@@ -16,8 +16,8 @@ type ProcessInfo struct {
 }
 
 type Usage struct {
-	CpuCapacity float64   `json:"cpuCapacity"`
-	MemCapacity float64   `json:"memCapacity"`
+	CpuCapacity float64   `json:"cpuCapacity,omitempty"`
+	MemCapacity float64   `json:"memCapacity,omitempty"`
 	Cpu         []float64 `json:"cpu"`
 	Mem         []float64 `json:"mem"`
 	Time        []string  `json:"time"`

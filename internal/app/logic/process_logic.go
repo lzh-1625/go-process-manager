@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -119,10 +120,13 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []model.Process) 
 			pi.State.State = process.State.State
 			pi.StartTime = process.GetStartTimeFormat()
 			pi.User = process.GetUserString()
+
 			pi.Usage.Cpu = process.performanceStatus.cpu
-			pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
 			pi.Usage.Mem = process.performanceStatus.mem
-			pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
+			if config.CF.PerformanceCapacityDisplay {
+				pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
+				pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
+			}
 			pi.Usage.Time = process.performanceStatus.time
 			pi.TermType = process.Type()
 			pi.CgroupEnable = process.Config.cgroupEnable
