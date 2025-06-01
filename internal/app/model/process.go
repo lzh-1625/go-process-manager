@@ -20,3 +20,9 @@ type Process struct {
 func (*Process) TableName() string {
 	return "process"
 }
+
+type ProcessShare struct {
+	Minute int  `json:"minute"`
+	Pid    int  `json:"pid"`
+	Write  bool `json:"write"`
+}

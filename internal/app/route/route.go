@@ -56,7 +56,11 @@ func routePathInit(r *gin.Engine) {
 	apiGroup.Use(middle.PanicMiddle())
 	// apiGroup.Use(middle.DemoMiddle())
 	{
-		apiGroup.GET("/ws", middle.OprPermission(constants.OPERATION_TERMINAL), api.WsApi.WebsocketHandle)
+		wsGroup := apiGroup.Group("/ws")
+		{
+			wsGroup.GET("", middle.OprPermission(constants.OPERATION_TERMINAL), api.WsApi.WebsocketHandle)
+			wsGroup.GET("/share", api.WsApi.WebsocketShareHandle)
+		}
 
 		processGroup := apiGroup.Group("/process")
 		{
@@ -66,6 +70,7 @@ func routePathInit(r *gin.Engine) {
 			processGroup.PUT("", middle.OprPermission(constants.OPERATION_START), api.ProcApi.StartProcess)
 			processGroup.PUT("/all", api.ProcApi.StartAllProcess)
 			processGroup.DELETE("/all", api.ProcApi.KillAllProcess)
+			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), api.ProcApi.ProcessCreateShare)
 			processGroup.GET("/control", middle.RolePermission(constants.ROLE_ROOT), middle.ProcessWaitCond.WaitTriggerMiddel, api.ProcApi.ProcessControl)
 
 			proConfigGroup := processGroup.Group("/config")

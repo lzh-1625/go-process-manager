@@ -1,9 +1,13 @@
 package api
 
 import (
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -105,5 +109,16 @@ func (p *procApi) ProcessControl(ctx *gin.Context) {
 	proc, err := logic.ProcessCtlLogic.GetProcess(uuid)
 	errCheck(ctx, err != nil, err)
 	proc.ProcessControl(user)
+	rOk(ctx, "Operation successful!", nil)
+}
+
+func (p *procApi) ProcessCreateShare(ctx *gin.Context) {
+	req := bind[model.ProcessShare](ctx)
+	err := repository.WsShare.AddShareData(model.WsShare{
+		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minute)),
+		Write:      req.Write,
+		Token:      utils.UnwarpIgnore(uuid.NewRandom()).String(),
+	})
+	errCheck(ctx, err != nil, err)
 	rOk(ctx, "Operation successful!", nil)
 }
