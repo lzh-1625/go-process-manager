@@ -114,11 +114,15 @@ func (p *procApi) ProcessControl(ctx *gin.Context) {
 
 func (p *procApi) ProcessCreateShare(ctx *gin.Context) {
 	req := bind[model.ProcessShare](ctx)
+	token := utils.UnwarpIgnore(uuid.NewRandom()).String()
 	err := repository.WsShare.AddShareData(model.WsShare{
-		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minute)),
+		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
 		Write:      req.Write,
-		Token:      utils.UnwarpIgnore(uuid.NewRandom()).String(),
+		Token:      token,
+		CreateBy:   getUserName(ctx),
 	})
 	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+	rOk(ctx, "Operation successful!", gin.H{
+		"token": token,
+	})
 }

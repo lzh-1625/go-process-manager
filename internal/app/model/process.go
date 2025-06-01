@@ -22,7 +22,7 @@ func (*Process) TableName() string {
 }
 
 type ProcessShare struct {
-	Minute int  `json:"minute"`
-	Pid    int  `json:"pid"`
-	Write  bool `json:"write"`
+	Minutes int  `json:"minutes"`
+	Pid     int  `json:"pid"`
+	Write   bool `json:"write"`
 }
