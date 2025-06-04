@@ -21,14 +21,6 @@ var (
 	TaskWaitCond    = newWaitCond()
 )
 
-var waitCondList []*waitCond
-
-func InitCondTiming() {
-	for _, v := range waitCondList {
-		go v.timing()
-	}
-}
-
 func newWaitCond() *waitCond {
 	wc := &waitCond{
 		cond:    *sync.NewCond(&sync.Mutex{}),
@@ -36,7 +28,7 @@ func newWaitCond() *waitCond {
 		timeMap: sync.Map{},
 		trigger: make(chan struct{}),
 	}
-	waitCondList = append(waitCondList, wc)
+	go wc.timing()
 	return wc
 }
 
