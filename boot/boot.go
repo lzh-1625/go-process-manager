@@ -11,7 +11,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/termui"
 	logger "github.com/lzh-1625/go_process_manager/log"
@@ -132,10 +131,6 @@ func initListenKillSignal() {
 		log.Print("已停止所有进程")
 		os.Exit(0)
 	}()
-}
-
-func initCondTiming() {
-	middle.InitCondTiming()
 }
 
 func initLogHandle() {
