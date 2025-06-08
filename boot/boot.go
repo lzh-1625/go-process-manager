@@ -26,7 +26,6 @@ func init() {
 	initLog()
 	initEs()
 	initLogHanler()
-	initCondTiming()
 	initProcess()
 	initJwtSecret()
 	initTui()
