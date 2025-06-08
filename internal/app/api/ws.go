@@ -100,7 +100,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
 	errCheck(ctx, err != nil, "Operation failed!")
 	errCheck(ctx, data.ExpireTime.Unix() <= time.Now().Unix(), "Share expired!")
 	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
-	errCheck(ctx, err != nil, "Operation failed!")
+	errCheck(ctx, err != nil, err)
 	gusetName := "guest-" + strconv.Itoa(data.Id) // 构造访客用户名
 	errCheck(ctx, proc.HasWsConn(gusetName), "A connection already exists; unable to establish a new one!")
 	errCheck(ctx, proc.State.State != 1, "The process is currently running.")

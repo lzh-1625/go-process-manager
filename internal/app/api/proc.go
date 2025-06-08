@@ -119,6 +119,7 @@ func (p *procApi) ProcessCreateShare(ctx *gin.Context) {
 		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
 		Write:      req.Write,
 		Token:      token,
+		Pid:        req.Pid,
 		CreateBy:   getUserName(ctx),
 	})
 	errCheck(ctx, err != nil, err)

@@ -40,6 +40,7 @@ func CheckToken() gin.HandlerFunc {
 			"/api/user/login",
 			"/api/user/register/admin",
 			"/api/task/api-key/",
+			"/api/ws/share",
 		}
 		if !slices.ContainsFunc(whiteList, func(s string) bool {
 			return strings.HasPrefix(c.Request.URL.Path, s)
