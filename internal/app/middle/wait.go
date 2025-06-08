@@ -29,7 +29,7 @@ func InitWaitCond() {
 func newWaitCond() *waitCond {
 	wc := &waitCond{
 		cond:    *sync.NewCond(&sync.Mutex{}),
-		ts:      time.Now().UnixMicro(),
+		ts:      time.Now().UnixNano(),
 		timeMap: sync.Map{},
 		trigger: make(chan struct{}),
 	}

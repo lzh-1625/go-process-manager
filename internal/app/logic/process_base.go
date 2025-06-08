@@ -177,12 +177,14 @@ func (p *ProcessBase) AddConn(user string, c ConnectInstance) {
 	p.wsLock.Lock()
 	defer p.wsLock.Unlock()
 	p.ws[user] = c
+	middle.ProcessWaitCond.Trigger()
 }
 
 func (p *ProcessBase) DeleteConn(user string) {
 	p.wsLock.Lock()
 	defer p.wsLock.Unlock()
 	delete(p.ws, user)
+	middle.ProcessWaitCond.Trigger()
 }
 
 func (p *ProcessBase) logReportHandler(log string) {

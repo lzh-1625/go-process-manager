@@ -9,7 +9,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -75,14 +74,11 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 	proc.ReadCache(wci)
 	w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, uuid, constants.OPERATION_TERMINAL_WRITE))
 	proc.AddConn(reqUser, wci)
-	defer middle.ProcessWaitCond.Trigger()
 	defer proc.DeleteConn(reqUser)
 	conn.SetCloseHandler(func(_ int, _ string) error {
-		middle.ProcessWaitCond.Trigger()
 		cancel()
 		return nil
 	})
-	middle.ProcessWaitCond.Trigger()
 	select {
 	case <-proc.StopChan:
 		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
@@ -101,8 +97,8 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
 	errCheck(ctx, data.ExpireTime.Unix() <= time.Now().Unix(), "Share expired!")
 	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
 	errCheck(ctx, err != nil, err)
-	gusetName := "guest-" + strconv.Itoa(data.Id) // 构造访客用户名
-	errCheck(ctx, proc.HasWsConn(gusetName), "A connection already exists; unable to establish a new one!")
+	guestName := "guest-" + strconv.Itoa(data.Id) // 构造访客用户名
+	errCheck(ctx, proc.HasWsConn(guestName), "A connection already exists; unable to establish a new one!")
 	errCheck(ctx, proc.State.State != 1, "The process is currently running.")
 	errCheck(ctx, !proc.VerifyControl(), "Insufficient permissions; please check your access rights!")
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
@@ -119,15 +115,12 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
 	}
 	proc.ReadCache(wci)
 	w.startWsConnect(wci, cancel, proc, data.Write)
-	proc.AddConn(gusetName, wci)
-	defer middle.ProcessWaitCond.Trigger()
-	defer proc.DeleteConn(gusetName)
+	proc.AddConn(guestName, wci)
+	defer proc.DeleteConn(guestName)
 	conn.SetCloseHandler(func(_ int, _ string) error {
-		middle.ProcessWaitCond.Trigger()
 		cancel()
 		return nil
 	})
-	middle.ProcessWaitCond.Trigger()
 	select {
 	case <-proc.StopChan:
 		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
