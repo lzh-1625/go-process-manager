@@ -17,9 +17,14 @@ type waitCond struct {
 }
 
 var (
-	ProcessWaitCond = newWaitCond()
-	TaskWaitCond    = newWaitCond()
+	ProcessWaitCond *waitCond
+	TaskWaitCond    *waitCond
 )
+
+func InitWaitCond() {
+	ProcessWaitCond = newWaitCond()
+	TaskWaitCond = newWaitCond()
+}
 
 func newWaitCond() *waitCond {
 	wc := &waitCond{

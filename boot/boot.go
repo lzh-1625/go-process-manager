@@ -11,6 +11,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/termui"
 	logger "github.com/lzh-1625/go_process_manager/log"
@@ -26,6 +27,7 @@ func init() {
 	initLog()
 	initEs()
 	initLogHanler()
+	initWaitCond()
 	initProcess()
 	initJwtSecret()
 	initTui()
@@ -134,4 +136,8 @@ func initListenKillSignal() {
 
 func initLogHandle() {
 	logic.InitLogHandle()
+}
+
+func initWaitCond() {
+	middle.InitWaitCond()
 }
