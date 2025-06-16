@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
 type configRepository struct{}
@@ -9,11 +10,8 @@ type configRepository struct{}
 var ConfigRepository = new(configRepository)
 
 func (c *configRepository) GetConfigValue(key string) (string, error) {
-	var result string
-	if err := db.Model(&model.Config{}).Select("value").Where(&model.Config{Key: key}).First(&result).Error; err != nil {
-		return "", err
-	}
-	return result, nil
+	data, err := query.Config.Select(query.Config.Value).Where(query.Config.Key.Eq(key)).First()
+	return *data.Value, err
 }
 
 func (c *configRepository) SetConfigValue(key, value string) error {

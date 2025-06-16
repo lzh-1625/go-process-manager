@@ -5,6 +5,7 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 
 	"gorm.io/gorm"
 )
@@ -50,12 +51,7 @@ func (t *taskRepository) EditTask(data model.Task) (err error) {
 }
 
 func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: id}).First(&model.Task{}).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: id}).Update("enable", enable).Error
+	_, err = query.Task.Where(query.Task.Id.Eq(id)).Update(query.Task.Enable, enable)
 	return
 }
 
@@ -67,6 +63,6 @@ func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 
 func (t *taskRepository) GetTriggerTask(processName string, event constants.ProcessState) []model.Task {
 	result := []model.Task{}
-	db.Raw(`SELECT task.* FROM task left join process p  on p.uuid == task.trigger_target  WHERE trigger_event= ? AND p.name = ?`, event, processName).Scan(&result)
+	query.Task.Select(query.Task.ALL).LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Task.TriggerTarget)).Where(query.Process.Name.Eq(processName)).Where(query.Task.TriggerEvent.Eq(int32(event))).Scan(result)
 	return result
 }

@@ -88,7 +88,7 @@ func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model
 	// 检查 req 是否为 nil
 	if req.Page.From < 0 || req.Page.Size <= 0 {
 		log.Logger.Error("无效的分页请求参数")
-		return model.LogResp{Total: 0, Data: []model.ProcessLog{}}
+		return model.LogResp{Total: 0, Data: []*model.ProcessLog{}}
 	}
 
 	search := e.esClient.Search(config.CF.EsIndex).From(req.Page.From).Size(req.Page.Size).TrackScores(true)
@@ -140,7 +140,7 @@ func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model
 		if v.Source != nil {
 			var data model.ProcessLog
 			if err := json.Unmarshal(v.Source, &data); err == nil {
-				result.Data = append(result.Data, data)
+				result.Data = append(result.Data, &data)
 			} else {
 				log.Logger.Errorw("JSON 解码失败", "err", err)
 			}

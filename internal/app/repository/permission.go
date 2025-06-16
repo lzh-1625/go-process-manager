@@ -40,6 +40,7 @@ func (p *permissionRepository) EditPermssion(data model.Permission) error {
 		"log":      data.Log,
 		"write":    data.Write,
 	}).Error
+
 }
 
 func (p *permissionRepository) GetPermission(user string, pid int) (result model.Permission) {

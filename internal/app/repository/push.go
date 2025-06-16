@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
 type pushRepository struct{}
@@ -32,7 +33,7 @@ func (p *pushRepository) DeletePushConfig(id int) error {
 	}).Error
 }
 
-func (p *pushRepository) GetPushConfigByIds(ids []int) (result []model.Push) {
-	db.Model(&model.Push{}).Where("id in ?", ids).Find(&result)
+func (p *pushRepository) GetPushConfigByIds(ids []int64) (result []*model.Push) {
+	result, _ = query.Push.Where(query.Push.Id.In(ids...)).Find()
 	return
 }

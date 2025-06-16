@@ -209,7 +209,7 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	}
 	defer result.Lock.Unlock()
 	result.Config.logReport = config.LogReport
-	result.Config.PushIds = utils.JsonStrToStruct[[]int](config.PushIds)
+	result.Config.PushIds = utils.JsonStrToStruct[[]int64](config.PushIds)
 	result.Config.cgroupEnable = config.CgroupEnable
 	result.Config.memoryLimit = config.MemoryLimit
 	result.Config.cpuLimit = config.CpuLimit

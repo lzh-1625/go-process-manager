@@ -83,8 +83,8 @@ type EsResp struct {
 }
 
 type LogResp struct {
-	Total int64        `json:"total"`
-	Data  []ProcessLog `json:"data"`
+	Total int64         `json:"total"`
+	Data  []*ProcessLog `json:"data"`
 }
 
 type ProcessLog struct {

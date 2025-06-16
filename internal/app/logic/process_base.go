@@ -49,7 +49,7 @@ type ProcessBase struct {
 	Config struct {
 		AutoRestart       bool
 		compulsoryRestart bool
-		PushIds           []int
+		PushIds           []int64
 		logReport         bool
 		cgroupEnable      bool
 		memoryLimit       *float32
@@ -218,7 +218,7 @@ func (p *ProcessBase) VerifyControl() bool {
 func (p *ProcessBase) setProcessConfig(pconfig model.Process) {
 	p.Config.AutoRestart = pconfig.AutoRestart
 	p.Config.logReport = pconfig.LogReport
-	p.Config.PushIds = utils.JsonStrToStruct[[]int](pconfig.PushIds)
+	p.Config.PushIds = utils.JsonStrToStruct[[]int64](pconfig.PushIds)
 	p.Config.compulsoryRestart = pconfig.CompulsoryRestart
 	p.Config.cgroupEnable = pconfig.CgroupEnable
 	p.Config.memoryLimit = pconfig.MemoryLimit

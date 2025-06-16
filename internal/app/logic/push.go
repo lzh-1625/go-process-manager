@@ -19,7 +19,7 @@ var PushLogic = &pushLogic{
 	},
 }
 
-func (p *pushLogic) Push(ids []int, placeholders map[string]string) {
+func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 	pl := repository.PushRepository.GetPushConfigByIds(ids)
 	for _, v := range pl {
 		if v.Enable {

@@ -1,13 +1,16 @@
 package repository
 
-import "github.com/lzh-1625/go_process_manager/internal/app/model"
+import (
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
+)
 
 type wsShare struct{}
 
 var WsShare = new(wsShare)
 
-func (p *wsShare) GetWsShareDataByToken(token string) (data model.WsShare, err error) {
-	err = db.Model(&model.WsShare{}).Where("token = ?", token).First(&data).Error
+func (p *wsShare) GetWsShareDataByToken(token string) (data *model.WsShare, err error) {
+	data, err = query.WsShare.Where(query.WsShare.Token.Eq(token)).First()
 	return
 }
 

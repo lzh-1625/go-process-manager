@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
@@ -15,29 +16,23 @@ func (l *logRepository) InsertLog(data model.ProcessLog) {
 	}
 }
 
-func (l *logRepository) SearchLog(query model.GetLogReq) (result []model.ProcessLog, total int64) {
-	tx := db.Model(&model.ProcessLog{}).Where(&model.ProcessLog{
-		Name:  query.Match.Name,
-		Using: query.Match.Using,
-	})
-	if query.Match.Log != "" {
-		tx.Where("log like ?", "%"+query.Match.Log+"%")
+func (l *logRepository) SearchLog(req model.GetLogReq) (result []*model.ProcessLog, total int64) {
+	q := query.ProcessLog.Where(query.ProcessLog.Name.Eq(req.Match.Name)).Where(query.ProcessLog.Using.Eq(req.Match.Using))
+	if req.Match.Log != "" {
+		q.Where(query.ProcessLog.Log.Like("%" + req.Match.Log + "%"))
 	}
-	if query.Sort == "desc" {
-		tx.Order("time desc")
+	if req.Sort == "desc" {
+		q.Order(query.ProcessLog.Time.Desc())
 	}
-	if query.TimeRange.StartTime != 0 {
-		tx.Where("time > ?", query.TimeRange.StartTime)
+	if req.TimeRange.StartTime != 0 {
+		q.Where(query.ProcessLog.Time.Gte(req.TimeRange.StartTime))
 	}
-	if query.TimeRange.EndTime != 0 {
-		tx.Where("time < ?", query.TimeRange.EndTime)
+	if req.TimeRange.EndTime != 0 {
+		q.Where(query.ProcessLog.Time.Lte(req.TimeRange.EndTime))
 	}
-	if len(query.FilterName) != 0 {
-		tx.Where("name in ?", query.FilterName)
+	if len(req.FilterName) != 0 {
+		q.Where(query.ProcessLog.Name.In(req.FilterName...))
 	}
-	tx.Count(&total)
-	tx.Limit(query.Page.Size)
-	tx.Offset(query.Page.From)
-	tx.Find(&result)
+	result, total, _ = q.FindByPage(req.Page.From, req.Page.Size)
 	return
 }
