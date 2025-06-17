@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -40,7 +41,7 @@ func InitDb() {
 	}
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	db = gdb.Session(&defaultConfig)
-	// db = gdb.Session(&defaultConfig).Debug()
+	db = gdb.Session(&defaultConfig).Debug()
 	db.AutoMigrate(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
 
 	// g := gen.NewGenerator(gen.Config{
@@ -50,4 +51,5 @@ func InitDb() {
 	// g.UseDB(db)
 	// g.ApplyBasic(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
 	// g.Execute()
+	query.SetDefault(db)
 }

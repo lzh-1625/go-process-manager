@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
@@ -11,6 +13,9 @@ var ConfigRepository = new(configRepository)
 
 func (c *configRepository) GetConfigValue(key string) (string, error) {
 	data, err := query.Config.Select(query.Config.Value).Where(query.Config.Key.Eq(key)).First()
+	if data == nil || err != nil {
+		return "", errors.ErrUnsupported
+	}
 	return *data.Value, err
 }
 

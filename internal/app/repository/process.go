@@ -23,7 +23,10 @@ func (p *processRepository) GetAllProcessConfig() []model.Process {
 
 func (p *processRepository) GetProcessConfigByUser(username string) []model.Process {
 	result := []model.Process{}
-	err := query.Permission.LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Permission.Pid)).Where(query.Permission.Owned.Is(true)).Where(query.Permission.Account.Eq(username)).Scan(&result)
+	err := query.Permission.LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Permission.Pid)).
+		Where(query.Permission.Owned.Is(true)).
+		Where(query.Permission.Account.Eq(username)).
+		Scan(&result)
 	if err != nil {
 		log.Logger.Error(err)
 		return []model.Process{}
