@@ -97,7 +97,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
 	errCheck(ctx, data.ExpireTime.Unix() <= time.Now().Unix(), "Share expired!")
 	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
 	errCheck(ctx, err != nil, err)
-	guestName := "guest-" + strconv.Itoa(data.Id) // 构造访客用户名
+	guestName := "guest-" + strconv.Itoa(int(data.ID)) // 构造访客用户名
 	errCheck(ctx, proc.HasWsConn(guestName), "A connection already exists; unable to establish a new one!")
 	errCheck(ctx, proc.State.State != 1, "The process is currently running.")
 	errCheck(ctx, !proc.VerifyControl(), "Insufficient permissions; please check your access rights!")
@@ -105,6 +105,8 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
 	errCheck(ctx, err != nil, "WebSocket connection upgrade failed!")
 
 	log.Logger.Infow("ws连接成功")
+	data.UpdatedAt = time.Now()
+	repository.WsShare.Edit(data)
 
 	proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
 	wsCtx, cancel := context.WithCancel(context.Background())
@@ -173,4 +175,14 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 		}
 	}()
 
+}
+
+func GetWsShareList(ctx *gin.Context) {
+	rOk(ctx, "Operation successful!", logic.WsSahreLogic.GetWsShareList())
+}
+
+func DeleteWsShareById(ctx *gin.Context) {
+	err := logic.WsSahreLogic.DeleteById(ctx.GetInt("id"))
+	errCheck(ctx, err != nil, err)
+	rOk(ctx, "Operation successful!", nil)
 }
