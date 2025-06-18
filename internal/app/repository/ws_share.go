@@ -20,18 +20,18 @@ func (p *wsShare) AddShareData(data model.WsShare) error {
 
 func (p *wsShare) GetWsShareList() (data []*model.WsShare) {
 	ws := query.WsShare
-	data, _ = ws.Find()
+	data, _ = ws.Order(ws.CreatedAt.Desc()).Find()
 	return
 }
 
 func (p *wsShare) Delete(id int) error {
 	ws := query.WsShare
-	_, err := ws.Where(ws.Id.Eq(id)).Delete()
+	_, err := ws.Where(ws.ID.Eq(uint(id))).Delete()
 	return err
 }
 
 func (p *wsShare) Edit(data *model.WsShare) error {
 	ws := query.WsShare
-	_, err := ws.Where(ws.Id.Eq(int(data.ID))).Updates(data)
+	_, err := ws.Where(ws.ID.Eq(uint(data.ID))).Updates(data)
 	return err
 }

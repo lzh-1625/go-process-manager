@@ -27,7 +27,10 @@ func newWsShare(db *gorm.DB, opts ...gen.DOOption) wsShare {
 
 	tableName := _wsShare.wsShareDo.TableName()
 	_wsShare.ALL = field.NewAsterisk(tableName)
-	_wsShare.Id = field.NewInt(tableName, "id")
+	_wsShare.ID = field.NewUint(tableName, "id")
+	_wsShare.CreatedAt = field.NewTime(tableName, "created_at")
+	_wsShare.UpdatedAt = field.NewTime(tableName, "updated_at")
+	_wsShare.DeletedAt = field.NewField(tableName, "deleted_at")
 	_wsShare.Pid = field.NewInt(tableName, "pid")
 	_wsShare.Write = field.NewBool(tableName, "write")
 	_wsShare.ExpireTime = field.NewTime(tableName, "expire_time")
@@ -43,7 +46,10 @@ type wsShare struct {
 	wsShareDo
 
 	ALL        field.Asterisk
-	Id         field.Int
+	ID         field.Uint
+	CreatedAt  field.Time
+	UpdatedAt  field.Time
+	DeletedAt  field.Field
 	Pid        field.Int
 	Write      field.Bool
 	ExpireTime field.Time
@@ -65,7 +71,10 @@ func (w wsShare) As(alias string) *wsShare {
 
 func (w *wsShare) updateTableName(table string) *wsShare {
 	w.ALL = field.NewAsterisk(table)
-	w.Id = field.NewInt(table, "id")
+	w.ID = field.NewUint(table, "id")
+	w.CreatedAt = field.NewTime(table, "created_at")
+	w.UpdatedAt = field.NewTime(table, "updated_at")
+	w.DeletedAt = field.NewField(table, "deleted_at")
 	w.Pid = field.NewInt(table, "pid")
 	w.Write = field.NewBool(table, "write")
 	w.ExpireTime = field.NewTime(table, "expire_time")
@@ -87,8 +96,11 @@ func (w *wsShare) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *wsShare) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 6)
-	w.fieldMap["id"] = w.Id
+	w.fieldMap = make(map[string]field.Expr, 9)
+	w.fieldMap["id"] = w.ID
+	w.fieldMap["created_at"] = w.CreatedAt
+	w.fieldMap["updated_at"] = w.UpdatedAt
+	w.fieldMap["deleted_at"] = w.DeletedAt
 	w.fieldMap["pid"] = w.Pid
 	w.fieldMap["write"] = w.Write
 	w.fieldMap["expire_time"] = w.ExpireTime

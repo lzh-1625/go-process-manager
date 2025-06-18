@@ -9,6 +9,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/gen"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -44,12 +45,12 @@ func InitDb() {
 	// db = gdb.Session(&defaultConfig).Debug()
 	db.AutoMigrate(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
 
-	// g := gen.NewGenerator(gen.Config{
-	// 	OutPath: "internal/app/repository/query",
-	// 	Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
-	// })
-	// g.UseDB(db)
-	// g.ApplyBasic(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
-	// g.Execute()
+	g := gen.NewGenerator(gen.Config{
+		OutPath: "internal/app/repository/query",
+		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
+	})
+	g.UseDB(db)
+	g.ApplyBasic(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
+	g.Execute()
 	query.SetDefault(db)
 }
