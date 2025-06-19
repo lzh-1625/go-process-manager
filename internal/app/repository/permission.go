@@ -16,9 +16,24 @@ var PermissionRepository = new(permissionRepository)
 
 func (p *permissionRepository) GetPermssionList(account string) []model.PermissionPo {
 	result := []model.PermissionPo{}
-	if err := db.Raw(`SELECT p.name ,p.uuid as pid,p2.owned ,p2."start" ,p2.stop ,p2.terminal,p2.log ,p2.write    
-	FROM users u full join process p left join permission p2 on p2.account == u.account and p2.pid =p.uuid 
-	WHERE u.account = ? or u.account ISNULL`, account).Find(&result); err.Error != nil {
+	if err := db.Raw(`SELECT
+	p.name ,
+	p.uuid as pid,
+	p2.owned ,
+	p2."start" ,
+	p2.stop ,
+	p2.terminal,
+	p2.log ,
+	p2.write
+FROM
+	users u
+full join process p
+left join permission p2 on
+	p2.account == u.account
+	and p2.pid = p.uuid
+WHERE
+	u.account = ?
+	or u.account ISNULL`, account).Find(&result); err.Error != nil {
 		log.Logger.Warnw("权限查询失败", "err", err)
 	}
 

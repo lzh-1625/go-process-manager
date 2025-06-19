@@ -56,8 +56,19 @@ func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
 }
 
 func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
-	db.Raw(`SELECT t.*, p.name AS process_name, p2.name AS target_name,p3.name AS trigger_name 
-	FROM task t LEFT JOIN process p ON t.process_id = p.uuid LEFT JOIN process p2 ON t.operation_target = p2.uuid LEFT JOIN process p3 ON t.trigger_target = p3.uuid`).Scan(&result)
+	db.Raw(`SELECT
+	t.*,
+	p.name AS process_name,
+	p2.name AS target_name,
+	p3.name AS trigger_name
+FROM
+	task t
+LEFT JOIN process p ON
+	t.process_id = p.uuid
+LEFT JOIN process p2 ON
+	t.operation_target = p2.uuid
+LEFT JOIN process p3 ON
+	t.trigger_target = p3.uuid`).Scan(&result)
 	return
 }
 
