@@ -1,12 +1,12 @@
 package repository
 
 import (
-	"reflect"
+	"errors"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 	"github.com/lzh-1625/go_process_manager/log"
-
 	"gorm.io/gorm"
 )
 
@@ -26,21 +26,22 @@ func (p *permissionRepository) GetPermssionList(account string) []model.Permissi
 }
 
 func (p *permissionRepository) EditPermssion(data model.Permission) error {
-	if db.Model(&model.Permission{}).Where(&model.Permission{Account: data.Account, Pid: data.Pid}).First(nil).Error == gorm.ErrRecordNotFound {
-		db.Omit("name").Create(&model.Permission{
+	per := query.Permission
+	if _, err := per.Where(per.Account.Eq(data.Account)).Where(per.Pid.Eq(data.Pid)).First(); errors.Is(err, gorm.ErrRecordNotFound) {
+		per.Create(&model.Permission{
 			Account: data.Account,
 			Pid:     data.Pid,
 		})
 	}
-	return db.Model(&model.Permission{}).Where(&model.Permission{Account: data.Account, Pid: data.Pid}).Updates(map[string]interface{}{
-		"owned":    data.Owned,
-		"start":    data.Start,
-		"stop":     data.Stop,
-		"terminal": data.Terminal,
-		"log":      data.Log,
-		"write":    data.Write,
-	}).Error
-
+	_, err := per.Where(per.Account.Eq(data.Account)).Where(per.Pid.Eq(data.Pid)).Updates(map[string]any{
+		per.Owned.ColumnName().String():    data.Owned,
+		per.Start.ColumnName().String():    data.Start,
+		per.Stop.ColumnName().String():     data.Stop,
+		per.Terminal.ColumnName().String(): data.Terminal,
+		per.Log.ColumnName().String():      data.Log,
+		per.Write.ColumnName().String():    data.Write,
+	})
+	return err
 }
 
 func (p *permissionRepository) GetPermission(user string, pid int) (result model.Permission) {
@@ -49,8 +50,19 @@ func (p *permissionRepository) GetPermission(user string, pid int) (result model
 }
 
 func (p *permissionRepository) GetProcessNameByPermission(user string, op constants.OprPermission) (result []string) {
-	query := model.PermissionPo{Account: user, Owned: true}
-	reflect.ValueOf(&query).Elem().FieldByName(string(op)).SetBool(true)
-	db.Model(&model.Permission{}).Select("name").Joins("right join process p on p.uuid = pid").Where(query).Find(&result)
+	tx := query.Permission.Select(query.Process.Name).RightJoin(query.Permission, query.Process.Uuid.EqCol(query.Permission.Pid)).Where(query.Permission.Account.Eq(user)).Where(query.Permission.Owned.Is(true))
+	switch op {
+	case constants.OPERATION_LOG:
+		tx = tx.Where(query.Permission.Log.Is(true))
+	case constants.OPERATION_START:
+		tx = tx.Where(query.Permission.Start.Is(true))
+	case constants.OPERATION_STOP:
+		tx = tx.Where(query.Permission.Stop.Is(true))
+	case constants.OPERATION_TERMINAL:
+		tx = tx.Where(query.Permission.Terminal.Is(true))
+	case constants.OPERATION_TERMINAL_WRITE:
+		tx = tx.Where(query.Permission.Write.Is(true))
+	}
+	tx.Scan(&result)
 	return
 }
