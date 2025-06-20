@@ -56,24 +56,27 @@ func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
 }
 
 func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
-	db.Raw(`SELECT
-	t.*,
-	p.name AS process_name,
-	p2.name AS target_name,
-	p3.name AS trigger_name
-FROM
-	task t
-LEFT JOIN process p ON
-	t.process_id = p.uuid
-LEFT JOIN process p2 ON
-	t.operation_target = p2.uuid
-LEFT JOIN process p3 ON
-	t.trigger_target = p3.uuid`).Scan(&result)
+	process := query.Process
+	task := query.Task
+	task.Select(
+		task.ALL,
+		process.As("p").Name.As("process_name"),
+		process.As("p2").Name.As("target_name"),
+		process.As("p3").Name.As("trigger_name"),
+	).
+		LeftJoin(process, process.As("p").Uuid.EqCol(task.ProcessId)).
+		LeftJoin(process, process.As("p2").Uuid.EqCol(task.OperationTarget)).
+		LeftJoin(process, process.As("p3").Uuid.EqCol(task.TriggerTarget)).
+		Scan(&result)
 	return
 }
 
 func (t *taskRepository) GetTriggerTask(processName string, event constants.ProcessState) []model.Task {
 	result := []model.Task{}
-	query.Task.Select(query.Task.ALL).LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Task.TriggerTarget)).Where(query.Process.Name.Eq(processName)).Where(query.Task.TriggerEvent.Eq(int32(event))).Scan(result)
+	query.Task.Select(query.Task.ALL).
+		LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Task.TriggerTarget)).
+		Where(query.Process.Name.Eq(processName)).
+		Where(query.Task.TriggerEvent.Eq(int32(event))).
+		Scan(result)
 	return result
 }
