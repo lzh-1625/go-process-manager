@@ -20,7 +20,7 @@ func Route() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	if !config.CF.Tui {
-		r.Use(gin.Logger())
+		r.Use(middle.Logger())
 	}
 	routePathInit(r)
 	staticInit(r)

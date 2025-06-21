@@ -65,7 +65,7 @@ func (p *permissionRepository) GetPermission(user string, pid int) (result model
 }
 
 func (p *permissionRepository) GetProcessNameByPermission(user string, op constants.OprPermission) (result []string) {
-	tx := query.Permission.Select(query.Process.Name).RightJoin(query.Permission, query.Process.Uuid.EqCol(query.Permission.Pid)).Where(query.Permission.Account.Eq(user)).Where(query.Permission.Owned.Is(true))
+	tx := query.Permission.Select(query.Process.Name).RightJoin(query.Process, query.Process.Uuid.EqCol(query.Permission.Pid)).Where(query.Permission.Account.Eq(user)).Where(query.Permission.Owned.Is(true))
 	switch op {
 	case constants.OPERATION_LOG:
 		tx = tx.Where(query.Permission.Log.Is(true))
