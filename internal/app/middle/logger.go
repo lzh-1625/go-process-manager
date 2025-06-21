@@ -22,6 +22,7 @@ func Logger() gin.HandlerFunc {
 		ctx.Next()
 		logKv := []any{}
 		logKv = append(logKv, "Method", ctx.Request.Method)
+		logKv = append(logKv, "Status", ctx.Writer.Status())
 		logKv = append(logKv, "Path", path)
 		logKv = append(logKv, "耗时", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
 		if user, ok := ctx.Get(constants.CTXFLG_USER_NAME); ok {
