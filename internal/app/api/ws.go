@@ -63,7 +63,6 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 
 	log.Logger.Infow("ws连接成功")
 
-	proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
 	wsCtx, cancel := context.WithCancel(context.Background())
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
@@ -72,6 +71,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 	}
 	proc.ReadCache(wci)
 	if proc.State.State == 1 {
+		proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
 		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, uuid, constants.OPERATION_TERMINAL_WRITE))
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
