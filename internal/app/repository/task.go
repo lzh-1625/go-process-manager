@@ -56,17 +56,19 @@ func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
 }
 
 func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
-	process := query.Process
+	p := query.Process.As("p")
+	p2 := query.Process.As("p2")
+	p3 := query.Process.As("p3")
 	task := query.Task
 	task.Select(
 		task.ALL,
-		process.As("p").Name.As("process_name"),
-		process.As("p2").Name.As("target_name"),
-		process.As("p3").Name.As("trigger_name"),
+		p.Name.As("process_name"),
+		p2.Name.As("target_name"),
+		p3.Name.As("trigger_name"),
 	).
-		LeftJoin(process, process.As("p").Uuid.EqCol(task.ProcessId)).
-		LeftJoin(process, process.As("p2").Uuid.EqCol(task.OperationTarget)).
-		LeftJoin(process, process.As("p3").Uuid.EqCol(task.TriggerTarget)).
+		LeftJoin(p, p.Uuid.EqCol(task.ProcessId)).
+		LeftJoin(p2, p2.Uuid.EqCol(task.OperationTarget)).
+		LeftJoin(p3, p3.Uuid.EqCol(task.TriggerTarget)).
 		Scan(&result)
 	return
 }
