@@ -53,7 +53,6 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 	proc, err := logic.ProcessCtlLogic.GetProcess(uuid)
 	errCheck(ctx, err != nil, "Operation failed!")
 	errCheck(ctx, proc.HasWsConn(reqUser), "A connection already exists; unable to establish a new one!")
-	errCheck(ctx, proc.State.State != 1, "The process is currently running.")
 	errCheck(ctx, proc.Control.Controller != reqUser && !proc.VerifyControl(), "Insufficient permissions; please check your access rights!")
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	errCheck(ctx, err != nil, "WebSocket connection upgrade failed!")
@@ -72,9 +71,11 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 		wsLock:     sync.Mutex{},
 	}
 	proc.ReadCache(wci)
-	w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, uuid, constants.OPERATION_TERMINAL_WRITE))
-	proc.AddConn(reqUser, wci)
-	defer proc.DeleteConn(reqUser)
+	if proc.State.State == 1 {
+		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, uuid, constants.OPERATION_TERMINAL_WRITE))
+		proc.AddConn(reqUser, wci)
+		defer proc.DeleteConn(reqUser)
+	}
 	conn.SetCloseHandler(func(_ int, _ string) error {
 		cancel()
 		return nil
