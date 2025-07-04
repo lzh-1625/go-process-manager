@@ -142,3 +142,39 @@ func routePathInit(r *gin.Engine) {
 		}
 	}
 }
+
+func bind[T any](fn func(*gin.Context, *T) error, bindOption int) func(*gin.Context) {
+	return func(ctx *gin.Context) {
+		var req *T
+		if bindOption&constants.BIND_OPTION_BODY != 0 {
+			if err := ctx.BindJSON(req); err != nil {
+				rErr(ctx, err)
+				return
+			}
+		}
+		if bindOption&constants.BIND_OPTION_HEADER != 0 {
+			if err := ctx.BindHeader(req); err != nil {
+				rErr(ctx, err)
+				return
+			}
+		}
+		if bindOption&constants.BIND_OPTION_QUERY != 0 {
+			if err := ctx.BindQuery(req); err != nil {
+				rErr(ctx, err)
+				return
+			}
+		}
+		err := fn(ctx, req)
+		if err != nil {
+			rErr(ctx, err)
+		}
+	}
+
+}
+
+func rErr(ctx *gin.Context, err error) {
+	ctx.JSON(500, gin.H{
+		"code":    -1,
+		"message": err,
+	})
+}
