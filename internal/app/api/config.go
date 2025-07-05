@@ -23,15 +23,13 @@ func (c *configApi) SetSystemConfiguration(ctx *gin.Context, _ any) (err error) 
 	if err = ctx.BindJSON(&req); err != nil {
 		return
 	}
-	if err = logic.ConfigLogic.SetSystemConfiguration(req); err != nil {
-		return
-	}
+	err = logic.ConfigLogic.SetSystemConfiguration(req)
 	return
 }
 
 func (c *configApi) EsConfigReload(ctx *gin.Context, _ any) (err error) {
 	if !logic.EsLogic.InitEs() {
-		return errors.New("es init fail")
+		err = errors.New("es init fail")
 	}
 	return
 }
