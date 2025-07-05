@@ -26,3 +26,7 @@ type ProcessShare struct {
 	Pid     int  `json:"pid"`
 	Write   bool `json:"write"`
 }
+
+type ProcessUuidReq struct {
+	Uuid int `form:"uuid"`
+}

@@ -17,3 +17,12 @@ type User struct {
 func (*User) TableName() string {
 	return "users"
 }
+
+type LoginHandlerReq struct {
+	Account  string `form:"account"`
+	Password string `form:"password"`
+}
+
+type DeleteUserReq struct {
+	Account string `form:"account"`
+}

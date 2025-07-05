@@ -45,3 +45,7 @@ type TaskVo struct {
 	StartTime   time.Time `json:"startTime"`
 	Running     bool      `json:"running"`
 }
+
+type TaskIdReq struct {
+	Id int `form:"id"`
+}

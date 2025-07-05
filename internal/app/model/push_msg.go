@@ -12,3 +12,7 @@ type Push struct {
 func (*Push) TableName() string {
 	return "push"
 }
+
+type PushIdReq struct {
+	Id int `form:"id"`
+}

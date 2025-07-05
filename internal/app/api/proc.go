@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,114 +17,117 @@ type procApi struct{}
 
 var ProcApi = new(procApi)
 
-func (p *procApi) CreateNewProcess(ctx *gin.Context) {
-	req := bind[model.Process](ctx)
+func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) (err error) {
 	index, err := repository.ProcessRepository.AddProcessConfig(req)
-	errCheck(ctx, err != nil, err)
+	if err != nil {
+		return
+	}
 	req.Uuid = index
 	proc, err := logic.ProcessCtlLogic.NewProcess(req)
-	errCheck(ctx, err != nil, err)
+	if err != nil {
+		return
+	}
 	logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 	rOk(ctx, "Operation successful!", gin.H{
 		"id": req.Uuid,
 	})
+	return
 }
 
-func (p *procApi) DeleteNewProcess(ctx *gin.Context) {
-	uuid := getQueryInt(ctx, "uuid")
-	logic.ProcessCtlLogic.KillProcess(uuid)
-	logic.ProcessCtlLogic.DeleteProcess(uuid)
-	err := repository.ProcessRepository.DeleteProcessConfig(uuid)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *procApi) DeleteNewProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+	logic.ProcessCtlLogic.KillProcess(req.Uuid)
+	logic.ProcessCtlLogic.DeleteProcess(req.Uuid)
+	return repository.ProcessRepository.DeleteProcessConfig(req.Uuid)
 }
 
-func (p *procApi) KillProcess(ctx *gin.Context) {
-	uuid := getQueryInt(ctx, "uuid")
-	err := logic.ProcessCtlLogic.KillProcess(uuid)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *procApi) KillProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+	return logic.ProcessCtlLogic.KillProcess(req.Uuid)
 }
 
-func (p *procApi) StartProcess(ctx *gin.Context) {
-	uuid := getQueryInt(ctx, "uuid")
-	prod, err := logic.ProcessCtlLogic.GetProcess(uuid)
+func (p *procApi) StartProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+	prod, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil { // 进程不存在则创建
-		proc, err := logic.ProcessCtlLogic.RunNewProcess(repository.ProcessRepository.GetProcessConfigById(uuid))
-		errCheck(ctx, err != nil, err)
-		logic.ProcessCtlLogic.AddProcess(uuid, proc)
+		proc, err1 := logic.ProcessCtlLogic.RunNewProcess(repository.ProcessRepository.GetProcessConfigById(req.Uuid))
+		if err1 != nil {
+			return err1
+		}
+		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 		rOk(ctx, "Operation successful!", nil)
-		return
+		return nil
 	}
-	errCheck(ctx, prod.State.State == 1, "The process is currently running.")
+	if prod.State.State == 1 {
+		return errors.New("process is currently running")
+	}
 	prod.ResetRestartTimes()
 	err = prod.Start()
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+	return
+
 }
 
-func (p *procApi) StartAllProcess(ctx *gin.Context) {
+func (p *procApi) StartAllProcess(ctx *gin.Context, _ any) (err error) {
 	if isAdmin(ctx) {
 		logic.ProcessCtlLogic.ProcessStartAll()
 	} else {
 		logic.ProcessCtlLogic.ProcesStartAllByUsername(getUserName(ctx))
 	}
-	rOk(ctx, "Operation successful!", nil)
+	return
 }
 
-func (p *procApi) KillAllProcess(ctx *gin.Context) {
+func (p *procApi) KillAllProcess(ctx *gin.Context, _ any) (err error) {
 	if isAdmin(ctx) {
 		logic.ProcessCtlLogic.KillAllProcess()
 	} else {
 		logic.ProcessCtlLogic.KillAllProcessByUserName(getUserName(ctx))
 	}
-	rOk(ctx, "Operation successful!", nil)
+	return
 }
 
-func (p *procApi) GetProcessList(ctx *gin.Context) {
+func (p *procApi) GetProcessList(ctx *gin.Context, _ any) (err error) {
 	if isAdmin(ctx) {
 		rOk(ctx, "Query successful!", logic.ProcessCtlLogic.GetProcessList())
 	} else {
 		rOk(ctx, "Query successful!", logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)))
 	}
+	return
 }
 
-func (p *procApi) UpdateProcessConfig(ctx *gin.Context) {
-	req := bind[model.Process](ctx)
+func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err error) {
 	logic.ProcessCtlLogic.UpdateProcessConfig(req)
-	err := repository.ProcessRepository.UpdateProcessConfig(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+	err = repository.ProcessRepository.UpdateProcessConfig(req)
+	return
 }
 
-func (p *procApi) GetProcessConfig(ctx *gin.Context) {
-	uuid := getQueryInt(ctx, "uuid")
-	data := repository.ProcessRepository.GetProcessConfigById(uuid)
-	errCheck(ctx, data.Uuid == 0, "No information found!")
-	rOk(ctx, "Query successful!", data)
+func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+	data := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
+	if data.Uuid == 0 {
+		return errors.New("no information found")
+	}
+	return
 }
 
-func (p *procApi) ProcessControl(ctx *gin.Context) {
+func (p *procApi) ProcessControl(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
 	user := getUserName(ctx)
-	uuid := getQueryInt(ctx, "uuid")
-	proc, err := logic.ProcessCtlLogic.GetProcess(uuid)
-	errCheck(ctx, err != nil, err)
+	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	if err != nil {
+		return
+	}
 	proc.ProcessControl(user)
-	rOk(ctx, "Operation successful!", nil)
+	return
 }
 
-func (p *procApi) ProcessCreateShare(ctx *gin.Context) {
-	req := bind[model.ProcessShare](ctx)
+func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) (err error) {
 	token := utils.UnwarpIgnore(uuid.NewRandom()).String()
-	err := repository.WsShare.AddShareData(model.WsShare{
+	if err = repository.WsShare.AddShareData(model.WsShare{
 		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
 		Write:      req.Write,
 		Token:      token,
 		Pid:        req.Pid,
 		CreateBy:   getUserName(ctx),
-	})
-	errCheck(ctx, err != nil, err)
+	}); err != nil {
+		return
+	}
 	rOk(ctx, "Operation successful!", gin.H{
 		"token": token,
 	})
+	return
 }

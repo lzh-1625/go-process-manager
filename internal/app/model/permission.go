@@ -29,3 +29,7 @@ type PermissionPo struct {
 	Write    bool   `gorm:"column:write;NOT NULL" json:"write"`
 	Log      bool   `gorm:"column:log;NOT NULL" json:"log"`
 }
+
+type GetPermissionListReq struct {
+	Account string `form:"account"`
+}

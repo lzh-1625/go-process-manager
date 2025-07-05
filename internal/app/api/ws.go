@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"sync"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -47,19 +49,22 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
+func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
 	reqUser := getUserName(ctx)
-	uuid := getQueryInt(ctx, "uuid")
-	proc, err := logic.ProcessCtlLogic.GetProcess(uuid)
-	errCheck(ctx, err != nil, "Operation failed!")
-	errCheck(ctx, proc.HasWsConn(reqUser), "A connection already exists; unable to establish a new one!")
-	errCheck(ctx, proc.Control.Controller != reqUser && !proc.VerifyControl(), "Insufficient permissions; please check your access rights!")
+	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	if err != nil {
+		return
+	}
+	if !proc.HasWsConn(reqUser) {
+		return errors.New("connection already exists; unable to establish a new one")
+	}
+	if proc.Control.Controller == reqUser || proc.VerifyControl() {
+		return errors.New("insufficient permissions; please check your access rights")
+	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-	errCheck(ctx, err != nil, "WebSocket connection upgrade failed!")
-
-	log.Logger.AddAdditionalInfo("processName", proc.Name)
-	log.Logger.AddAdditionalInfo("userName", reqUser)
-	defer log.Logger.DeleteAdditionalInfo(2)
+	if err != nil {
+		return
+	}
 
 	log.Logger.Infow("ws连接成功")
 
@@ -72,7 +77,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 	proc.ReadCache(wci)
 	if proc.State.State == 1 {
 		proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
-		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, uuid, constants.OPERATION_TERMINAL_WRITE))
+		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, constants.OPERATION_TERMINAL_WRITE))
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
 	}
@@ -89,21 +94,35 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
 		log.Logger.Infow("ws连接断开", "操作类型", "tcp连接建立已被关闭")
 	}
 	conn.Close()
+	return
 }
 
-func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
-	token := getQueryString(ctx, "token")
-	data, err := repository.WsShare.GetWsShareDataByToken(token)
-	errCheck(ctx, err != nil, "Operation failed!")
-	errCheck(ctx, data.ExpireTime.Unix() <= time.Now().Unix(), "Share expired!")
+func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
+	data, err := repository.WsShare.GetWsShareDataByToken(req.Token)
+	if err != nil {
+		return
+	}
+	if data.ExpireTime.Unix() <= time.Now().Unix() {
+		return errors.New("share expired")
+	}
 	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
-	errCheck(ctx, err != nil, err)
+	if err != nil {
+		return
+	}
 	guestName := "guest-" + strconv.Itoa(int(data.ID)) // 构造访客用户名
-	errCheck(ctx, proc.HasWsConn(guestName), "A connection already exists; unable to establish a new one!")
-	errCheck(ctx, proc.State.State != 1, "The process is currently running.")
-	errCheck(ctx, !proc.VerifyControl(), "Insufficient permissions; please check your access rights!")
+	if proc.HasWsConn(guestName) {
+		return errors.New("connection already exists; unable to establish a new one")
+	}
+	if proc.State.State != 1 {
+		return errors.New("process is currently running")
+	}
+	if !proc.VerifyControl() {
+		return errors.New("insufficient permissions; please check your access rights")
+	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-	errCheck(ctx, err != nil, "WebSocket connection upgrade failed!")
+	if err != nil {
+		return
+	}
 
 	log.Logger.Infow("ws连接成功")
 	data.UpdatedAt = time.Now()
@@ -135,6 +154,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context) {
 		log.Logger.Infow("ws连接断开", "操作类型", "分享时间已结束")
 	}
 	conn.Close()
+	return
 }
 
 func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc logic.Process, write bool) {
@@ -183,7 +203,8 @@ func GetWsShareList(ctx *gin.Context) {
 }
 
 func DeleteWsShareById(ctx *gin.Context) {
-	err := logic.WsSahreLogic.DeleteById(ctx.GetInt("id"))
-	errCheck(ctx, err != nil, err)
+	if err := logic.WsSahreLogic.DeleteById(ctx.GetInt("id")); err != nil {
+		return
+	}
 	rOk(ctx, "Operation successful!", nil)
 }

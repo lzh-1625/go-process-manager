@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -12,62 +14,55 @@ type taskApi struct{}
 
 var TaskApi = new(taskApi)
 
-func (t *taskApi) CreateTask(ctx *gin.Context) {
-	req := bind[model.Task](ctx)
-	err := logic.TaskLogic.CreateTask(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) CreateTask(ctx *gin.Context, req model.Task) (err error) {
+	return logic.TaskLogic.CreateTask(req)
 }
 
-func (t *taskApi) GetTaskById(ctx *gin.Context) {
-	result, err := repository.TaskRepository.GetTaskById(getQueryInt(ctx, "id"))
-	errCheck(ctx, err != nil, "Query failed!")
+func (t *taskApi) GetTaskById(ctx *gin.Context, req model.TaskIdReq) (err error) {
+	result, err := repository.TaskRepository.GetTaskById(req.Id)
+	if err != nil {
+		return
+	}
 	rOk(ctx, "Operation successful!", result)
+	return
 }
 
-func (t *taskApi) GetTaskList(ctx *gin.Context) {
+func (t *taskApi) GetTaskList(ctx *gin.Context, _ any) (err error) {
 	result := logic.TaskLogic.GetAllTaskJob()
 	rOk(ctx, "Operation successful!", result)
+	return
 }
 
-func (t *taskApi) DeleteTaskById(ctx *gin.Context) {
-	err := logic.TaskLogic.DeleteTask(getQueryInt(ctx, "id"))
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) DeleteTaskById(ctx *gin.Context, req model.TaskIdReq) (err error) {
+	return logic.TaskLogic.DeleteTask(req.Id)
+
 }
 
-func (t *taskApi) StartTask(ctx *gin.Context) {
-	go logic.TaskLogic.RunTaskById(getQueryInt(ctx, "id"))
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) StartTask(ctx *gin.Context, req model.TaskIdReq) (err error) {
+	go logic.TaskLogic.RunTaskById(req.Id)
+	return
 }
 
-func (t *taskApi) StopTask(ctx *gin.Context) {
-	errCheck(ctx, logic.TaskLogic.StopTaskJob(getQueryInt(ctx, "id")) != nil, "Operation failed!")
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) StopTask(ctx *gin.Context, req model.TaskIdReq) (err error) {
+	if logic.TaskLogic.StopTaskJob(req.Id) != nil {
+		return errors.New("operation failed")
+	}
+	return
 }
 
-func (t *taskApi) EditTask(ctx *gin.Context) {
-	req := bind[model.Task](ctx)
-	err := logic.TaskLogic.EditTask(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) EditTask(ctx *gin.Context, req model.Task) (err error) {
+	return logic.TaskLogic.EditTask(req)
 }
 
-func (t *taskApi) EditTaskEnable(ctx *gin.Context) {
-	req := bind[model.Task](ctx)
-	err := logic.TaskLogic.EditTaskEnable(req.Id, req.Enable)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) EditTaskEnable(ctx *gin.Context, req model.Task) (err error) {
+	return logic.TaskLogic.EditTaskEnable(req.Id, req.Enable)
 }
 
-func (t *taskApi) RunTaskByKey(ctx *gin.Context) {
-	err := logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) RunTaskByKey(ctx *gin.Context, _ any) (err error) {
+	return logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
+
 }
 
-func (t *taskApi) CreateTaskApiKey(ctx *gin.Context) {
-	err := logic.TaskLogic.CreateApiKey(getQueryInt(ctx, "id"))
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *taskApi) CreateTaskApiKey(ctx *gin.Context, req model.TaskIdReq) (err error) {
+	return logic.TaskLogic.CreateApiKey(req.Id)
 }

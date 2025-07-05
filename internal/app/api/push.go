@@ -11,32 +11,27 @@ type pushApi struct{}
 
 var PushApi = new(pushApi)
 
-func (p *pushApi) GetPushList(ctx *gin.Context) {
+func (p *pushApi) GetPushList(ctx *gin.Context, __ any) (err error) {
 	rOk(ctx, "Query successful!", repository.PushRepository.GetPushList())
+	return
 }
 
-func (p *pushApi) GetPushById(ctx *gin.Context) {
-	id := getQueryInt(ctx, "id")
-	rOk(ctx, "Query successful!", repository.PushRepository.GetPushConfigById(id))
+func (p *pushApi) GetPushById(ctx *gin.Context, req model.PushIdReq) (err error) {
+	rOk(ctx, "Query successful!", repository.PushRepository.GetPushConfigById(req.Id))
+	return
 }
 
-func (p *pushApi) AddPushConfig(ctx *gin.Context) {
-	req := bind[model.Push](ctx)
-	err := repository.PushRepository.AddPushConfig(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *pushApi) AddPushConfig(ctx *gin.Context, req model.Push) (err error) {
+	err = repository.PushRepository.AddPushConfig(req)
+	return
 }
 
-func (p *pushApi) UpdatePushConfig(ctx *gin.Context) {
-	req := bind[model.Push](ctx)
-	err := repository.PushRepository.UpdatePushConfig(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *pushApi) UpdatePushConfig(ctx *gin.Context, req model.Push) (err error) {
+	err = repository.PushRepository.UpdatePushConfig(req)
+	return
 }
 
-func (p *pushApi) DeletePushConfig(ctx *gin.Context) {
-	id := getQueryInt(ctx, "id")
-	err := repository.PushRepository.DeletePushConfig(id)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *pushApi) DeletePushConfig(ctx *gin.Context, req model.PushIdReq) (err error) {
+	err = repository.PushRepository.DeletePushConfig(req.Id)
+	return
 }

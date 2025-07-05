@@ -11,14 +11,12 @@ var PermissionApi = new(permissionApi)
 
 type permissionApi struct{}
 
-func (p *permissionApi) EditPermssion(ctx *gin.Context) {
-	req := bind[model.Permission](ctx)
-	err := repository.PermissionRepository.EditPermssion(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *permissionApi) EditPermssion(ctx *gin.Context, req model.Permission) (err error) {
+	return repository.PermissionRepository.EditPermssion(req)
 }
 
-func (p *permissionApi) GetPermissionList(ctx *gin.Context) {
-	result := repository.PermissionRepository.GetPermssionList(getQueryString(ctx, "account"))
+func (p *permissionApi) GetPermissionList(ctx *gin.Context, req model.GetPermissionListReq) (err error) {
+	result := repository.PermissionRepository.GetPermssionList(req.Account)
 	rOk(ctx, "Query successful!", result)
+	return
 }

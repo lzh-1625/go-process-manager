@@ -14,3 +14,14 @@ type WsShare struct {
 	CreateBy   string    `gorm:"column:create_by" json:"createBy"`
 	Token      string    `gorm:"column:token" json:"token"`
 }
+
+func (WsShare) TableName() string {
+	return "ws_share"
+}
+
+type WebsocketHandleReq struct {
+	Uuid  int    `json:"uuid"`
+	Cols  int    `json:"cols"`
+	Rows  int    `json:"rows"`
+	Token string `json:"token"`
+}

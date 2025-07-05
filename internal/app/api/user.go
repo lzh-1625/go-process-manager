@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -16,57 +18,65 @@ var UserApi = new(userApi)
 
 const DEFAULT_ROOT_PASSWORD = "root"
 
-func (u *userApi) LoginHandler(ctx *gin.Context) {
-	req := bind[map[string]string](ctx)
-	account := req["account"]
-	password := req["password"]
-	errCheck(ctx, !u.checkLoginInfo(account, password), "Incorrect username or password!")
-	token, err := utils.GenToken(account)
-	errCheck(ctx, err != nil, err)
+func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) (err error) {
+	if !u.checkLoginInfo(req.Account, req.Password) {
+		return errors.New("incorrect username or password")
+	}
+	token, err := utils.GenToken(req.Account)
+	if err != nil {
+		return
+	}
 	rOk(ctx, "Operation successful!", gin.H{
 		"token":    token,
-		"username": account,
-		"role":     repository.UserRepository.GetUserByName(account).Role,
+		"username": req.Account,
+		"role":     repository.UserRepository.GetUserByName(req.Account).Role,
 	})
+	return
 }
 
-func (u *userApi) CreateUser(ctx *gin.Context) {
-	req := bind[model.User](ctx)
-	errCheck(ctx, req.Role == constants.ROLE_ROOT, "Creation of root accounts is forbidden!")
-	errCheck(ctx, req.Account == constants.CONSOLE, "Operation failed!")
-	errCheck(ctx, len(req.Password) < config.CF.UserPassWordMinLength, "Password is too short")
-	err := repository.UserRepository.CreateUser(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
+	if req.Role == constants.ROLE_ROOT {
+		return errors.New("creation of root accounts is forbidden")
+	}
+	if req.Account == constants.CONSOLE {
+		return errors.New("operation failed")
+	}
+	if len(req.Password) < config.CF.UserPassWordMinLength {
+		return errors.New("password is too short")
+	}
+	err = repository.UserRepository.CreateUser(req)
+	return
 }
 
-func (u *userApi) ChangePassword(ctx *gin.Context) {
-	req := bind[model.User](ctx)
+func (u *userApi) ChangePassword(ctx *gin.Context, req model.User) (err error) {
 	reqUser := getUserName(ctx)
-	errCheck(ctx, getRole(ctx) != constants.ROLE_ROOT && req.Account != "", "Invalid parameters!")
+	if getRole(ctx) != constants.ROLE_ROOT && req.Account != "" {
+		return errors.New("invalid parameters")
+	}
 	var userName string
 	if req.Account != "" {
 		userName = req.Account
 	} else {
 		userName = reqUser
 	}
-	errCheck(ctx, len(req.Password) < config.CF.UserPassWordMinLength, "Password is too short")
-	err := repository.UserRepository.UpdatePassword(userName, req.Password)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
-
+	if len(req.Password) < config.CF.UserPassWordMinLength {
+		return errors.New("password is too short")
+	}
+	err = repository.UserRepository.UpdatePassword(userName, req.Password)
+	return
 }
 
-func (u *userApi) DeleteUser(ctx *gin.Context) {
-	account := getQueryString(ctx, "account")
-	errCheck(ctx, account == "root", "Deletion of root accounts is forbidden!")
-	err := repository.UserRepository.DeleteUser(account)
-	errCheck(ctx, err != nil, "Deletion of root accounts failed!")
-	rOk(ctx, "Operation successful!", nil)
+func (u *userApi) DeleteUser(ctx *gin.Context, req model.User) (err error) {
+	if req.Account == "root" {
+		return errors.New("deletion of root accounts is forbidden")
+	}
+	err = repository.UserRepository.DeleteUser(req.Account)
+	return
 }
 
-func (u *userApi) GetUserList(ctx *gin.Context) {
+func (u *userApi) GetUserList(ctx *gin.Context, _ any) error {
 	rOk(ctx, "Query successful!", repository.UserRepository.GetUserList())
+	return nil
 }
 
 func (u *userApi) checkLoginInfo(account, password string) bool {
