@@ -102,6 +102,7 @@ func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) (
 	if data.Uuid == 0 {
 		return errors.New("no information found")
 	}
+	rOk(ctx, "success", data)
 	return
 }
 
