@@ -21,7 +21,7 @@ func (t *taskApi) CreateTask(ctx *gin.Context, req model.Task) (err error) {
 func (t *taskApi) GetTaskById(ctx *gin.Context, req model.TaskIdReq) (err error) {
 	result, err := repository.TaskRepository.GetTaskById(req.Id)
 	if err != nil {
-		return
+		return err
 	}
 	rOk(ctx, "Operation successful!", result)
 	return

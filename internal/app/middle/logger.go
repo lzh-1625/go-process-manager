@@ -28,7 +28,14 @@ func Logger() gin.HandlerFunc {
 		if user, ok := ctx.Get(constants.CTXFLG_USER_NAME); ok {
 			logKv = append(logKv, "user", user)
 		}
-		log.Logger.Infow("GIN", logKv...)
+		switch {
+		case ctx.Writer.Status() >= 200 && ctx.Writer.Status() < 300:
+			log.Logger.Infow("\033[102mGIN\033[0m", logKv...)
+		case ctx.Writer.Status() >= 500:
+			log.Logger.Infow("\033[101mGIN\033[0m", logKv...)
+		default:
+			log.Logger.Infow("\033[103mGIN\033[0m", logKv...)
+		}
 	}
 
 }

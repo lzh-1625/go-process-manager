@@ -20,12 +20,12 @@ var ProcApi = new(procApi)
 func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) (err error) {
 	index, err := repository.ProcessRepository.AddProcessConfig(req)
 	if err != nil {
-		return
+		return err
 	}
 	req.Uuid = index
 	proc, err := logic.ProcessCtlLogic.NewProcess(req)
 	if err != nil {
-		return
+		return err
 	}
 	logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 	rOk(ctx, "Operation successful!", gin.H{
@@ -109,7 +109,7 @@ func (p *procApi) ProcessControl(ctx *gin.Context, req model.ProcessUuidReq) (er
 	user := getUserName(ctx)
 	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil {
-		return
+		return err
 	}
 	proc.ProcessControl(user)
 	return
@@ -124,7 +124,7 @@ func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) (
 		Pid:        req.Pid,
 		CreateBy:   getUserName(ctx),
 	}); err != nil {
-		return
+		return err
 	}
 	rOk(ctx, "Operation successful!", gin.H{
 		"token": token,

@@ -120,7 +120,6 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []model.Process) 
 			pi.State.State = process.State.State
 			pi.StartTime = process.GetStartTimeFormat()
 			pi.User = process.GetUserString()
-
 			pi.Usage.Cpu = process.performanceStatus.cpu
 			pi.Usage.Mem = process.performanceStatus.mem
 			if config.CF.PerformanceCapacityDisplay {
@@ -163,7 +162,6 @@ func (p *processCtlLogic) RunPrcessById(id int) (*ProcessBase, error) {
 func (p *processCtlLogic) ProcessInit() {
 	config := repository.ProcessRepository.GetAllProcessConfig()
 	for _, v := range config {
-
 		proc, err := p.NewProcess(v)
 		if err != nil {
 			log.Logger.Warnw("初始化启动进程失败", v.Name, "name", "err", err)

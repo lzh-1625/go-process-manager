@@ -21,7 +21,7 @@ func (c *configApi) GetSystemConfiguration(ctx *gin.Context, _ any) error {
 func (c *configApi) SetSystemConfiguration(ctx *gin.Context, _ any) (err error) {
 	req := map[string]string{}
 	if err = ctx.BindJSON(&req); err != nil {
-		return
+		return err
 	}
 	err = logic.ConfigLogic.SetSystemConfiguration(req)
 	return

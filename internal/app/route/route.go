@@ -54,7 +54,6 @@ func routePathInit(r *gin.Engine) {
 
 	apiGroup := r.Group("/api")
 	apiGroup.Use(middle.CheckToken())
-	apiGroup.Use(middle.PanicMiddle())
 	// apiGroup.Use(middle.DemoMiddle())
 	{
 		wsGroup := apiGroup.Group("/ws")
@@ -155,19 +154,19 @@ func bind[T any](fn func(*gin.Context, T) error, bindOption int) func(*gin.Conte
 	return func(ctx *gin.Context) {
 		var req T
 		if bindOption&Body != 0 {
-			if err := ctx.BindJSON(req); err != nil {
+			if err := ctx.BindJSON(&req); err != nil {
 				rErr(ctx, err)
 				return
 			}
 		}
 		if bindOption&Header != 0 {
-			if err := ctx.BindHeader(req); err != nil {
+			if err := ctx.BindHeader(&req); err != nil {
 				rErr(ctx, err)
 				return
 			}
 		}
 		if bindOption&Query != 0 {
-			if err := ctx.BindQuery(req); err != nil {
+			if err := ctx.BindQuery(&req); err != nil {
 				rErr(ctx, err)
 				return
 			}
@@ -187,8 +186,9 @@ func bind[T any](fn func(*gin.Context, T) error, bindOption int) func(*gin.Conte
 }
 
 func rErr(ctx *gin.Context, err error) {
+	log.Logger.Warn(err)
 	ctx.JSON(500, gin.H{
 		"code":    -1,
-		"message": err,
+		"message": err.Error(),
 	})
 }

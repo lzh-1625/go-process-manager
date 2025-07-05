@@ -13,7 +13,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
-	"github.com/lzh-1625/go_process_manager/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -53,17 +52,17 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	reqUser := getUserName(ctx)
 	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil {
-		return
+		return err
 	}
-	if !proc.HasWsConn(reqUser) {
-		return errors.New("connection already exists; unable to establish a new one")
+	if proc.HasWsConn(reqUser) {
+		return errors.New("connection already exists")
 	}
-	if proc.Control.Controller == reqUser || proc.VerifyControl() {
-		return errors.New("insufficient permissions; please check your access rights")
+	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
+		return errors.New("insufficient permissions")
 	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		return
+		return err
 	}
 
 	log.Logger.Infow("ws连接成功")
@@ -76,7 +75,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	}
 	proc.ReadCache(wci)
 	if proc.State.State == 1 {
-		proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
+		proc.SetTerminalSize(req.Cols, req.Rows)
 		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, constants.OPERATION_TERMINAL_WRITE))
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
@@ -100,14 +99,14 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
 	data, err := repository.WsShare.GetWsShareDataByToken(req.Token)
 	if err != nil {
-		return
+		return err
 	}
 	if data.ExpireTime.Unix() <= time.Now().Unix() {
 		return errors.New("share expired")
 	}
 	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
 	if err != nil {
-		return
+		return err
 	}
 	guestName := "guest-" + strconv.Itoa(int(data.ID)) // 构造访客用户名
 	if proc.HasWsConn(guestName) {
@@ -121,14 +120,14 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		return
+		return err
 	}
 
 	log.Logger.Infow("ws连接成功")
 	data.UpdatedAt = time.Now()
 	repository.WsShare.Edit(data)
 
-	proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
+	proc.SetTerminalSize(req.Cols, req.Rows)
 	wsCtx, cancel := context.WithCancel(context.Background())
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
