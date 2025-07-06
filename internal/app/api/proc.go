@@ -52,16 +52,14 @@ func (p *procApi) StartProcess(ctx *gin.Context, req model.ProcessUuidReq) (err 
 			return err1
 		}
 		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
-		rOk(ctx, "Operation successful!", nil)
 		return nil
-	}
+	}			
 	if prod.State.State == 1 {
 		return errors.New("process is currently running")
 	}
 	prod.ResetRestartTimes()
 	err = prod.Start()
 	return
-
 }
 
 func (p *procApi) StartAllProcess(ctx *gin.Context, _ any) (err error) {

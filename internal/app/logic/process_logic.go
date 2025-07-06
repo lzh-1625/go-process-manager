@@ -114,24 +114,25 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []model.Process) 
 			Name: v.Name,
 			Uuid: v.Uuid,
 		}
-		if value, ok := p.processMap.Load(v.Uuid); ok {
-			process := value.(*ProcessBase)
-			pi.State.Info = process.State.Info
-			pi.State.State = process.State.State
-			pi.StartTime = process.GetStartTimeFormat()
-			pi.User = process.GetUserString()
-			pi.Usage.Cpu = process.performanceStatus.cpu
-			pi.Usage.Mem = process.performanceStatus.mem
-			if config.CF.PerformanceCapacityDisplay {
-				pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
-				pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
-			}
-			pi.Usage.Time = process.performanceStatus.time
-			pi.TermType = process.Type()
-			pi.CgroupEnable = process.Config.cgroupEnable
-			pi.CpuLimit = process.Config.cpuLimit
-			pi.MemoryLimit = process.Config.memoryLimit
+		process, err := p.GetProcess(v.Uuid)
+		if err != nil {
+			continue
 		}
+		pi.State.Info = process.State.Info
+		pi.State.State = process.State.State
+		pi.StartTime = process.GetStartTimeFormat()
+		pi.User = process.GetUserString()
+		pi.Usage.Cpu = process.performanceStatus.cpu
+		pi.Usage.Mem = process.performanceStatus.mem
+		if config.CF.PerformanceCapacityDisplay {
+			pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
+			pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
+		}
+		pi.Usage.Time = process.performanceStatus.time
+		pi.TermType = process.Type()
+		pi.CgroupEnable = process.Config.cgroupEnable
+		pi.CpuLimit = process.Config.cpuLimit
+		pi.MemoryLimit = process.Config.memoryLimit
 		processInfoList = append(processInfoList, pi)
 	}
 	return processInfoList

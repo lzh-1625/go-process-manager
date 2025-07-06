@@ -110,13 +110,13 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	}
 	guestName := "guest-" + strconv.Itoa(int(data.ID)) // 构造访客用户名
 	if proc.HasWsConn(guestName) {
-		return errors.New("connection already exists; unable to establish a new one")
+		return errors.New("connection already exists")
 	}
 	if proc.State.State != 1 {
-		return errors.New("process is currently running")
+		return errors.New("process not is running")
 	}
 	if !proc.VerifyControl() {
-		return errors.New("insufficient permissions; please check your access rights")
+		return errors.New("insufficient permissions")
 	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {

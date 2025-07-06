@@ -70,7 +70,7 @@ func routePathInit(r *gin.Engine) {
 			processGroup.PUT("", middle.OprPermission(constants.OPERATION_START), bind(api.ProcApi.StartProcess, Body))
 			processGroup.PUT("/all", bind(api.ProcApi.StartAllProcess, None))
 			processGroup.DELETE("/all", bind(api.ProcApi.KillAllProcess, None))
-			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.ProcessCreateShare, Body))
+			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.ProcessCreateShare, Query))
 			processGroup.GET("/control", middle.RolePermission(constants.ROLE_ROOT), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.ProcessControl, Query))
 
 			proConfigGroup := processGroup.Group("/config")
@@ -176,7 +176,7 @@ func bind[T any](fn func(*gin.Context, T) error, bindOption int) func(*gin.Conte
 			rErr(ctx, err)
 			return
 		}
-		if ctx.Writer.Status() == 0 {
+		if !ctx.Writer.Written() {
 			ctx.JSON(200, gin.H{
 				"code":    0,
 				"message": "success",
