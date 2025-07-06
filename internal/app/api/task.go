@@ -1,8 +1,6 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -44,10 +42,7 @@ func (t *taskApi) StartTask(ctx *gin.Context, req model.TaskIdReq) (err error) {
 }
 
 func (t *taskApi) StopTask(ctx *gin.Context, req model.TaskIdReq) (err error) {
-	if logic.TaskLogic.StopTaskJob(req.Id) != nil {
-		return errors.New("operation failed")
-	}
-	return
+	return logic.TaskLogic.StopTaskJob(req.Id)
 }
 
 func (t *taskApi) EditTask(ctx *gin.Context, req model.Task) (err error) {
@@ -60,7 +55,6 @@ func (t *taskApi) EditTaskEnable(ctx *gin.Context, req model.Task) (err error) {
 
 func (t *taskApi) RunTaskByKey(ctx *gin.Context, _ any) (err error) {
 	return logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
-
 }
 
 func (t *taskApi) CreateTaskApiKey(ctx *gin.Context, req model.TaskIdReq) (err error) {
