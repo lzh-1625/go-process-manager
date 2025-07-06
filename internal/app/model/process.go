@@ -4,7 +4,7 @@ import "github.com/lzh-1625/go_process_manager/internal/app/constants"
 
 type Process struct {
 	Uuid              int                    `gorm:"primaryKey;autoIncrement;column:uuid" json:"uuid"`
-	Name              string                 `gorm:"column:name;uniqueIndex;type:text" json:"name"`
+	Name              string                 `gorm:"column:name;uniqueIndex;type:text" json:"name" binding:"required"`
 	Cmd               string                 `gorm:"column:args" json:"cmd"`
 	Cwd               string                 `gorm:"column:cwd" json:"cwd"`
 	AutoRestart       bool                   `gorm:"column:auto_restart" json:"autoRestart"`

@@ -31,5 +31,5 @@ type PermissionPo struct {
 }
 
 type GetPermissionListReq struct {
-	Account string `form:"account"`
+	Account string `form:"account" binding:"required"`
 }

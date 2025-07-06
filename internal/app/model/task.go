@@ -47,5 +47,5 @@ type TaskVo struct {
 }
 
 type TaskIdReq struct {
-	Id int `form:"id"`
+	Id int `form:"id" binding:"required"`
 }

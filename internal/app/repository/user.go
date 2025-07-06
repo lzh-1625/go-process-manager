@@ -25,20 +25,14 @@ func (u *userRepository) CreateUser(user model.User) error {
 }
 
 func (u *userRepository) UpdatePassword(name string, password string) error {
-	tx := db.Model(&model.User{}).Where(&model.User{Account: name}).Updates(&model.User{Password: utils.Md5(password)})
-	return tx.Error
+	return db.Model(&model.User{}).Where(&model.User{Account: name}).Updates(&model.User{Password: utils.Md5(password)}).Error
 }
 
 func (u *userRepository) DeleteUser(name string) error {
-	if err := db.Model(&model.User{}).Where(&model.User{Account: name}).First(&model.User{}).Error; err != nil {
-		return err
-	}
-	tx := db.Delete(&model.User{Account: name})
-	return tx.Error
+	return db.Delete(&model.User{Account: name}).Error
 }
 
-func (u *userRepository) GetUserList() []model.User {
-	result := []model.User{}
+func (u *userRepository) GetUserList() (result []model.User) {
 	db.Find(&result)
-	return result
+	return
 }

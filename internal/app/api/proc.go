@@ -47,9 +47,13 @@ func (p *procApi) KillProcess(ctx *gin.Context, req model.ProcessUuidReq) (err e
 func (p *procApi) StartProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
 	prod, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil { // 进程不存在则创建
-		proc, err1 := logic.ProcessCtlLogic.RunNewProcess(repository.ProcessRepository.GetProcessConfigById(req.Uuid))
-		if err1 != nil {
-			return err1
+		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
+		if err != nil {
+			return err
+		}
+		proc, err := logic.ProcessCtlLogic.RunNewProcess(proConfig)
+		if err != nil {
+			return err
 		}
 		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 		return nil
@@ -96,9 +100,9 @@ func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err 
 }
 
 func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
-	data := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
-	if data.Uuid == 0 {
-		return errors.New("no information found")
+	data, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
+	if err != nil {
+		return err
 	}
 	rOk(ctx, "success", data)
 	return

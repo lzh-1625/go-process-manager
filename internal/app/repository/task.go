@@ -1,13 +1,9 @@
 package repository
 
 import (
-	"errors"
-
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
-
-	"gorm.io/gorm"
 )
 
 type taskRepository struct{}
@@ -41,11 +37,6 @@ func (t *taskRepository) DeleteTask(id int) (err error) {
 }
 
 func (t *taskRepository) EditTask(data model.Task) (err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: data.Id}).First(&model.Task{}).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
 	err = db.Model(&model.Task{}).Where(&model.Task{Id: data.Id}).Save(data).Error
 	return
 }

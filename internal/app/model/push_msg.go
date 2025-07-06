@@ -14,5 +14,5 @@ func (*Push) TableName() string {
 }
 
 type PushIdReq struct {
-	Id int `form:"id"`
+	Id int `form:"id" binding:"required"`
 }
