@@ -53,7 +53,7 @@ func (p *procApi) StartProcess(ctx *gin.Context, req model.ProcessUuidReq) (err 
 		}
 		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 		return nil
-	}			
+	}
 	if prod.State.State == 1 {
 		return errors.New("process is currently running")
 	}

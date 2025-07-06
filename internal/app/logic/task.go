@@ -34,8 +34,6 @@ func (t *taskLogic) run(ctx context.Context, data *model.TaskJob) {
 		data.Running = false
 		middle.TaskWaitCond.Trigger()
 	}()
-	log.Logger.AddAdditionalInfo("taskId", data.Task.Id)
-	defer log.Logger.DeleteAdditionalInfo(1)
 	var ok bool
 	// 判断条件是否满足
 	if data.Task.Condition == constants.PASS {

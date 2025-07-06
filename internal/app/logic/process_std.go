@@ -38,14 +38,12 @@ func (p *ProcessStd) Write(input string) (err error) {
 
 func (p *ProcessStd) Start() (err error) {
 	defer func() {
-		log.Logger.DeleteAdditionalInfo(1)
 		if err != nil {
 			p.Config.AutoRestart = false
 			p.SetState(constants.PROCESS_WARNNING)
 			p.State.Info = "进程启动失败:" + err.Error()
 		}
 	}()
-	log.Logger.AddAdditionalInfo("进程名称", p.Name)
 	if ok := p.SetState(constants.PROCESS_START, func() bool {
 		return p.State.State != 1
 	}); !ok {

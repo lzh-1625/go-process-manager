@@ -67,7 +67,7 @@ func routePathInit(r *gin.Engine) {
 			processGroup.DELETE("", middle.OprPermission(constants.OPERATION_STOP), bind(api.ProcApi.KillProcess, Query))
 			processGroup.GET("", bind(api.ProcApi.GetProcessList, None))
 			processGroup.GET("/wait", middle.ProcessWaitCond.WaitGetMiddel, bind(api.ProcApi.GetProcessList, None))
-			processGroup.PUT("", middle.OprPermission(constants.OPERATION_START), bind(api.ProcApi.StartProcess, Body))
+			processGroup.PUT("", middle.OprPermission(constants.OPERATION_START), bind(api.ProcApi.StartProcess, Query))
 			processGroup.PUT("/all", bind(api.ProcApi.StartAllProcess, None))
 			processGroup.DELETE("/all", bind(api.ProcApi.KillAllProcess, None))
 			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.ProcessCreateShare, Query))

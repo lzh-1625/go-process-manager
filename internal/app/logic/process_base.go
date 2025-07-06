@@ -263,8 +263,6 @@ func (p *ProcessBase) monitorHanler() {
 	if !p.monitor.enable {
 		return
 	}
-	log.Logger.AddAdditionalInfo("name", p.Name)
-	log.Logger.AddAdditionalInfo("pid", p.Pid)
 	defer log.Logger.Infow("性能监控结束")
 	ticker := time.NewTicker(time.Second * time.Duration(config.CF.PerformanceInfoInterval))
 	defer ticker.Stop()

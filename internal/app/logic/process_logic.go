@@ -47,11 +47,11 @@ func (p *processCtlLogic) KillProcess(uuid int) error {
 func (p *processCtlLogic) GetProcess(uuid int) (*ProcessBase, error) {
 	process, ok := p.processMap.Load(uuid)
 	if !ok {
-		return nil, errors.New("进程获取失败")
+		return nil, errors.New("process not exist")
 	}
 	result, ok := process.(*ProcessBase)
 	if !ok {
-		return nil, errors.New("进程类型错误")
+		return nil, errors.New("process type error")
 
 	}
 	return result, nil

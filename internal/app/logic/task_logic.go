@@ -54,8 +54,6 @@ func (t *taskLogic) InitTaskJob() {
 
 func (t *taskLogic) cronHandle(data *model.TaskJob) func() {
 	return func() {
-		log.Logger.AddAdditionalInfo("id", data.Task.Id)
-		defer log.Logger.DeleteAdditionalInfo(1)
 		log.Logger.Infow("定时任务启动")
 		if data.Running {
 			log.Logger.Infow("任务已在运行，跳过当前任务")
