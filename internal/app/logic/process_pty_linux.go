@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -133,7 +134,7 @@ func (p *ProcessPty) doOnInit() {
 func NewProcessPty(pconfig model.Process) *ProcessBase {
 	p := ProcessBase{
 		Name:         pconfig.Name,
-		StartCommand: strings.Split(pconfig.Cmd, " "),
+		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
 		WorkDir:      pconfig.Cwd,
 	}
 	processPty := ProcessPty{

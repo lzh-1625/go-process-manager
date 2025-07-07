@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"io"
 	"os/exec"
-	"strings"
+
+	"github.com/google/shlex"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
@@ -133,7 +134,7 @@ func (p *ProcessStd) Read() string {
 func NewProcessStd(pconfig model.Process) *ProcessBase {
 	p := ProcessBase{
 		Name:         pconfig.Name,
-		StartCommand: strings.Split(pconfig.Cmd, " "),
+		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
 		WorkDir:      pconfig.Cwd,
 	}
 	processStd := ProcessStd{
