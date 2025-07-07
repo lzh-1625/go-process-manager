@@ -59,7 +59,7 @@ func (p *ProcessPty) Start() (err error) {
 		log.Logger.Errorw("进程启动失败", "err", err)
 		return err
 	}
-	p.p, err = os.FindProcess(pid)
+	p.op, err = os.FindProcess(pid)
 	if err != nil {
 		log.Logger.Errorw("进程启动失败", "err", err)
 		return err
