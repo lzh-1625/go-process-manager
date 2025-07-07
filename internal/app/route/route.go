@@ -70,7 +70,7 @@ func routePathInit(r *gin.Engine) {
 			processGroup.PUT("", middle.OprPermission(constants.OPERATION_START), bind(api.ProcApi.StartProcess, Query))
 			processGroup.PUT("/all", bind(api.ProcApi.StartAllProcess, None))
 			processGroup.DELETE("/all", bind(api.ProcApi.KillAllProcess, None))
-			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.ProcessCreateShare, Query))
+			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.ProcessCreateShare, Body))
 			processGroup.GET("/control", middle.RolePermission(constants.ROLE_ROOT), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.ProcessControl, Query))
 
 			proConfigGroup := processGroup.Group("/config")

@@ -28,5 +28,5 @@ type ProcessShare struct {
 }
 
 type ProcessUuidReq struct {
-	Uuid int `form:"uuid"`
+	Uuid int `form:"uuid" binding:"required"`
 }

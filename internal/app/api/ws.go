@@ -101,7 +101,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if err != nil {
 		return err
 	}
-	if data.ExpireTime.Unix() <= time.Now().Unix() {
+	if data.ExpireTime.Before(time.Now()) {
 		return errors.New("share expired")
 	}
 	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
