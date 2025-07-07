@@ -70,7 +70,7 @@ func (p *ProcessStd) Start() (err error) {
 		return err
 	}
 	log.Logger.Infow("进程启动成功", "重启次数", p.State.restartTimes)
-	p.p = cmd.Process
+	p.op = cmd.Process
 	p.pInit()
 	p.push("进程启动成功")
 	return nil

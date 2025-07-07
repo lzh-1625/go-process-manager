@@ -33,7 +33,7 @@ type Process interface {
 
 type ProcessBase struct {
 	Process
-	p            *os.Process
+	op           *os.Process
 	Name         string
 	Pid          int
 	StartCommand []string
@@ -84,7 +84,7 @@ type ConnectInstance interface {
 }
 
 func (p *ProcessBase) watchDog() {
-	state, _ := p.p.Wait()
+	state, _ := p.op.Wait()
 	if p.cgroup.enable && p.cgroup.delete != nil {
 		err := p.cgroup.delete()
 		if err != nil {
@@ -128,7 +128,7 @@ func (p *ProcessBase) pInit() {
 	p.State.manualStopFlag = false
 	p.State.startTime = time.Now()
 	p.ws = make(map[string]ConnectInstance)
-	p.Pid = p.p.Pid
+	p.Pid = p.op.Pid
 	p.doOnInit()
 	p.InitPerformanceStatus()
 	p.initPsutil()
@@ -306,7 +306,7 @@ func (p *ProcessBase) initPsutil() {
 }
 
 func (p *ProcessBase) Kill() error {
-	p.p.Signal(syscall.SIGINT)
+	p.op.Signal(syscall.SIGINT)
 	select {
 	case <-p.StopChan:
 		{
@@ -315,7 +315,7 @@ func (p *ProcessBase) Kill() error {
 	case <-time.After(time.Second * time.Duration(config.CF.KillWaitTime)):
 		{
 			log.Logger.Debugw("进程kill超时,强制停止进程", "name", p.Name)
-			return p.p.Kill()
+			return p.op.Kill()
 		}
 	}
 }
