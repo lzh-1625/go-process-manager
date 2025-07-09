@@ -18,9 +18,6 @@ var LogLogicImpl LogLogic
 
 func InitLog() {
 	switch config.CF.StorgeType {
-	case "sqlite":
-		LogLogicImpl = LogSqlite
-		log.Logger.Infow("使用sqlite作为日志存储")
 	case "es":
 		LogLogicImpl = LogEs
 		EsLogic.InitEs()
@@ -29,6 +26,9 @@ func InitLog() {
 		LogLogicImpl = BleveLogic
 		BleveLogic.InitBleve()
 		log.Logger.Infow("使用bleve作为日志存储")
+	default:
+		LogLogicImpl = LogSqlite
+		log.Logger.Infow("使用sqlite作为日志存储")
 	}
 }
 
