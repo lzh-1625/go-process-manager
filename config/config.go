@@ -6,7 +6,7 @@ var CF = new(configuration)
 type configuration struct {
 	LogLevel                   string  `default:"debug"  describe:"日志等级[debug,info]"`
 	Listen                     string  `default:":8797" describe:"监听端口"`
-	EsEnable                   bool    `default:"false" describe:"启用Elasticsearch"`
+	StorgeType                 string  `default:"sqlite" describe:"存储引擎[sqlite、es、bleve]"`
 	EsUrl                      string  `default:"" describe:"Elasticsearch url"`
 	EsIndex                    string  `default:"server_log_v1" describe:"Elasticsearch index"`
 	EsUsername                 string  `default:"" describe:"Elasticsearch用户名"`

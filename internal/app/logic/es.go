@@ -24,11 +24,6 @@ var (
 )
 
 func (e *esLogic) InitEs() bool {
-	if !config.CF.EsEnable {
-		log.Logger.Debug("不使用es")
-		return false
-	}
-
 	var err error
 	EsLogic.esClient, err = elastic.NewClient(
 		elastic.SetURL(config.CF.EsUrl),
@@ -42,7 +37,6 @@ func (e *esLogic) InitEs() bool {
 		}),
 	)
 	if err != nil {
-		config.CF.EsEnable = false
 		log.Logger.Warnw("Failed to connect to es", "err", err)
 		return false
 	}

@@ -6,3 +6,4 @@ config.yaml
 ltest
 gtest
 mtest
+log.bleve

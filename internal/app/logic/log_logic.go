@@ -4,6 +4,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/log"
 )
 
 type LogLogic interface {
@@ -14,10 +15,18 @@ type LogLogic interface {
 var LogLogicImpl LogLogic
 
 func InitLog() {
-	if config.CF.EsEnable {
-		LogLogicImpl = LogEs
-	} else {
+	switch config.CF.StorgeType {
+	case "sqlite":
 		LogLogicImpl = LogSqlite
+		log.Logger.Infow("使用sqlite作为日志存储")
+	case "es":
+		LogLogicImpl = LogEs
+		EsLogic.InitEs()
+		log.Logger.Infow("使用es作为日志存储")
+	case "bleve":
+		LogLogicImpl = BleveLogic
+		BleveLogic.InitBleve()
+		log.Logger.Infow("使用bleve作为日志存储")
 	}
 }
 

@@ -114,7 +114,9 @@ func (p *ProcessPty) readInit() {
 }
 
 func (p *ProcessPty) ReadCache(ws ConnectInstance) {
-	ws.Write(p.cacheBytesBuf.Bytes())
+	if p.cacheBytesBuf != nil {
+		ws.Write(p.cacheBytesBuf.Bytes())
+	}
 }
 
 func (p *ProcessPty) bufHanle(b []byte) {

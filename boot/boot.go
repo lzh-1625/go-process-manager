@@ -25,7 +25,6 @@ func init() {
 	initArgs()
 	initLogHandle()
 	initLog()
-	initEs()
 	initLogHanler()
 	initWaitCond()
 	initProcess()
@@ -80,10 +79,6 @@ func initArgs() {
 
 func initLog() {
 	logger.InitLog()
-}
-
-func initEs() {
-	logic.EsLogic.InitEs()
 }
 
 func initProcess() {
