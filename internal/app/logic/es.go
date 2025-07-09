@@ -110,7 +110,6 @@ func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model
 	if req.Match.Using != "" {
 		queryList = append(queryList, elastic.NewMatchQuery("using", req.Match.Using))
 	}
-
 	if len(filterProcessName) != 0 { // 过滤进程名
 		shouldQueryList := []elastic.Query{}
 		for _, fpn := range filterProcessName {
@@ -123,7 +122,7 @@ func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model
 	}
 
 	result := model.LogResp{}
-	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...)).Do(context.TODO())
+	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
 		log.Logger.Errorw("es查询失败", "err", err, "reason", resp.Error.Reason)
 		return result
@@ -134,6 +133,9 @@ func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model
 		if v.Source != nil {
 			var data model.ProcessLog
 			if err := json.Unmarshal(v.Source, &data); err == nil {
+				if len(v.Highlight) > 0 && len(v.Highlight["log"]) > 0 {
+					data.Log = v.Highlight["log"][0]
+				}
 				result.Data = append(result.Data, &data)
 			} else {
 				log.Logger.Errorw("JSON 解码失败", "err", err)
