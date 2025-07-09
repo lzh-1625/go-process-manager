@@ -3,17 +3,13 @@ package logic
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
-	"time"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/constants"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
-
-	"github.com/robfig/cron/v3"
 )
 
 type taskLogic struct {
@@ -22,48 +18,22 @@ type taskLogic struct {
 
 var TaskLogic = new(taskLogic)
 
-func (t *taskLogic) getTaskJob(id int) (*model.TaskJob, error) {
+func (t *taskLogic) getTaskJob(id int) (*TaskJob, error) {
 	c, ok := t.taskJobMap.Load(id)
 	if !ok {
 		return nil, errors.New("don't exist this task id")
 	}
-	return c.(*model.TaskJob), nil
+	return c.(*TaskJob), nil
 }
 
 func (t *taskLogic) InitTaskJob() {
 	for _, v := range repository.TaskRepository.GetAllTask() {
-		tj := &model.TaskJob{
-			Task:      &v,
-			StartTime: time.Now(),
-		}
-		if tj.Task.Cron != "" {
-			c := cron.New()
-			_, err := c.AddFunc(v.Cron, t.cronHandle(tj))
-			if err != nil {
-				log.Logger.Errorw("定时任务创建失败", "err", err, "id", v.Id)
-				continue
-			}
-			if v.Enable {
-				c.Start()
-			}
-			tj.Cron = c
+		tj, err := NewTaskJob(v)
+		if err != nil {
+			log.Logger.Warnw("任务初始化失败", "err", err)
+			continue
 		}
 		t.taskJobMap.Store(v.Id, tj)
-	}
-}
-
-func (t *taskLogic) cronHandle(data *model.TaskJob) func() {
-	return func() {
-		log.Logger.Infow("定时任务启动")
-		if data.Running {
-			log.Logger.Infow("任务已在运行，跳过当前任务")
-			return
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		data.Cancel = cancel
-		t.run(ctx, data)
-		log.Logger.Infow("定时任务结束")
 	}
 }
 
@@ -94,9 +64,9 @@ func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 		if err != nil {
 			continue
 		}
-		result[i].Id = task.Task.Id
+		result[i].Id = task.TaskConfig.Id
 		result[i].Running = task.Running
-		result[i].Enable = task.Task.Enable
+		result[i].Enable = task.TaskConfig.Enable
 	}
 	return result
 }
@@ -113,37 +83,27 @@ func (t *taskLogic) DeleteTask(id int) (err error) {
 }
 
 func (t *taskLogic) CreateTask(data model.Task) error {
-	tj := &model.TaskJob{
-		Task:      &data,
-		StartTime: time.Now(),
-	}
-	if data.Cron != "" {
-		if _, err := cron.ParseStandard(data.Cron); err != nil { // cron表达式校验
-			log.Logger.Errorw("cron解析失败", "cron", data.Cron, "err", err)
-			return err
-		} else {
-			c := cron.New()
-			c.AddFunc(data.Cron, t.cronHandle(tj))
-			tj.Cron = c
-		}
+	tj, err := NewTaskJob(data)
+	if err != nil {
+		return err
 	}
 	taskId, err := repository.TaskRepository.AddTask(data)
 	if err != nil {
 		return err
 	}
-	data.Id = taskId
-	t.taskJobMap.Store(data.Id, tj)
+	tj.TaskConfig.Id = taskId
+	t.taskJobMap.Store(taskId, tj)
 	return nil
 }
 
 func (t *taskLogic) EditTask(data model.Task) error {
 	tj, err := t.getTaskJob(data.Id)
 	if err != nil {
-		return fmt.Errorf("task with id %v does not exist", data.Id)
+		return errors.New("task id not exist")
 	}
 
 	if tj.Running {
-		return errors.New("can't edit task while it is running")
+		return errors.New("can't edit running task")
 	}
 
 	if tj.Cron != nil {
@@ -151,37 +111,9 @@ func (t *taskLogic) EditTask(data model.Task) error {
 		tj.Cron = nil
 	}
 
-	// 更新任务
-	tj.Task = &data
+	tj.TaskConfig = &data
+	tj.TaskConfig.Enable = false
 
-	// 如果 Cron 字段为空，直接禁用任务并返回
-	if tj.Task.Cron == "" {
-		tj.Task.Enable = false
-		return repository.TaskRepository.EditTask(data)
-	}
-
-	// 校验 Cron 表达式
-	if _, err := cron.ParseStandard(tj.Task.Cron); err != nil {
-		tj.Task.Enable = false
-		return fmt.Errorf("invalid cron expression: %v", err)
-	}
-
-	// 创建 Cron 调度器
-	c := cron.New()
-	_, err = c.AddFunc(data.Cron, t.cronHandle(tj))
-	if err != nil {
-		log.Logger.Errorw("failed to create cron job", "err", err, "id", data.Id)
-		tj.Task.Enable = false
-		return fmt.Errorf("failed to create cron job: %v", err)
-	}
-
-	// 启动 Cron 调度器
-	if data.Enable {
-		c.Start()
-	}
-	tj.Cron = c
-
-	// 更新任务到数据库
 	return repository.TaskRepository.EditTask(data)
 }
 
@@ -190,16 +122,12 @@ func (t *taskLogic) EditTaskEnable(id int, status bool) error {
 	if err != nil {
 		return errors.New("don't exist this task id")
 	}
-	if tj.Cron != nil {
-		if status {
-			tj.Cron.Start()
-		} else {
-			tj.Cron.Stop()
-		}
-	} else if status {
-		return errors.New("cron job create failed")
+	if tj.TaskConfig.CronExpression == "" {
+		return errors.New("task cron expression is empty")
 	}
-	tj.Task.Enable = status
+	if err := tj.EditStatus(status); err != nil {
+		return err
+	}
 	if err := repository.TaskRepository.EditTaskEnable(id, status); err != nil {
 		return err
 	}
@@ -236,4 +164,19 @@ func (t *taskLogic) RunTaskByTriggerEvent(processName string, event constants.Pr
 		log.Logger.Infow("执行触发任务", "taskId", v.Id)
 		t.RunTaskById(v.Id)
 	}
+}
+
+func (t *taskLogic) RunTaskById(id int) error {
+	task, err := t.getTaskJob(id)
+	if err != nil {
+		return errors.New("id不存在")
+	}
+	if task.Running {
+		return errors.New("task is running")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	task.Cancel = cancel
+	task.Run(ctx)
+	return nil
 }
