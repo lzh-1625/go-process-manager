@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
+	_ "github.com/blevesearch/bleve/v2/search/highlight/highlighter/ansi"
 	"github.com/google/uuid"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -108,12 +109,19 @@ func (b *bleveLogic) Search(req model.GetLogReq, filterProcessName ...string) (r
 	if req.Sort == "asc" {
 		sortArgs = append(sortArgs, "time")
 	}
+	hl := bleve.HighlightRequest{}
+	hl.AddField("log")
+	style := "ansi"
 	res, err := b.index.Search(&bleve.SearchRequest{
 		Query:  buildQuery,
 		Fields: []string{"log", "name", "using", "time"},
 		From:   req.Page.From,
 		Size:   req.Page.Size,
 		Sort:   search.ParseSortOrderStrings(sortArgs),
+		Highlight: &bleve.HighlightRequest{
+			Style:  &style,
+			Fields: []string{"log"},
+		},
 	})
 	if err != nil {
 		logger.Logger.Warnw("bleve search failed", "err", err)
@@ -122,7 +130,7 @@ func (b *bleveLogic) Search(req model.GetLogReq, filterProcessName ...string) (r
 	data := []*model.ProcessLog{}
 	for _, v := range res.Hits {
 		data = append(data, &model.ProcessLog{
-			Log:   v.Fields["log"].(string),
+			Log:   v.Fragments["log"][0],
 			Time:  int64(v.Fields["time"].(float64)),
 			Using: v.Fields["using"].(string),
 			Name:  v.Fields["name"].(string),
