@@ -1,8 +1,6 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 
 	"github.com/gin-gonic/gin"
@@ -27,9 +25,6 @@ func (c *configApi) SetSystemConfiguration(ctx *gin.Context, _ any) (err error) 
 	return
 }
 
-func (c *configApi) EsConfigReload(ctx *gin.Context, _ any) (err error) {
-	if !logic.EsLogic.InitEs() {
-		err = errors.New("es init fail")
-	}
-	return
+func (c *configApi) LogConfigReload(ctx *gin.Context, _ any) (err error) {
+	return logic.LogLogicImpl.Init()
 }

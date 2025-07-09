@@ -138,7 +138,7 @@ func routePathInit(r *gin.Engine) {
 		{
 			configGroup.GET("", bind(api.ConfigApi.GetSystemConfiguration, None))
 			configGroup.PUT("", bind(api.ConfigApi.SetSystemConfiguration, None))
-			configGroup.PUT("/es", bind(api.ConfigApi.EsConfigReload, None))
+			configGroup.PUT("/log", bind(api.ConfigApi.LogConfigReload, None))
 		}
 	}
 }

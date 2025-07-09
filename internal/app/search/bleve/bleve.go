@@ -1,4 +1,4 @@
-package logic
+package bleve
 
 import (
 	"time"
@@ -9,17 +9,20 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	sr "github.com/lzh-1625/go_process_manager/internal/app/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
 	gse "github.com/vcaesar/gse-bleve"
 )
 
-type bleveLogic struct {
+func init() {
+	sr.Register("bleve", new(bleveSearch))
+}
+
+type bleveSearch struct {
 	index bleve.Index
 }
 
-var BleveLogic = new(bleveLogic)
-
-func (b *bleveLogic) InitBleve() {
+func (b *bleveSearch) Init() error {
 	opt := gse.Option{
 		Dicts: "embed, zh",
 		Stop:  "",
@@ -29,7 +32,7 @@ func (b *bleveLogic) InitBleve() {
 	indexMapping, err := gse.NewMapping(opt)
 	if err != nil {
 		logger.Logger.Errorw("bleve init fail", "err", err)
-		return
+		return err
 	}
 	mapping := bleve.NewDocumentMapping()
 	log := bleve.NewTextFieldMapping()
@@ -50,13 +53,14 @@ func (b *bleveLogic) InitBleve() {
 		index, err = bleve.New("log.bleve", indexMapping)
 		if err != nil {
 			logger.Logger.Errorw("bleve init error", "err", err)
-			return
+			return err
 		}
 	}
 	b.index = index
+	return nil
 }
 
-func (b *bleveLogic) Insert(logContent string, processName string, using string, ts int64) {
+func (b *bleveSearch) Insert(logContent string, processName string, using string, ts int64) {
 	if err := b.index.Index(uuid.NewString(), model.ProcessLog{
 		Log:   logContent,
 		Name:  processName,
@@ -67,7 +71,7 @@ func (b *bleveLogic) Insert(logContent string, processName string, using string,
 	}
 }
 
-func (b *bleveLogic) Search(req model.GetLogReq, filterProcessName ...string) (result model.LogResp) {
+func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (result model.LogResp) {
 	buildQuery := bleve.NewBooleanQuery()
 	if req.Match.Log != "" {
 		logQuery := bleve.NewMatchQuery(req.Match.Log)

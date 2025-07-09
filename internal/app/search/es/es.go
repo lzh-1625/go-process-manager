@@ -1,4 +1,4 @@
-package logic
+package es
 
 import (
 	"context"
@@ -10,22 +10,23 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/search"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/olivere/elastic/v7"
 )
 
-type esLogic struct {
+func init() {
+	search.Register("es", new(esSearch))
+}
+
+type esSearch struct {
 	esClient *elastic.Client
 }
 
-var (
-	EsLogic = new(esLogic)
-)
-
-func (e *esLogic) InitEs() bool {
+func (e *esSearch) Init() error {
 	var err error
-	EsLogic.esClient, err = elastic.NewClient(
+	e.esClient, err = elastic.NewClient(
 		elastic.SetURL(config.CF.EsUrl),
 		elastic.SetBasicAuth(config.CF.EsUsername, config.CF.EsPassword),
 		elastic.SetSniff(false),
@@ -38,13 +39,13 @@ func (e *esLogic) InitEs() bool {
 	)
 	if err != nil {
 		log.Logger.Warnw("Failed to connect to es", "err", err)
-		return false
+		return err
 	}
-	EsLogic.CreateIndexIfNotExists(config.CF.EsIndex)
-	return true
+	e.CreateIndexIfNotExists(config.CF.EsIndex)
+	return nil
 }
 
-func (e *esLogic) Insert(logContent string, processName string, using string, ts int64) {
+func (e *esSearch) Insert(logContent string, processName string, using string, ts int64) {
 	data := model.ProcessLog{
 		Log:   logContent,
 		Name:  processName,
@@ -57,7 +58,7 @@ func (e *esLogic) Insert(logContent string, processName string, using string, ts
 	}
 }
 
-func (e *esLogic) CreateIndexIfNotExists(index string) error {
+func (e *esSearch) CreateIndexIfNotExists(index string) error {
 
 	ctx := context.Background()
 	exists, err := e.esClient.IndexExists(index).Do(ctx)
@@ -78,7 +79,7 @@ func (e *esLogic) CreateIndexIfNotExists(index string) error {
 	return nil
 }
 
-func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
+func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
 	// 检查 req 是否为 nil
 	if req.Page.From < 0 || req.Page.Size <= 0 {
 		log.Logger.Error("无效的分页请求参数")
@@ -148,7 +149,7 @@ func (e *esLogic) Search(req model.GetLogReq, filterProcessName ...string) model
 }
 
 // 通过反射得到mapping
-func (e *esLogic) structToJSON() string {
+func (e *esSearch) structToJSON() string {
 	typ := reflect.TypeOf(model.ProcessLog{})
 	properties := make(map[string]map[string]string)
 	for i := 0; i < typ.NumField(); i++ {
