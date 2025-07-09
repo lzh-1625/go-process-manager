@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 package logic
 
 import "github.com/lzh-1625/go_process_manager/log"
