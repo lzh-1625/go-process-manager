@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,10 +11,8 @@ type configApi struct{}
 
 var ConfigApi = new(configApi)
 
-func (c *configApi) GetSystemConfiguration(ctx *gin.Context, _ any) error {
-	result := logic.ConfigLogic.GetSystemConfiguration()
-	rOk(ctx, "Operation successful!", result)
-	return nil
+func (c *configApi) GetSystemConfiguration(ctx *gin.Context, _ any) []model.SystemConfigurationVo {
+	return logic.ConfigLogic.GetSystemConfiguration()
 }
 
 func (c *configApi) SetSystemConfiguration(ctx *gin.Context, _ any) (err error) {

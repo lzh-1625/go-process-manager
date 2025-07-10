@@ -17,7 +17,7 @@ type procApi struct{}
 
 var ProcApi = new(procApi)
 
-func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) (err error) {
+func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) any {
 	index, err := repository.ProcessRepository.AddProcessConfig(req)
 	if err != nil {
 		return err
@@ -28,10 +28,9 @@ func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) (err err
 		return err
 	}
 	logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
-	rOk(ctx, "Operation successful!", gin.H{
+	return gin.H{
 		"id": req.Uuid,
-	})
-	return
+	}
 }
 
 func (p *procApi) DeleteNewProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
@@ -84,13 +83,12 @@ func (p *procApi) KillAllProcess(ctx *gin.Context, _ any) (err error) {
 	return
 }
 
-func (p *procApi) GetProcessList(ctx *gin.Context, _ any) (err error) {
+func (p *procApi) GetProcessList(ctx *gin.Context, _ any) any {
 	if isAdmin(ctx) {
-		rOk(ctx, "Query successful!", logic.ProcessCtlLogic.GetProcessList())
+		return logic.ProcessCtlLogic.GetProcessList()
 	} else {
-		rOk(ctx, "Query successful!", logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)))
+		return logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx))
 	}
-	return
 }
 
 func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err error) {
@@ -99,13 +97,12 @@ func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err 
 	return
 }
 
-func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) any {
 	data, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
 	if err != nil {
 		return err
 	}
-	rOk(ctx, "success", data)
-	return
+	return data
 }
 
 func (p *procApi) ProcessControl(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
@@ -118,9 +115,9 @@ func (p *procApi) ProcessControl(ctx *gin.Context, req model.ProcessUuidReq) (er
 	return
 }
 
-func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) (err error) {
+func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) any {
 	token := utils.UnwarpIgnore(uuid.NewRandom()).String()
-	if err = repository.WsShare.AddShareData(model.WsShare{
+	if err := repository.WsShare.AddShareData(model.WsShare{
 		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
 		Write:      req.Write,
 		Token:      token,
@@ -129,8 +126,7 @@ func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) (
 	}); err != nil {
 		return err
 	}
-	rOk(ctx, "Operation successful!", gin.H{
+	return gin.H{
 		"token": token,
-	})
-	return
+	}
 }

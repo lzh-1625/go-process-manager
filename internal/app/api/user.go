@@ -18,20 +18,19 @@ var UserApi = new(userApi)
 
 const DEFAULT_ROOT_PASSWORD = "root"
 
-func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) (err error) {
+func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any {
 	if !u.checkLoginInfo(req.Account, req.Password) {
 		return errors.New("incorrect username or password")
 	}
 	token, err := utils.GenToken(req.Account)
 	if err != nil {
-		return
+		return err
 	}
-	rOk(ctx, "Operation successful!", gin.H{
+	return gin.H{
 		"token":    token,
 		"username": req.Account,
 		"role":     repository.UserRepository.GetUserByName(req.Account).Role,
-	})
-	return
+	}
 }
 
 func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
@@ -74,9 +73,8 @@ func (u *userApi) DeleteUser(ctx *gin.Context, req model.User) (err error) {
 	return
 }
 
-func (u *userApi) GetUserList(ctx *gin.Context, _ any) error {
-	rOk(ctx, "Query successful!", repository.UserRepository.GetUserList())
-	return nil
+func (u *userApi) GetUserList(ctx *gin.Context, _ any) any {
+	return repository.UserRepository.GetUserList()
 }
 
 func (u *userApi) checkLoginInfo(account, password string) bool {

@@ -16,19 +16,16 @@ func (t *taskApi) CreateTask(ctx *gin.Context, req model.Task) (err error) {
 	return logic.TaskLogic.CreateTask(req)
 }
 
-func (t *taskApi) GetTaskById(ctx *gin.Context, req model.TaskIdReq) (err error) {
+func (t *taskApi) GetTaskById(ctx *gin.Context, req model.TaskIdReq) any {
 	result, err := repository.TaskRepository.GetTaskById(req.Id)
 	if err != nil {
 		return err
 	}
-	rOk(ctx, "Operation successful!", result)
-	return
+	return result
 }
 
-func (t *taskApi) GetTaskList(ctx *gin.Context, _ any) (err error) {
-	result := logic.TaskLogic.GetAllTaskJob()
-	rOk(ctx, "Operation successful!", result)
-	return
+func (t *taskApi) GetTaskList(ctx *gin.Context, _ any) any {
+	return logic.TaskLogic.GetAllTaskJob()
 }
 
 func (t *taskApi) DeleteTaskById(ctx *gin.Context, req model.TaskIdReq) (err error) {

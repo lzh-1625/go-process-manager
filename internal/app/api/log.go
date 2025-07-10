@@ -16,9 +16,9 @@ type logApi struct{}
 
 var LogApi = new(logApi)
 
-func (a *logApi) GetLog(ctx *gin.Context, req model.GetLogReq) (err error) {
+func (a *logApi) GetLog(ctx *gin.Context, req model.GetLogReq) any {
 	if isAdmin(ctx) {
-		rOk(ctx, "Query successful!", logic.LogLogicImpl.Search(req, req.FilterName...))
+		return logic.LogLogicImpl.Search(req, req.FilterName...)
 	} else {
 		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), constants.OPERATION_LOG)
 		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
@@ -30,12 +30,10 @@ func (a *logApi) GetLog(ctx *gin.Context, req model.GetLogReq) (err error) {
 		if len(filterName) == 0 {
 			return errors.New("no information found")
 		}
-		rOk(ctx, "Query successful!", logic.LogLogicImpl.Search(req, filterName...))
+		return logic.LogLogicImpl.Search(req, filterName...)
 	}
-	return
 }
 
-func (a *logApi) GetRunningLog(ctx *gin.Context, _ any) error {
-	rOk(ctx, "Query successful!", logic.Loghandler.GetRunning())
-	return nil
+func (a *logApi) GetRunningLog(ctx *gin.Context, _ any) int {
+	return logic.Loghandler.GetRunning()
 }

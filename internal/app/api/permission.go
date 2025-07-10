@@ -15,8 +15,6 @@ func (p *permissionApi) EditPermssion(ctx *gin.Context, req model.Permission) (e
 	return repository.PermissionRepository.EditPermssion(req)
 }
 
-func (p *permissionApi) GetPermissionList(ctx *gin.Context, req model.GetPermissionListReq) (err error) {
-	result := repository.PermissionRepository.GetPermssionList(req.Account)
-	rOk(ctx, "Query successful!", result)
-	return
+func (p *permissionApi) GetPermissionList(ctx *gin.Context, req model.GetPermissionListReq) any {
+	return repository.PermissionRepository.GetPermssionList(req.Account)
 }

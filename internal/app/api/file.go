@@ -11,27 +11,25 @@ type file struct{}
 
 var FileApi = new(file)
 
-func (f *file) FilePathHandler(ctx *gin.Context, req model.FilePathHandlerReq) (err error) {
-	rOk(ctx, "Operation successful!", logic.FileLogic.GetFileAndDirByPath(req.Path))
-	return
+func (f *file) FilePathHandler(ctx *gin.Context, req model.FilePathHandlerReq) []model.FileStruct {
+	return logic.FileLogic.GetFileAndDirByPath(req.Path)
 }
 
 func (f *file) FileWriteHandler(ctx *gin.Context, _ any) (err error) {
 	path := ctx.PostForm("filePath")
 	fi, err := ctx.FormFile("data")
 	if err != nil {
-		return
+		return err
 	}
 	fiReader, _ := fi.Open()
 	err = logic.FileLogic.UpdateFileData(path, fiReader, fi.Size)
 	return
 }
 
-func (f *file) FileReadHandler(ctx *gin.Context, req model.FileReadHandlerReq) (err error) {
+func (f *file) FileReadHandler(ctx *gin.Context, req model.FileReadHandlerReq) any {
 	bytes, err := logic.FileLogic.ReadFileFromPath(req.FilePath)
 	if err != nil {
-		return
+		return err
 	}
-	rOk(ctx, "Operation successful!", string(bytes))
-	return
+	return string(bytes)
 }

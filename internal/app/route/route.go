@@ -150,7 +150,7 @@ const (
 	Query
 )
 
-func bind[T any](fn func(*gin.Context, T) error, bindOption int) func(*gin.Context) {
+func bind[T any, R any](fn func(*gin.Context, T) R, bindOption int) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		var req T
 		if bindOption&Body != 0 {
@@ -171,15 +171,31 @@ func bind[T any](fn func(*gin.Context, T) error, bindOption int) func(*gin.Conte
 				return
 			}
 		}
-		err := fn(ctx, req)
-		if err != nil {
-			rErr(ctx, err)
+		result := fn(ctx, req)
+		switch v := any(result).(type) {
+		case error:
+			if v != nil {
+				rErr(ctx, v)
+				return
+			} else {
+				ctx.JSON(200, gin.H{
+					"code":    0,
+					"message": "success",
+				})
+				return
+			}
+		case api.Response:
+			ctx.JSON(v.StatusCode, gin.H{
+				"data": v.Data,
+				"msg":  v.Msg,
+				"code": v.Code,
+			})
 			return
-		}
-		if !ctx.Writer.Written() {
+		default:
 			ctx.JSON(200, gin.H{
 				"code":    0,
 				"message": "success",
+				"data":    v,
 			})
 		}
 	}

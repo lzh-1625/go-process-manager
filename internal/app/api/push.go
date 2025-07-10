@@ -11,27 +11,22 @@ type pushApi struct{}
 
 var PushApi = new(pushApi)
 
-func (p *pushApi) GetPushList(ctx *gin.Context, __ any) (err error) {
-	rOk(ctx, "Query successful!", repository.PushRepository.GetPushList())
-	return
+func (p *pushApi) GetPushList(ctx *gin.Context, __ any) any {
+	return repository.PushRepository.GetPushList()
 }
 
-func (p *pushApi) GetPushById(ctx *gin.Context, req model.PushIdReq) (err error) {
-	rOk(ctx, "Query successful!", repository.PushRepository.GetPushConfigById(req.Id))
-	return
+func (p *pushApi) GetPushById(ctx *gin.Context, req model.PushIdReq) any {
+	return repository.PushRepository.GetPushConfigById(req.Id)
 }
 
 func (p *pushApi) AddPushConfig(ctx *gin.Context, req model.Push) (err error) {
-	err = repository.PushRepository.AddPushConfig(req)
-	return
+	return repository.PushRepository.AddPushConfig(req)
 }
 
 func (p *pushApi) UpdatePushConfig(ctx *gin.Context, req model.Push) (err error) {
-	err = repository.PushRepository.UpdatePushConfig(req)
-	return
+	return repository.PushRepository.UpdatePushConfig(req)
 }
 
 func (p *pushApi) DeletePushConfig(ctx *gin.Context, req model.PushIdReq) (err error) {
-	err = repository.PushRepository.DeletePushConfig(req.Id)
-	return
+	return repository.PushRepository.DeletePushConfig(req.Id)
 }

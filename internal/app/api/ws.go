@@ -197,13 +197,10 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 
 }
 
-func GetWsShareList(ctx *gin.Context) {
-	rOk(ctx, "Operation successful!", logic.WsSahreLogic.GetWsShareList())
+func GetWsShareList(ctx *gin.Context, _ any) any {
+	return logic.WsSahreLogic.GetWsShareList()
 }
 
-func DeleteWsShareById(ctx *gin.Context) {
-	if err := logic.WsSahreLogic.DeleteById(ctx.GetInt("id")); err != nil {
-		return
-	}
-	rOk(ctx, "Operation successful!", nil)
+func DeleteWsShareById(ctx *gin.Context, _ any) any {
+	return logic.WsSahreLogic.DeleteById(ctx.GetInt("id"))
 }
