@@ -15,6 +15,7 @@ import (
 	sr "github.com/lzh-1625/go_process_manager/internal/app/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
 	gse "github.com/vcaesar/gse-bleve"
+	// gse "github.com/lzh-1625/gse-bleve"
 )
 
 func init() {
@@ -27,7 +28,7 @@ type bleveSearch struct {
 
 func (b *bleveSearch) Init() error {
 	opt := gse.Option{
-		Dicts: "embed, zh",
+		Dicts: "embed, zh_s",
 		Stop:  "",
 		Opt:   "search-hmm",
 		Trim:  "trim",
