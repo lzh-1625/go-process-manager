@@ -57,10 +57,8 @@ func (r *Response) SetCode(code int) *Response {
 func (r *Response) SetMessage(msg any) *Response {
 	if str, ok := msg.(string); ok {
 		r.Msg = str
-	} else {
-		if err, ok := msg.(error); ok {
-			r.Msg = err.Error()
-		}
+	} else if err, ok := msg.(error); ok {
+		r.Msg = err.Error()
 	}
 	return r
 }
