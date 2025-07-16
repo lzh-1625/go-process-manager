@@ -51,7 +51,7 @@ func CheckToken() gin.HandlerFunc {
 			} else {
 				token = c.Query("token")
 			}
-			if _, err := utils.ParseToken(token); err != nil {
+			if _, err := utils.VerifyToken(token); err != nil {
 				rErr(c, -2, "token校验失败", err)
 				return
 			}
@@ -73,8 +73,8 @@ func getUser(ctx *gin.Context) (string, error) {
 	} else {
 		token = ctx.Query("token")
 	}
-	if mc, err := utils.ParseToken(token); err == nil && mc != nil {
-		return mc.UserName, nil
+	if mc, err := utils.VerifyToken(token); err == nil && mc != nil {
+		return mc.Username, nil
 	} else {
 		return "", errors.Join(errors.New("用户信息获取失败"), err)
 	}

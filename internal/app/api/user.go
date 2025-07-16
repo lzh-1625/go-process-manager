@@ -22,7 +22,7 @@ func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any 
 	if !u.checkLoginInfo(req.Account, req.Password) {
 		return errors.New("incorrect username or password")
 	}
-	token, err := utils.GenToken(req.Account)
+	token, err := utils.GenerateToken(req.Account)
 	if err != nil {
 		return err
 	}
