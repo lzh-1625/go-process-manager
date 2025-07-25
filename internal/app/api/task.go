@@ -16,7 +16,9 @@ func (t *taskApi) CreateTask(ctx *gin.Context, req model.Task) (err error) {
 	return logic.TaskLogic.CreateTask(req)
 }
 
-func (t *taskApi) GetTaskById(ctx *gin.Context, req model.TaskIdReq) any {
+func (t *taskApi) GetTaskById(ctx *gin.Context, req struct {
+	Id int `form:"id" binding:"required"`
+}) any {
 	result, err := repository.TaskRepository.GetTaskById(req.Id)
 	if err != nil {
 		return err
@@ -28,17 +30,23 @@ func (t *taskApi) GetTaskList(ctx *gin.Context, _ any) any {
 	return logic.TaskLogic.GetAllTaskJob()
 }
 
-func (t *taskApi) DeleteTaskById(ctx *gin.Context, req model.TaskIdReq) (err error) {
+func (t *taskApi) DeleteTaskById(ctx *gin.Context, req struct {
+	Id int `form:"id" binding:"required"`
+}) (err error) {
 	return logic.TaskLogic.DeleteTask(req.Id)
 
 }
 
-func (t *taskApi) StartTask(ctx *gin.Context, req model.TaskIdReq) (err error) {
+func (t *taskApi) StartTask(ctx *gin.Context, req struct {
+	Id int `form:"id" binding:"required"`
+}) (err error) {
 	go logic.TaskLogic.RunTaskById(req.Id)
 	return
 }
 
-func (t *taskApi) StopTask(ctx *gin.Context, req model.TaskIdReq) (err error) {
+func (t *taskApi) StopTask(ctx *gin.Context, req struct {
+	Id int `form:"id" binding:"required"`
+}) (err error) {
 	return logic.TaskLogic.StopTaskJob(req.Id)
 }
 
@@ -54,6 +62,8 @@ func (t *taskApi) RunTaskByKey(ctx *gin.Context, _ any) (err error) {
 	return logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
 }
 
-func (t *taskApi) CreateTaskApiKey(ctx *gin.Context, req model.TaskIdReq) (err error) {
+func (t *taskApi) CreateTaskApiKey(ctx *gin.Context, req struct {
+	Id int `form:"id" binding:"required"`
+}) (err error) {
 	return logic.TaskLogic.CreateApiKey(req.Id)
 }

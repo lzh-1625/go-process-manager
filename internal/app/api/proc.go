@@ -33,17 +33,23 @@ func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) any {
 	}
 }
 
-func (p *procApi) DeleteNewProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+func (p *procApi) DeleteNewProcess(ctx *gin.Context, req struct {
+	Uuid int `form:"uuid" binding:"required"`
+}) (err error) {
 	logic.ProcessCtlLogic.KillProcess(req.Uuid)
 	logic.ProcessCtlLogic.DeleteProcess(req.Uuid)
 	return repository.ProcessRepository.DeleteProcessConfig(req.Uuid)
 }
 
-func (p *procApi) KillProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+func (p *procApi) KillProcess(ctx *gin.Context, req struct {
+	Uuid int `form:"uuid" binding:"required"`
+}) (err error) {
 	return logic.ProcessCtlLogic.KillProcess(req.Uuid)
 }
 
-func (p *procApi) StartProcess(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+func (p *procApi) StartProcess(ctx *gin.Context, req struct {
+	Uuid int `form:"uuid" binding:"required"`
+}) (err error) {
 	prod, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil { // 进程不存在则创建
 		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
@@ -97,7 +103,9 @@ func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err 
 	return
 }
 
-func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) any {
+func (p *procApi) GetProcessConfig(ctx *gin.Context, req struct {
+	Uuid int `form:"uuid" binding:"required"`
+}) any {
 	data, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
 	if err != nil {
 		return err
@@ -105,7 +113,9 @@ func (p *procApi) GetProcessConfig(ctx *gin.Context, req model.ProcessUuidReq) a
 	return data
 }
 
-func (p *procApi) ProcessControl(ctx *gin.Context, req model.ProcessUuidReq) (err error) {
+func (p *procApi) ProcessControl(ctx *gin.Context, req struct {
+	Uuid int `form:"uuid" binding:"required"`
+}) (err error) {
 	user := getUserName(ctx)
 	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil {

@@ -15,6 +15,8 @@ func (p *permissionApi) EditPermssion(ctx *gin.Context, req model.Permission) (e
 	return repository.PermissionRepository.EditPermssion(req)
 }
 
-func (p *permissionApi) GetPermissionList(ctx *gin.Context, req model.GetPermissionListReq) any {
+func (p *permissionApi) GetPermissionList(ctx *gin.Context, req struct {
+	Account string `form:"account" binding:"required"`
+}) any {
 	return repository.PermissionRepository.GetPermssionList(req.Account)
 }
