@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"reflect"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -123,29 +122,4 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 
 	result.Total = resp.TotalHits()
 	return result
-}
-
-// 通过反射得到mapping
-func (e *esSearch) structToJSON() string {
-	typ := reflect.TypeOf(model.ProcessLog{})
-	properties := make(map[string]map[string]string)
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		fieldTag := field.Tag.Get("type")
-		if fieldTag != "" {
-			properties[field.Tag.Get("json")] = map[string]string{
-				"type": fieldTag,
-			}
-		}
-	}
-	result := map[string]interface{}{
-		"mappings": map[string]interface{}{
-			"properties": properties,
-		},
-	}
-	jsonData, err := json.Marshal(result)
-	if err != nil {
-		return ""
-	}
-	return string(jsonData)
 }
