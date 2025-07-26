@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -16,12 +17,16 @@ type sqliteSearch struct{}
 
 func (l *sqliteSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
 	req.FilterName = filterProcessName
-	data, total := repository.LogRepository.SearchLog(req)
-	if req.Match.Log != "" {
+	query := search.QueryStringAnalysis(req.Match.Log)
+	data, total := repository.LogRepository.SearchLog(req, query)
+	for _, v := range slices.DeleteFunc(query, func(q search.Query) bool {
+		return q.Cond == search.NotMatch || q.Cond == search.NotWildCard
+	}) {
 		for i := range data {
-			data[i].Log = strings.ReplaceAll(data[i].Log, req.Match.Log, "\033[43m"+req.Match.Log+"\033[0m")
+			data[i].Log = strings.ReplaceAll(data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
 		}
 	}
+
 	return model.LogResp{
 		Data:  data,
 		Total: total,

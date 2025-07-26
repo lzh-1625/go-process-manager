@@ -5,6 +5,7 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
+	"github.com/lzh-1625/go_process_manager/internal/app/search"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
@@ -18,7 +19,7 @@ func (l *logRepository) InsertLog(data model.ProcessLog) {
 	}
 }
 
-func (l *logRepository) SearchLog(req model.GetLogReq) (result []*model.ProcessLog, total int64) {
+func (l *logRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) (result []*model.ProcessLog, total int64) {
 	q := query.ProcessLog.WithContext(context.TODO())
 	if req.Match.Name != "" {
 		q = q.Where(query.ProcessLog.Name.Eq(req.Match.Name))
@@ -26,9 +27,16 @@ func (l *logRepository) SearchLog(req model.GetLogReq) (result []*model.ProcessL
 	if req.Match.Using != "" {
 		q = q.Where(query.ProcessLog.Using.Eq(req.Match.Using))
 	}
-	if req.Match.Log != "" {
-		q = q.Where(query.ProcessLog.Log.Like("%" + req.Match.Log + "%"))
+
+	for _, v := range logQuery {
+		switch v.Cond {
+		case search.Match, search.WildCard:
+			q = q.Where(query.ProcessLog.Log.Like("%" + v.Content + "%"))
+		case search.NotMatch, search.NotWildCard:
+			q = q.Where(query.ProcessLog.Log.NotLike("%" + v.Content + "%"))
+		}
 	}
+
 	if req.Sort == "desc" {
 		q = q.Order(query.ProcessLog.Time.Desc())
 	}

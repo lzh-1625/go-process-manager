@@ -3,19 +3,20 @@ package es
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/search"
+	sr "github.com/lzh-1625/go_process_manager/internal/app/search"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/olivere/elastic/v7"
 )
 
 func init() {
-	search.Register("es", new(esSearch))
+	sr.Register("es", new(esSearch))
 }
 
 type esSearch struct {
@@ -78,9 +79,23 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	if req.TimeRange.EndTime != 0 {
 		queryList = append(queryList, timeRangeQuery.Lte(req.TimeRange.EndTime))
 	}
-	if req.Match.Log != "" {
-		queryList = append(queryList, elastic.NewMatchQuery("log", req.Match.Log))
+	notQuery := []elastic.Query{}
+
+	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
+		switch v.Cond {
+		case sr.Match:
+			queryList = append(queryList, elastic.NewMatchQuery("log", v.Content))
+		case sr.NotMatch:
+			notQuery = append(notQuery, elastic.NewMatchQuery("log", v.Content))
+		case sr.WildCard:
+			queryList = append(queryList, elastic.NewWildcardQuery("log.keyword", "*"+v.Content+"*"))
+		case sr.NotWildCard:
+			notQuery = append(notQuery, elastic.NewWildcardQuery("log.keyword", "*"+v.Content+"*"))
+		}
+		fmt.Printf("v.Cond: %v\n", v.Cond)
+		fmt.Printf("v.Content: %v\n", v.Content)
 	}
+
 	if req.Match.Name != "" {
 		queryList = append(queryList, elastic.NewMatchQuery("name", req.Match.Name))
 	}
@@ -99,7 +114,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	}
 
 	result := model.LogResp{}
-	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
+	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
 		log.Logger.Errorw("es查询失败", "err", err, "reason", resp.Error.Reason)
 		return result

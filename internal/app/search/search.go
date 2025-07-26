@@ -1,6 +1,9 @@
 package search
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
 )
@@ -24,4 +27,43 @@ func GetSearchImpl(name string) LogLogic {
 	}
 	log.Logger.Warnw("未找到对应的存储引擎,使用默认[sqlite]", "name", name)
 	return searchImplMap["sqlite"]
+}
+
+type Cond int
+
+const (
+	Match       Cond = iota // ^
+	WildCard                // ~
+	NotMatch                // !^
+	NotWildCard             // !~
+)
+
+type Query struct {
+	Cond    Cond
+	Content string
+}
+
+func QueryStringAnalysis(s string) (query []Query) {
+	if strings.TrimSpace(s) == "" {
+		return
+	}
+	strList := strings.Split(s, " ")
+	for _, v := range strList {
+		switch {
+		case strings.HasPrefix(v, "!^"):
+			query = append(query, Query{NotMatch, v[2:]})
+		case strings.HasPrefix(v, "!~"):
+			query = append(query, Query{NotWildCard, v[2:]})
+		case strings.HasPrefix(v, "!"):
+			query = append(query, Query{NotMatch, v[1:]})
+		case strings.HasPrefix(v, "^"):
+			query = append(query, Query{Match, v[1:]})
+		case strings.HasPrefix(v, "~"):
+			query = append(query, Query{WildCard, v[1:]})
+		default:
+			query = append(query, Query{Match, v})
+		}
+	}
+	fmt.Printf("query: %v\n", query)
+	return
 }

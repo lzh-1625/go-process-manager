@@ -4,6 +4,7 @@
 package bleve
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -41,6 +42,8 @@ func (b *bleveSearch) Init() error {
 	mapping := bleve.NewDocumentMapping()
 	log := bleve.NewTextFieldMapping()
 	log.Index = true
+	logkeyword := bleve.NewKeywordFieldMapping()
+	logkeyword.Index = true
 	time := bleve.NewNumericFieldMapping()
 	time.Index = true
 	name := bleve.NewKeywordFieldMapping()
@@ -48,6 +51,7 @@ func (b *bleveSearch) Init() error {
 	using := bleve.NewKeywordFieldMapping()
 	using.Index = true
 	mapping.AddFieldMappingsAt("log", log)
+	mapping.AddFieldMappingsAt("logkeyword", logkeyword)
 	mapping.AddFieldMappingsAt("time", time)
 	mapping.AddFieldMappingsAt("name", name)
 	mapping.AddFieldMappingsAt("using", using)
@@ -66,21 +70,38 @@ func (b *bleveSearch) Init() error {
 
 func (b *bleveSearch) Insert(logContent string, processName string, using string, ts int64) {
 	if err := b.index.Index(uuid.NewString(), model.ProcessLog{
-		Log:   logContent,
-		Name:  processName,
-		Using: using,
-		Time:  ts,
+		Log:        logContent,
+		Name:       processName,
+		Logkeyword: logContent,
+		Using:      using,
+		Time:       ts,
 	}); err != nil {
 		logger.Logger.Warnw("bleve log insert failed", "err", err)
 	}
+	fmt.Printf("using: %v\n", using)
 }
 
 func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (result model.LogResp) {
 	buildQuery := bleve.NewBooleanQuery()
-	if req.Match.Log != "" {
-		logQuery := bleve.NewMatchQuery(req.Match.Log)
-		logQuery.SetField("log")
-		buildQuery.AddMust(logQuery)
+	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
+		switch v.Cond {
+		case sr.Match:
+			logQuery := bleve.NewMatchQuery(v.Content)
+			logQuery.SetField("log")
+			buildQuery.AddMust(logQuery)
+		case sr.NotMatch:
+			logQuery := bleve.NewMatchQuery(v.Content)
+			logQuery.SetField("log")
+			buildQuery.AddMustNot(logQuery)
+		case sr.WildCard:
+			logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
+			logQuery.SetField("logkeyword")
+			buildQuery.AddMust(logQuery)
+		case sr.NotWildCard:
+			logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
+			logQuery.SetField("logkeyword")
+			buildQuery.AddMustNot(logQuery)
+		}
 	}
 	if req.Match.Name != "" {
 		nameQuery := bleve.NewTermQuery(req.Match.Name)
