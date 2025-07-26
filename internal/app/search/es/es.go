@@ -3,7 +3,6 @@ package es
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"reflect"
 	"time"
@@ -41,7 +40,6 @@ func (e *esSearch) Init() error {
 		log.Logger.Warnw("Failed to connect to es", "err", err)
 		return err
 	}
-	e.CreateIndexIfNotExists(config.CF.EsIndex)
 	return nil
 }
 
@@ -56,27 +54,6 @@ func (e *esSearch) Insert(logContent string, processName string, using string, t
 	if err != nil {
 		log.Logger.Errorw("es数据插入失败", "err", err)
 	}
-}
-
-func (e *esSearch) CreateIndexIfNotExists(index string) error {
-
-	ctx := context.Background()
-	exists, err := e.esClient.IndexExists(index).Do(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-
-	info, err := e.esClient.CreateIndex(index).BodyString(e.structToJSON()).Do(ctx)
-	if err != nil {
-		return err
-	}
-	if !info.Acknowledged {
-		return fmt.Errorf("ES 创建索引 [%s] 失败", index)
-	}
-	return nil
 }
 
 func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
