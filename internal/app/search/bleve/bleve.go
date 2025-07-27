@@ -81,22 +81,22 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	buildQuery := bleve.NewBooleanQuery()
 	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
 		switch v.Cond {
-		case sr.Match:
+		case sr.Match, sr.WildCard:
 			logQuery := bleve.NewMatchQuery(v.Content)
 			logQuery.SetField("log")
 			buildQuery.AddMust(logQuery)
-		case sr.NotMatch:
+		case sr.NotMatch, sr.NotWildCard:
 			logQuery := bleve.NewMatchQuery(v.Content)
 			logQuery.SetField("log")
 			buildQuery.AddMustNot(logQuery)
-		case sr.WildCard:
-			logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
-			logQuery.SetField("log")
-			buildQuery.AddMust(logQuery)
-		case sr.NotWildCard:
-			logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
-			logQuery.SetField("log")
-			buildQuery.AddMustNot(logQuery)
+			// case sr.WildCard:
+			// 	logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
+			// 	logQuery.SetField("log")
+			// 	buildQuery.AddMust(logQuery)
+			// case sr.NotWildCard:
+			// 	logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
+			// 	logQuery.SetField("log")
+			// 	buildQuery.AddMustNot(logQuery)
 		}
 	}
 	if req.Match.Name != "" {
