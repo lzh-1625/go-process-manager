@@ -88,13 +88,11 @@ type LogResp struct {
 }
 
 type ProcessLog struct {
-	Id         int    `json:"id,omitempty" gorm:"primaryKey;autoIncrement;column:id" `
-	Log        string `json:"log" gorm:"column:log"`
-	Word       string `json:"word,omitempty"`
-	Logkeyword string `json:"logkeyword,omitempty"`
-	Time       int64  `json:"time" gorm:"column:time"`
-	Name       string `json:"name" gorm:"column:name"`
-	Using      string `json:"using" gorm:"column:using"`
+	Id    int    `json:"id,omitempty" gorm:"primaryKey;autoIncrement;column:id" `
+	Log   string `json:"log" gorm:"column:log"`
+	Time  int64  `json:"time" gorm:"column:time"`
+	Name  string `json:"name" gorm:"column:name"`
+	Using string `json:"using" gorm:"column:using"`
 }
 
 func (n *ProcessLog) TableName() string {
