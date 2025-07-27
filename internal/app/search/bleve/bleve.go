@@ -133,10 +133,11 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	}
 	sortArgs := ([]string{"-_score"})
 	if req.Sort == "desc" {
-		sortArgs = append(sortArgs, "-time")
+
+		sortArgs = ([]string{"-time"})
 	}
 	if req.Sort == "asc" {
-		sortArgs = append(sortArgs, "time")
+		sortArgs = ([]string{"time"})
 	}
 	hl := bleve.HighlightRequest{}
 	hl.AddField("log")
