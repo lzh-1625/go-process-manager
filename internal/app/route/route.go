@@ -184,7 +184,7 @@ func bind[T any, R any](fn func(*gin.Context, T) R, bindOption int) func(*gin.Co
 				})
 				return
 			}
-		case api.Response:
+		case *api.Response:
 			ctx.JSON(v.StatusCode, gin.H{
 				"data": v.Data,
 				"msg":  v.Msg,
