@@ -123,6 +123,7 @@ func initListenKillSignal() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
+		logger.Logger.Info("进程正在退出,等待全部进程停止")
 		logic.ProcessCtlLogic.KillAllProcess()
 		log.Print("已停止所有进程")
 		os.Exit(0)
