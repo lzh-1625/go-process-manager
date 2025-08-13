@@ -25,7 +25,7 @@ func NewTaskJob(data model.Task) (*TaskJob, error) {
 		TaskConfig: &data,
 		StartTime:  time.Now(),
 	}
-	if data.CronExpression != "" {
+	if data.Enable && data.CronExpression != "" {
 		err := tj.InitCronHandle()
 		if err != nil {
 			log.Logger.Warnw("定时任务启动失败", "err", err, "task", data.Id)
@@ -114,6 +114,7 @@ func (t *TaskJob) InitCronHandle() error {
 	if err != nil {
 		return err
 	}
+	c.Start()
 	t.Cron = c
 	return nil
 }
