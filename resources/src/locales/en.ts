@@ -34,6 +34,7 @@ export default {
     signin: "Sign In",
   },
   menu: {
+    process: 'ProcessManager',
     search: 'Search (press "ctrl + /" to focus)',
     dashboard: "Dashboard",
     logout: "Logout",

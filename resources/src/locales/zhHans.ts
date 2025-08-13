@@ -34,6 +34,7 @@ export default {
     signin: "登录",
   },
   menu: {
+    process: '进程管理',
     search: "搜索（按“ Ctrl + /”进行聚焦）",
     dashboard: "仪表板",
     logout: "登出",

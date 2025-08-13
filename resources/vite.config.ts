@@ -38,8 +38,8 @@ export default defineConfig({
       usePolling: true,
     },
     proxy: {
-      "/sdApi": {
-        target: "http://me.yunrobot.cn:7860",
+      "/api": {
+        target: "http://xcon.top:8797",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/sdApi/, ""),
       },

@@ -5,7 +5,6 @@
 -->
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
-import _ from "lodash";
 const menu = ref([
   {
     title: "卡片模板",

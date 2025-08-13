@@ -6,6 +6,7 @@ import menuUML from "./menus/uml.menu";
 import menuLanding from "./menus/landing.menu";
 import menuData from "./menus/data.menu";
 import menuAi from "./menus/ai.menu";
+import menuProcess from "./menus/process.menus"
 
 export default {
   menu: [
@@ -22,8 +23,8 @@ export default {
       ],
     },
     {
-      text: "chatgpt",
-      items: menuAi,
+      text: "process",
+      items: menuProcess,
     },
     {
       text: "Apps",

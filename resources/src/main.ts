@@ -21,12 +21,14 @@ import router from "./router";
 import i18n from "./plugins/i18n";
 import Vue3Lottie from "vue3-lottie";
 import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
+import permission  from "./directives/permission"
 
 
 const pinia = createPinia();
 pinia.use(piniaPersist);
 const app = createApp(App);
 
+app.directive('permission', permission);
 app.use(router);
 app.use(PerfectScrollbarPlugin);
 app.use(MasonryWall);

@@ -1,6 +1,5 @@
 import enMessages from "@/locales/en";
 import zhHansMessages from "@/locales/zhHans";
-import jaMessages from "@/locales/ja";
 
 const supported = ["en", "zhHans", "ja"];
 let locale = "en";
@@ -34,18 +33,10 @@ export default {
       name: "china",
       label: "中文",
       messages: zhHansMessages,
-    },
-    {
-      code: "ja",
-      flag: "jp",
-      name: "japan",
-      label: "日本語",
-      messages: jaMessages,
-    },
+    }
   ],
   messages: {
     en: enMessages,
     zhHans: zhHansMessages,
-    ja: jaMessages,
   },
 };
