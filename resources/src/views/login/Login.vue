@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { login } from "~/src/api/login";
+import { login } from "@/api/login";
 import router from "~/src/router";
 
 const isLoading = ref(false);
