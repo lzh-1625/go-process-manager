@@ -39,7 +39,7 @@ func (p *ProcessPty) Start() (err error) {
 		}
 	}()
 	if ok := p.SetState(eum.ProcessStateStart, func() bool {
-		return p.State.State != 1
+		return p.State.State != eum.ProcessStateStart
 	}); !ok {
 		log.Logger.Warnw("进程已在运行，跳过启动")
 		return nil

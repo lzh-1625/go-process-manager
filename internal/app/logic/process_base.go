@@ -281,7 +281,7 @@ func (p *ProcessBase) monitorHanler() {
 	ticker := time.NewTicker(time.Second * time.Duration(config.CF.PerformanceInfoInterval))
 	defer ticker.Stop()
 	for {
-		if p.State.State != 1 {
+		if p.State.State != eum.ProcessStateStart {
 			log.Logger.Debugw("进程未在运行", "state", p.State.State)
 			return
 		}

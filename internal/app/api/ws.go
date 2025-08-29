@@ -74,7 +74,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 		wsLock:     sync.Mutex{},
 	}
 	proc.ReadCache(wci)
-	if proc.State.State == 1 {
+	if proc.State.State == eum.ProcessStateStart {
 		proc.SetTerminalSize(req.Cols, req.Rows)
 		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, eum.OperationTerminalWrite))
 		proc.AddConn(reqUser, wci)
@@ -112,7 +112,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if proc.HasWsConn(guestName) {
 		return errors.New("connection already exists")
 	}
-	if proc.State.State != 1 {
+	if proc.State.State != eum.ProcessStateStart {
 		return errors.New("process not is running")
 	}
 	if !proc.VerifyControl() {

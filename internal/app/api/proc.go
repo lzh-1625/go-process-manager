@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -63,7 +64,7 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 		return nil
 	}
-	if prod.State.State == 1 {
+	if prod.State.State == eum.ProcessStateStart {
 		return errors.New("process is currently running")
 	}
 	prod.ResetRestartTimes()

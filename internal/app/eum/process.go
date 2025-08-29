@@ -13,4 +13,5 @@ const (
 	ProcessStateStop ProcessState = iota
 	ProcessStateStart
 	ProcessStateWarnning
+	ProcessStateRunning
 )
