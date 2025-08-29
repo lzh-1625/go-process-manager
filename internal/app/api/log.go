@@ -4,7 +4,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -20,7 +20,7 @@ func (a *logApi) GetLog(ctx *gin.Context, req model.GetLogReq) any {
 	if isAdmin(ctx) {
 		return logic.LogLogicImpl.Search(req, req.FilterName...)
 	} else {
-		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), constants.OPERATION_LOG)
+		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
 		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
 			return !slices.Contains(processNameList, s)
 		})

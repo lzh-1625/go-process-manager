@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -35,10 +35,10 @@ func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any 
 }
 
 func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
-	if req.Role == constants.ROLE_ROOT {
+	if req.Role == eum.RoleRoot {
 		return errors.New("creation of root accounts is forbidden")
 	}
-	if req.Account == constants.CONSOLE {
+	if req.Account == eum.Console {
 		return errors.New("operation failed")
 	}
 	if len(req.Password) < config.CF.UserPassWordMinLength {
@@ -50,7 +50,7 @@ func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
 
 func (u *userApi) ChangePassword(ctx *gin.Context, req model.User) (err error) {
 	reqUser := getUserName(ctx)
-	if getRole(ctx) != constants.ROLE_ROOT && req.Account != "" {
+	if getRole(ctx) != eum.RoleRoot && req.Account != "" {
 		return errors.New("invalid parameters")
 	}
 	var userName string
@@ -84,7 +84,7 @@ func (u *userApi) checkLoginInfo(account, password string) bool {
 		repository.UserRepository.CreateUser(model.User{
 			Account:  "root",
 			Password: DEFAULT_ROOT_PASSWORD,
-			Role:     constants.ROLE_ROOT,
+			Role:     eum.RoleRoot,
 		})
 		return password == DEFAULT_ROOT_PASSWORD
 	}

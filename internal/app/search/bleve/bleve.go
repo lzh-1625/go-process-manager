@@ -4,7 +4,6 @@
 package bleve
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -74,7 +73,6 @@ func (b *bleveSearch) Insert(logContent string, processName string, using string
 	}); err != nil {
 		logger.Logger.Warnw("bleve log insert failed", "err", err)
 	}
-	fmt.Printf("using: %v\n", using)
 }
 
 func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (result model.LogResp) {

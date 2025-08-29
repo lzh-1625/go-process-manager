@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
@@ -64,7 +64,7 @@ func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 	return
 }
 
-func (t *taskRepository) GetTriggerTask(processName string, event constants.ProcessState) []model.Task {
+func (t *taskRepository) GetTriggerTask(processName string, event eum.ProcessState) []model.Task {
 	result := []model.Task{}
 	query.Task.Select(query.Task.ALL).
 		LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Task.TriggerTarget)).

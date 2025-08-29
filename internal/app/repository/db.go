@@ -42,14 +42,17 @@ func InitDb() {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	db = gdb.Session(&defaultConfig)
 	// db = db.Debug()
-	db.AutoMigrate(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
-
-	// g := gen.NewGenerator(gen.Config{
-	// 	OutPath: "internal/app/repository/query",
-	// 	Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface, // generate mode
-	// })
-	// g.UseDB(db)
-	// g.ApplyBasic(&model.Process{}, &model.User{}, &model.Permission{}, &model.Push{}, &model.Config{}, &model.ProcessLog{}, &model.Task{}, &model.WsShare{})
-	// g.Execute()
+	db.AutoMigrate(
+		&model.Process{},
+		&model.User{},
+		&model.Permission{},
+		&model.Push{},
+		&model.Config{},
+		&model.ProcessLog{},
+		&model.Task{},
+		&model.WsShare{},
+		&model.Event{},
+	)
+	gormGen(db)
 	query.SetDefault(db)
 }

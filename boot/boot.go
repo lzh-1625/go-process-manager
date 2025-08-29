@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -86,12 +86,12 @@ func initProcess() {
 }
 
 func initJwtSecret() {
-	if secret, err := repository.ConfigRepository.GetConfigValue(constants.SECRET_KEY); err == nil {
+	if secret, err := repository.ConfigRepository.GetConfigValue(eum.SecretKey); err == nil {
 		utils.SetSecret([]byte(secret))
 		return
 	}
 	secret := utils.RandString(32)
-	repository.ConfigRepository.SetConfigValue(constants.SECRET_KEY, secret)
+	repository.ConfigRepository.SetConfigValue(eum.SecretKey, secret)
 	utils.SetSecret([]byte(secret))
 }
 

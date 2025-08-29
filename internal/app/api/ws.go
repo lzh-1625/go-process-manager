@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -76,7 +76,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	proc.ReadCache(wci)
 	if proc.State.State == 1 {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, constants.OPERATION_TERMINAL_WRITE))
+		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, eum.OperationTerminalWrite))
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
 	}

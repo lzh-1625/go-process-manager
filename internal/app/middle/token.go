@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -58,8 +58,8 @@ func CheckToken() gin.HandlerFunc {
 			if username, err := getUser(c); err != nil {
 				rErr(c, -1, "无法获取user信息", err)
 			} else {
-				c.Set(constants.CTXFLG_USER_NAME, username)
-				c.Set(constants.CTXFLG_ROLE, repository.UserRepository.GetUserByName(username).Role)
+				c.Set(eum.CtxUserName, username)
+				c.Set(eum.CtxRole, repository.UserRepository.GetUserByName(username).Role)
 			}
 		}
 		c.Next()

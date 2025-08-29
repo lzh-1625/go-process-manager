@@ -18,6 +18,7 @@ import (
 var (
 	Q          = new(Query)
 	Config     *config
+	Event      *event
 	Permission *permission
 	Process    *process
 	ProcessLog *processLog
@@ -30,6 +31,7 @@ var (
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	Config = &Q.Config
+	Event = &Q.Event
 	Permission = &Q.Permission
 	Process = &Q.Process
 	ProcessLog = &Q.ProcessLog
@@ -43,6 +45,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:         db,
 		Config:     newConfig(db, opts...),
+		Event:      newEvent(db, opts...),
 		Permission: newPermission(db, opts...),
 		Process:    newProcess(db, opts...),
 		ProcessLog: newProcessLog(db, opts...),
@@ -57,6 +60,7 @@ type Query struct {
 	db *gorm.DB
 
 	Config     config
+	Event      event
 	Permission permission
 	Process    process
 	ProcessLog processLog
@@ -72,6 +76,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:         db,
 		Config:     q.Config.clone(db),
+		Event:      q.Event.clone(db),
 		Permission: q.Permission.clone(db),
 		Process:    q.Process.clone(db),
 		ProcessLog: q.ProcessLog.clone(db),
@@ -94,6 +99,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:         db,
 		Config:     q.Config.replaceDB(db),
+		Event:      q.Event.replaceDB(db),
 		Permission: q.Permission.replaceDB(db),
 		Process:    q.Process.replaceDB(db),
 		ProcessLog: q.ProcessLog.replaceDB(db),
@@ -106,6 +112,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 
 type queryCtx struct {
 	Config     IConfigDo
+	Event      IEventDo
 	Permission IPermissionDo
 	Process    IProcessDo
 	ProcessLog IProcessLogDo
@@ -118,6 +125,7 @@ type queryCtx struct {
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		Config:     q.Config.WithContext(ctx),
+		Event:      q.Event.WithContext(ctx),
 		Permission: q.Permission.WithContext(ctx),
 		Process:    q.Process.WithContext(ctx),
 		ProcessLog: q.ProcessLog.WithContext(ctx),

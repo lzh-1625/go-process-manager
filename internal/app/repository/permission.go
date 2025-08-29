@@ -3,7 +3,7 @@ package repository
 import (
 	"errors"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 	"github.com/lzh-1625/go_process_manager/log"
@@ -64,18 +64,18 @@ func (p *permissionRepository) GetPermission(user string, pid int) (result model
 	return
 }
 
-func (p *permissionRepository) GetProcessNameByPermission(user string, op constants.OprPermission) (result []string) {
+func (p *permissionRepository) GetProcessNameByPermission(user string, op eum.OprPermission) (result []string) {
 	tx := query.Permission.Select(query.Process.Name).RightJoin(query.Process, query.Process.Uuid.EqCol(query.Permission.Pid)).Where(query.Permission.Account.Eq(user)).Where(query.Permission.Owned.Is(true))
 	switch op {
-	case constants.OPERATION_LOG:
+	case eum.OperationLog:
 		tx = tx.Where(query.Permission.Log.Is(true))
-	case constants.OPERATION_START:
+	case eum.OperationStart:
 		tx = tx.Where(query.Permission.Start.Is(true))
-	case constants.OPERATION_STOP:
+	case eum.OperationStop:
 		tx = tx.Where(query.Permission.Stop.Is(true))
-	case constants.OPERATION_TERMINAL:
+	case eum.OperationTerminal:
 		tx = tx.Where(query.Permission.Terminal.Is(true))
-	case constants.OPERATION_TERMINAL_WRITE:
+	case eum.OperationTerminalWrite:
 		tx = tx.Where(query.Permission.Write.Is(true))
 	}
 	tx.Scan(&result)

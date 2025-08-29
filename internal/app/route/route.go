@@ -6,7 +6,7 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/resources"
@@ -58,55 +58,55 @@ func routePathInit(r *gin.Engine) {
 	{
 		wsGroup := apiGroup.Group("/ws")
 		{
-			wsGroup.GET("", middle.OprPermission(constants.OPERATION_TERMINAL), bind(api.WsApi.WebsocketHandle, Query))
+			wsGroup.GET("", middle.OprPermission(eum.OperationTerminal), bind(api.WsApi.WebsocketHandle, Query))
 			wsGroup.GET("/share", bind(api.WsApi.WebsocketShareHandle, Query))
 		}
 
 		processGroup := apiGroup.Group("/process")
 		{
-			processGroup.DELETE("", middle.OprPermission(constants.OPERATION_STOP), bind(api.ProcApi.KillProcess, Query))
+			processGroup.DELETE("", middle.OprPermission(eum.OperationStop), bind(api.ProcApi.KillProcess, Query))
 			processGroup.GET("", bind(api.ProcApi.GetProcessList, None))
 			processGroup.GET("/wait", middle.ProcessWaitCond.WaitGetMiddel, bind(api.ProcApi.GetProcessList, None))
-			processGroup.PUT("", middle.OprPermission(constants.OPERATION_START), bind(api.ProcApi.StartProcess, Query))
+			processGroup.PUT("", middle.OprPermission(eum.OperationStart), bind(api.ProcApi.StartProcess, Query))
 			processGroup.PUT("/all", bind(api.ProcApi.StartAllProcess, None))
 			processGroup.DELETE("/all", bind(api.ProcApi.KillAllProcess, None))
-			processGroup.POST("/share", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.ProcessCreateShare, Body))
-			processGroup.GET("/control", middle.RolePermission(constants.ROLE_ROOT), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.ProcessControl, Query))
+			processGroup.POST("/share", middle.RolePermission(eum.RoleAdmin), bind(api.ProcApi.ProcessCreateShare, Body))
+			processGroup.GET("/control", middle.RolePermission(eum.RoleRoot), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.ProcessControl, Query))
 
 			proConfigGroup := processGroup.Group("/config")
 			{
-				proConfigGroup.POST("", middle.RolePermission(constants.ROLE_ROOT), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.CreateNewProcess, Body))
-				proConfigGroup.DELETE("", middle.RolePermission(constants.ROLE_ROOT), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.DeleteNewProcess, Query))
-				proConfigGroup.PUT("", middle.RolePermission(constants.ROLE_ROOT), bind(api.ProcApi.UpdateProcessConfig, Body))
-				proConfigGroup.GET("", middle.RolePermission(constants.ROLE_ADMIN), bind(api.ProcApi.GetProcessConfig, Query))
+				proConfigGroup.POST("", middle.RolePermission(eum.RoleRoot), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.CreateNewProcess, Body))
+				proConfigGroup.DELETE("", middle.RolePermission(eum.RoleRoot), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.DeleteNewProcess, Query))
+				proConfigGroup.PUT("", middle.RolePermission(eum.RoleRoot), bind(api.ProcApi.UpdateProcessConfig, Body))
+				proConfigGroup.GET("", middle.RolePermission(eum.RoleAdmin), bind(api.ProcApi.GetProcessConfig, Query))
 			}
 		}
 
 		taskGroup := apiGroup.Group("/task")
 		{
-			taskGroup.GET("", middle.RolePermission(constants.ROLE_ADMIN), bind(api.TaskApi.GetTaskById, Query))
-			taskGroup.GET("/all", middle.RolePermission(constants.ROLE_ADMIN), bind(api.TaskApi.GetTaskList, None))
-			taskGroup.GET("/all/wait", middle.RolePermission(constants.ROLE_ADMIN), middle.TaskWaitCond.WaitGetMiddel, bind(api.TaskApi.GetTaskList, None))
-			taskGroup.POST("", middle.RolePermission(constants.ROLE_ADMIN), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.CreateTask, Body))
-			taskGroup.DELETE("", middle.RolePermission(constants.ROLE_ADMIN), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.DeleteTaskById, Query))
-			taskGroup.PUT("", middle.RolePermission(constants.ROLE_ADMIN), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTask, Body))
-			taskGroup.PUT("/enable", middle.RolePermission(constants.ROLE_ADMIN), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTaskEnable, Body))
-			taskGroup.GET("/start", middle.RolePermission(constants.ROLE_ADMIN), bind(api.TaskApi.StartTask, Query))
-			taskGroup.GET("/stop", middle.RolePermission(constants.ROLE_ADMIN), bind(api.TaskApi.StopTask, Query))
-			taskGroup.POST("/key", middle.RolePermission(constants.ROLE_ADMIN), bind(api.TaskApi.CreateTaskApiKey, Body))
+			taskGroup.GET("", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.GetTaskById, Query))
+			taskGroup.GET("/all", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.GetTaskList, None))
+			taskGroup.GET("/all/wait", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitGetMiddel, bind(api.TaskApi.GetTaskList, None))
+			taskGroup.POST("", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.CreateTask, Body))
+			taskGroup.DELETE("", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.DeleteTaskById, Query))
+			taskGroup.PUT("", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTask, Body))
+			taskGroup.PUT("/enable", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTaskEnable, Body))
+			taskGroup.GET("/start", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.StartTask, Query))
+			taskGroup.GET("/stop", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.StopTask, Query))
+			taskGroup.POST("/key", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.CreateTaskApiKey, Body))
 			taskGroup.GET("/api-key/:key", bind(api.TaskApi.RunTaskByKey, None))
 		}
 
 		userGroup := apiGroup.Group("/user")
 		{
 			userGroup.POST("/login", bind(api.UserApi.LoginHandler, Body))
-			userGroup.POST("", middle.RolePermission(constants.ROLE_ROOT), bind(api.UserApi.CreateUser, Body))
-			userGroup.PUT("/password", middle.RolePermission(constants.ROLE_USER), bind(api.UserApi.ChangePassword, Body))
-			userGroup.DELETE("", middle.RolePermission(constants.ROLE_ROOT), bind(api.UserApi.DeleteUser, Query))
-			userGroup.GET("", middle.RolePermission(constants.ROLE_ROOT), bind(api.UserApi.GetUserList, None))
+			userGroup.POST("", middle.RolePermission(eum.RoleRoot), bind(api.UserApi.CreateUser, Body))
+			userGroup.PUT("/password", middle.RolePermission(eum.RoleUser), bind(api.UserApi.ChangePassword, Body))
+			userGroup.DELETE("", middle.RolePermission(eum.RoleRoot), bind(api.UserApi.DeleteUser, Query))
+			userGroup.GET("", middle.RolePermission(eum.RoleRoot), bind(api.UserApi.GetUserList, None))
 		}
 
-		pushGroup := apiGroup.Group("/push").Use(middle.RolePermission(constants.ROLE_ADMIN))
+		pushGroup := apiGroup.Group("/push").Use(middle.RolePermission(eum.RoleAdmin))
 		{
 			pushGroup.GET("/list", bind(api.PushApi.GetPushList, None))
 			pushGroup.GET("", bind(api.PushApi.GetPushById, Query))
@@ -115,26 +115,26 @@ func routePathInit(r *gin.Engine) {
 			pushGroup.DELETE("", bind(api.PushApi.DeletePushConfig, Query))
 		}
 
-		fileGroup := apiGroup.Group("/file").Use(middle.RolePermission(constants.ROLE_ADMIN))
+		fileGroup := apiGroup.Group("/file").Use(middle.RolePermission(eum.RoleAdmin))
 		{
 			fileGroup.GET("/list", bind(api.FileApi.FilePathHandler, Query))
 			fileGroup.PUT("", bind(api.FileApi.FileWriteHandler, None))
 			fileGroup.GET("", bind(api.FileApi.FileReadHandler, Query))
 		}
 
-		permissionGroup := apiGroup.Group("/permission").Use(middle.RolePermission(constants.ROLE_ROOT))
+		permissionGroup := apiGroup.Group("/permission").Use(middle.RolePermission(eum.RoleRoot))
 		{
 			permissionGroup.GET("/list", bind(api.PermissionApi.GetPermissionList, Query))
 			permissionGroup.PUT("", middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.PermissionApi.EditPermssion, Body))
 		}
 
-		logGroup := apiGroup.Group("/log").Use(middle.RolePermission(constants.ROLE_USER))
+		logGroup := apiGroup.Group("/log").Use(middle.RolePermission(eum.RoleUser))
 		{
 			logGroup.POST("", bind(api.LogApi.GetLog, Body))
 			logGroup.GET("/running", bind(api.LogApi.GetRunningLog, None))
 		}
 
-		configGroup := apiGroup.Group("/config").Use(middle.RolePermission(constants.ROLE_ROOT))
+		configGroup := apiGroup.Group("/config").Use(middle.RolePermission(eum.RoleRoot))
 		{
 			configGroup.GET("", bind(api.ConfigApi.GetSystemConfiguration, None))
 			configGroup.PUT("", bind(api.ConfigApi.SetSystemConfiguration, None))

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -49,7 +49,7 @@ func (t *tui) drawProcessList() {
 			i++
 		}
 		list.AddItem(v.Name, utils.NewKVStr().Add("user_name", v.User).Add("start_time", v.StartTime).Add("state", v.State.State).Build(), 'a'+rune(i), func() {
-			if v.State.State != 1 || v.TermType != constants.TERMINAL_PTY {
+			if v.State.State != 1 || v.TermType != eum.TerminalPty {
 				return
 			}
 			t.teminal(v.Uuid)
@@ -75,8 +75,8 @@ func (t *tui) teminal(uuid int) {
 	tci := &TermConnectInstance{
 		CancelFunc: cancel,
 	}
-	p.AddConn(constants.CONSOLE, tci)
-	defer p.DeleteConn(constants.CONSOLE)
+	p.AddConn(eum.Console, tci)
+	defer p.DeleteConn(eum.Console)
 	os.Stdin.Write([]byte("\033[H\033[2J")) // 清空屏幕
 	p.ReadCache(tci)
 	go t.startConnect(p, ctx, cancel)
@@ -91,11 +91,11 @@ func (t *tui) teminal(uuid int) {
 
 func (t *tui) startConnect(p logic.Process, ctx context.Context, cancel context.CancelFunc) {
 	switch p.Type() {
-	case constants.TERMINAL_PTY:
+	case eum.TerminalPty:
 		{
 			t.ptyConnect(p, ctx, cancel)
 		}
-	case constants.TERMINAL_STD:
+	case eum.TerminalStd:
 		{
 			t.stdConnect(p, ctx, cancel)
 		}

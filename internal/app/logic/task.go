@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/google/uuid"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
@@ -35,6 +36,10 @@ func NewTaskJob(data model.Task) (*TaskJob, error) {
 }
 
 func (t *TaskJob) Run(ctx context.Context) {
+	if ctx.Value(eum.CtxTaskTraceId{}) == nil {
+		ctx = context.WithValue(ctx, eum.CtxTaskTraceId{}, uuid.NewString())
+	}
+	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceId", ctx.Value(eum.CtxTaskTraceId{}))
 	t.Running = true
 	middle.TaskWaitCond.Trigger()
 	defer func() {
@@ -43,7 +48,7 @@ func (t *TaskJob) Run(ctx context.Context) {
 	}()
 	var ok bool
 	// 判断条件是否满足
-	if t.TaskConfig.Condition == constants.PASS {
+	if t.TaskConfig.Condition == eum.TaskCondPass {
 		ok = true
 	} else {
 		proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
@@ -91,6 +96,7 @@ func (t *TaskJob) Run(ctx context.Context) {
 	} else {
 		log.Logger.Infow("任务流结束")
 	}
+	EventLogic.Create(t.TaskConfig.Name, eum.EventProcessStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}))
 }
 
 func (t *TaskJob) InitCronHandle() error {

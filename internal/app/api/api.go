@@ -3,28 +3,28 @@ package api
 import (
 	"reflect"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
-func getRole(ctx *gin.Context) constants.Role {
-	if v, ok := ctx.Get(constants.CTXFLG_ROLE); ok {
-		return v.(constants.Role)
+func getRole(ctx *gin.Context) eum.Role {
+	if v, ok := ctx.Get(eum.CtxRole); ok {
+		return v.(eum.Role)
 	}
-	return constants.ROLE_GUEST
+	return eum.RoleGuest
 }
 
 func getUserName(ctx *gin.Context) string {
-	return ctx.GetString(constants.CTXFLG_USER_NAME)
+	return ctx.GetString(eum.CtxUserName)
 }
 
 func isAdmin(ctx *gin.Context) bool {
-	return getRole(ctx) <= constants.ROLE_ADMIN
+	return getRole(ctx) <= eum.RoleAdmin
 }
 
-func hasOprPermission(ctx *gin.Context, uuid int, op constants.OprPermission) bool {
+func hasOprPermission(ctx *gin.Context, uuid int, op eum.OprPermission) bool {
 	return isAdmin(ctx) || reflect.ValueOf(repository.PermissionRepository.GetPermission(getUserName(ctx), uuid)).FieldByName(string(op)).Bool()
 }
 

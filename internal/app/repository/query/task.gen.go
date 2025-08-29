@@ -28,6 +28,7 @@ func newTask(db *gorm.DB, opts ...gen.DOOption) task {
 	tableName := _task.taskDo.TableName()
 	_task.ALL = field.NewAsterisk(tableName)
 	_task.Id = field.NewInt(tableName, "id")
+	_task.Name = field.NewString(tableName, "name")
 	_task.ProcessId = field.NewInt(tableName, "process_id")
 	_task.Condition = field.NewInt(tableName, "condition")
 	_task.NextId = field.NewInt(tableName, "next_id")
@@ -35,7 +36,7 @@ func newTask(db *gorm.DB, opts ...gen.DOOption) task {
 	_task.TriggerEvent = field.NewInt32(tableName, "trigger_event")
 	_task.TriggerTarget = field.NewInt(tableName, "trigger_target")
 	_task.OperationTarget = field.NewInt(tableName, "operation_target")
-	_task.Cron = field.NewString(tableName, "cron")
+	_task.CronExpression = field.NewString(tableName, "cron")
 	_task.Enable = field.NewBool(tableName, "enable")
 	_task.ApiEnable = field.NewBool(tableName, "api_enable")
 	_task.Key = field.NewString(tableName, "key")
@@ -50,6 +51,7 @@ type task struct {
 
 	ALL             field.Asterisk
 	Id              field.Int
+	Name            field.String
 	ProcessId       field.Int
 	Condition       field.Int
 	NextId          field.Int
@@ -57,7 +59,7 @@ type task struct {
 	TriggerEvent    field.Int32
 	TriggerTarget   field.Int
 	OperationTarget field.Int
-	Cron            field.String
+	CronExpression  field.String
 	Enable          field.Bool
 	ApiEnable       field.Bool
 	Key             field.String
@@ -78,6 +80,7 @@ func (t task) As(alias string) *task {
 func (t *task) updateTableName(table string) *task {
 	t.ALL = field.NewAsterisk(table)
 	t.Id = field.NewInt(table, "id")
+	t.Name = field.NewString(table, "name")
 	t.ProcessId = field.NewInt(table, "process_id")
 	t.Condition = field.NewInt(table, "condition")
 	t.NextId = field.NewInt(table, "next_id")
@@ -85,7 +88,7 @@ func (t *task) updateTableName(table string) *task {
 	t.TriggerEvent = field.NewInt32(table, "trigger_event")
 	t.TriggerTarget = field.NewInt(table, "trigger_target")
 	t.OperationTarget = field.NewInt(table, "operation_target")
-	t.Cron = field.NewString(table, "cron")
+	t.CronExpression = field.NewString(table, "cron")
 	t.Enable = field.NewBool(table, "enable")
 	t.ApiEnable = field.NewBool(table, "api_enable")
 	t.Key = field.NewString(table, "key")
@@ -105,8 +108,9 @@ func (t *task) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (t *task) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 12)
+	t.fieldMap = make(map[string]field.Expr, 13)
 	t.fieldMap["id"] = t.Id
+	t.fieldMap["name"] = t.Name
 	t.fieldMap["process_id"] = t.ProcessId
 	t.fieldMap["condition"] = t.Condition
 	t.fieldMap["next_id"] = t.NextId
@@ -114,7 +118,7 @@ func (t *task) fillFieldMap() {
 	t.fieldMap["trigger_event"] = t.TriggerEvent
 	t.fieldMap["trigger_target"] = t.TriggerTarget
 	t.fieldMap["operation_target"] = t.OperationTarget
-	t.fieldMap["cron"] = t.Cron
+	t.fieldMap["cron"] = t.CronExpression
 	t.fieldMap["enable"] = t.Enable
 	t.fieldMap["api_enable"] = t.ApiEnable
 	t.fieldMap["key"] = t.Key

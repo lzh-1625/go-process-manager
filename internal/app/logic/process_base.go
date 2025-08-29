@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
@@ -27,7 +27,7 @@ type Process interface {
 	doOnInit()
 	doOnKilled()
 	Start() error
-	Type() constants.TerminalType
+	Type() eum.TerminalType
 	SetTerminalSize(int, int)
 }
 
@@ -58,7 +58,7 @@ type ProcessBase struct {
 	State struct {
 		startTime      time.Time
 		Info           string
-		State          constants.ProcessState //0 为未运行，1为运作中，2为异常状态
+		State          eum.ProcessState //0 为未运行，1为运作中，2为异常状态
 		stateLock      sync.Mutex
 		restartTimes   int
 		manualStopFlag bool
@@ -93,7 +93,7 @@ func (p *ProcessBase) watchDog() {
 	}
 	close(p.StopChan)
 	p.doOnKilled()
-	p.SetState(constants.PROCESS_STOP)
+	p.SetState(eum.ProcessStateStop)
 	if state.ExitCode() != 0 {
 		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode(), "进程类型", p.Type())
 		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
@@ -117,7 +117,7 @@ func (p *ProcessBase) watchDog() {
 		return
 	}
 	log.Logger.Warnw("重启次数达到上限", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(constants.PROCESS_WARNNING)
+	p.SetState(eum.ProcessStateWarnning)
 	p.State.Info = "重启次数异常"
 	p.push("进程重启次数达到上限")
 }
@@ -139,7 +139,7 @@ func (p *ProcessBase) pInit() {
 }
 
 // fn 函数执行成功的情况下对state赋值
-func (p *ProcessBase) SetState(state constants.ProcessState, fn ...func() bool) bool {
+func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
 	for _, v := range fn {
@@ -149,8 +149,22 @@ func (p *ProcessBase) SetState(state constants.ProcessState, fn ...func() bool) 
 	}
 	p.State.State = state
 	middle.ProcessWaitCond.Trigger()
+	p.createEvent(state)
 	go TaskLogic.RunTaskByTriggerEvent(p.Name, state)
 	return true
+}
+
+func (p *ProcessBase) createEvent(state eum.ProcessState) {
+	var eventType eum.EventType
+	switch state {
+	case eum.ProcessStateStart:
+		eventType = eum.EventProcessStart
+	case eum.ProcessStateStop:
+		eventType = eum.EventProcessStop
+	case eum.ProcessStateWarnning:
+		eventType = eum.EventProcessWarning
+	}
+	EventLogic.Create(p.Name, eventType, "")
 }
 
 func (p *ProcessBase) GetUserString() string {

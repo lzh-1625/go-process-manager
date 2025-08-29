@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
@@ -25,7 +25,7 @@ func Logger() gin.HandlerFunc {
 		logKv = append(logKv, "Status", ctx.Writer.Status())
 		logKv = append(logKv, "Path", path)
 		logKv = append(logKv, "耗时", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
-		if user, ok := ctx.Get(constants.CTXFLG_USER_NAME); ok {
+		if user, ok := ctx.Get(eum.CtxUserName); ok {
 			logKv = append(logKv, "user", user)
 		}
 		switch {

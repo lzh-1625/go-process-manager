@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
@@ -76,7 +76,7 @@ func (p *processCtlLogic) KillAllProcess() {
 }
 
 func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
-	stopPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, constants.OPERATION_STOP)
+	stopPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStop)
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*ProcessBase)
@@ -183,7 +183,7 @@ func (p *processCtlLogic) ProcessInit() {
 }
 
 func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
-	startPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, constants.OPERATION_START)
+	startPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*ProcessBase)
 		if !slices.Contains(startPermissionProcess, process.Name) {
@@ -225,9 +225,9 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 
 func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessBase, err error) {
 	switch config.TermType {
-	case constants.TERMINAL_STD:
+	case eum.TerminalStd:
 		proc = NewProcessStd(config)
-	case constants.TERMINAL_PTY:
+	case eum.TerminalPty:
 		proc = NewProcessPty(config)
 	default:
 		err = errors.New("终端类型错误")

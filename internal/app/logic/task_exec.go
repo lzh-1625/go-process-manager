@@ -4,21 +4,21 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
 type conditionFunc func(data *model.Task, proc *ProcessBase) bool
 
-var conditionHandle = map[constants.Condition]conditionFunc{
-	constants.RUNNING: func(data *model.Task, proc *ProcessBase) bool {
+var conditionHandle = map[eum.Condition]conditionFunc{
+	eum.TaskCondRunning: func(data *model.Task, proc *ProcessBase) bool {
 		return proc.State.State == 1
 	},
-	constants.NOT_RUNNING: func(data *model.Task, proc *ProcessBase) bool {
+	eum.TaskCondNotRunning: func(data *model.Task, proc *ProcessBase) bool {
 		return proc.State.State != 1
 	},
-	constants.EXCEPTION: func(data *model.Task, proc *ProcessBase) bool {
+	eum.TaskCondException: func(data *model.Task, proc *ProcessBase) bool {
 		return proc.State.State == 2
 	},
 }
@@ -26,8 +26,8 @@ var conditionHandle = map[constants.Condition]conditionFunc{
 // 执行操作，返回结果是否成功
 type operationFunc func(data *model.Task, proc *ProcessBase) bool
 
-var OperationHandle = map[constants.TaskOperation]operationFunc{
-	constants.TASK_START: func(data *model.Task, proc *ProcessBase) bool {
+var OperationHandle = map[eum.TaskOperation]operationFunc{
+	eum.TaskStart: func(data *model.Task, proc *ProcessBase) bool {
 		if proc.State.State == 1 {
 			log.Logger.Debugw("进程已在运行")
 			return false
@@ -36,7 +36,7 @@ var OperationHandle = map[constants.TaskOperation]operationFunc{
 		return true
 	},
 
-	constants.TASK_START_WAIT_DONE: func(data *model.Task, proc *ProcessBase) bool {
+	eum.TaskStartWaitDone: func(data *model.Task, proc *ProcessBase) bool {
 		if proc.State.State == 1 {
 			log.Logger.Debugw("进程已在运行")
 			return false
@@ -55,7 +55,7 @@ var OperationHandle = map[constants.TaskOperation]operationFunc{
 		}
 	},
 
-	constants.TASK_STOP: func(data *model.Task, proc *ProcessBase) bool {
+	eum.TaskStop: func(data *model.Task, proc *ProcessBase) bool {
 		if proc.State.State != 1 {
 			log.Logger.Debugw("进程未在运行")
 			return false
@@ -66,7 +66,7 @@ var OperationHandle = map[constants.TaskOperation]operationFunc{
 		return true
 	},
 
-	constants.TASK_STOP_WAIT_DONE: func(data *model.Task, proc *ProcessBase) bool {
+	eum.TaskStopWaitDone: func(data *model.Task, proc *ProcessBase) bool {
 		if proc.State.State != 1 {
 			log.Logger.Debugw("进程未在运行")
 			return false

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	_ "github.com/lzh-1625/go_process_manager/boot"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 
@@ -32,7 +32,7 @@ func TestCgroup(t *testing.T) {
 		Name:     "test",
 		Cmd:      "bash",
 		Cwd:      `/root`,
-		TermType: constants.TERMINAL_PTY,
+		TermType: eum.TerminalPty,
 	})
 	if err != nil {
 		t.FailNow()

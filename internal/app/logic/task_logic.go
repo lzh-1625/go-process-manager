@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
@@ -154,7 +154,7 @@ func (t *taskLogic) RunTaskByKey(key string) error {
 	return nil
 }
 
-func (t *taskLogic) RunTaskByTriggerEvent(processName string, event constants.ProcessState) {
+func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessState) {
 	taskList := repository.TaskRepository.GetTriggerTask(processName, event)
 	if len(taskList) == 0 {
 		return

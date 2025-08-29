@@ -8,7 +8,7 @@ import (
 	"github.com/google/shlex"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -21,8 +21,8 @@ type ProcessStd struct {
 	stdout    *bufio.Scanner
 }
 
-func (p *ProcessStd) Type() constants.TerminalType {
-	return constants.TERMINAL_STD
+func (p *ProcessStd) Type() eum.TerminalType {
+	return eum.TerminalStd
 }
 
 func (p *ProcessStd) WriteBytes(input []byte) (err error) {
@@ -41,11 +41,11 @@ func (p *ProcessStd) Start() (err error) {
 	defer func() {
 		if err != nil {
 			p.Config.AutoRestart = false
-			p.SetState(constants.PROCESS_WARNNING)
+			p.SetState(eum.ProcessStateWarnning)
 			p.State.Info = "进程启动失败:" + err.Error()
 		}
 	}()
-	if ok := p.SetState(constants.PROCESS_START, func() bool {
+	if ok := p.SetState(eum.ProcessStateStart, func() bool {
 		return p.State.State != 1
 	}); !ok {
 		log.Logger.Warnw("进程已在运行，跳过启动")
