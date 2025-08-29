@@ -164,7 +164,7 @@ func (p *ProcessBase) createEvent(state eum.ProcessState) {
 	case eum.ProcessStateWarnning:
 		eventType = eum.EventProcessWarning
 	}
-	EventLogic.Create(p.Name, eventType, "")
+	EventLogic.Create(p.Name, eventType)
 }
 
 func (p *ProcessBase) GetUserString() string {

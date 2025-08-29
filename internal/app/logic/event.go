@@ -13,7 +13,7 @@ type eventLogic struct{}
 
 var EventLogic = new(eventLogic)
 
-func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv ...any) error {
+func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv ...any) {
 	if len(additionalKv)%2 != 0 {
 		log.Logger.Errorw("参数长度错误", "args", additionalKv)
 	}
@@ -26,5 +26,7 @@ func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv .
 	for i := range len(additionalKv) / 2 {
 		m[additionalKv[2*i]] = additionalKv[2*i+1]
 	}
-	return repository.EventRepository.Create(data)
+	if err := repository.EventRepository.Create(data); err != nil {
+		log.Logger.Errorw("事件创建失败", "err", err)
+	}
 }
