@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -320,6 +321,10 @@ func (p *ProcessBase) initPsutil() {
 }
 
 func (p *ProcessBase) Kill() error {
+	if p.State.State != eum.ProcessStateRunning {
+		return errors.New("can't kill not running process")
+	}
+	p.State.manualStopFlag = true
 	p.op.Signal(syscall.SIGINT)
 	select {
 	case <-p.StopChan:

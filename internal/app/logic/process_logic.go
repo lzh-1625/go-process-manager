@@ -37,10 +37,6 @@ func (p *processCtlLogic) KillProcess(uuid int) error {
 	if !ok {
 		return errors.New("进程类型错误")
 	}
-	if result.State.State != eum.ProcessStateRunning {
-		return nil
-	}
-	result.State.manualStopFlag = true
 	return result.Kill()
 }
 
@@ -61,13 +57,9 @@ func (p *processCtlLogic) KillAllProcess() {
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*ProcessBase)
-		if process.State.State != eum.ProcessStateRunning {
-			return true
-		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			process.State.manualStopFlag = true
 			process.Kill()
 		}()
 		return true
