@@ -2,6 +2,7 @@ package logic
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"os/exec"
 
@@ -46,7 +47,7 @@ func (p *ProcessStd) Start() (err error) {
 		}
 	}()
 	if ok := p.SetState(eum.ProcessStateStart, func() bool {
-		return p.State.State != eum.ProcessStateStart
+		return p.State.State != eum.ProcessStateRunning && p.State.State != eum.ProcessStateStart
 	}); !ok {
 		log.Logger.Warnw("进程已在运行，跳过启动")
 		return nil
@@ -73,6 +74,11 @@ func (p *ProcessStd) Start() (err error) {
 	log.Logger.Infow("进程启动成功", "重启次数", p.State.restartTimes)
 	p.op = cmd.Process
 	p.pInit()
+	if !p.SetState(eum.ProcessStateRunning, func() bool {
+		return p.State.State == eum.ProcessStateStart
+	}) {
+		return errors.New("状态异常启动失败")
+	}
 	p.push("进程启动成功")
 	return nil
 }

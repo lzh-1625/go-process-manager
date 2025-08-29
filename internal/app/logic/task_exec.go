@@ -13,10 +13,10 @@ type conditionFunc func(data *model.Task, proc *ProcessBase) bool
 
 var conditionHandle = map[eum.Condition]conditionFunc{
 	eum.TaskCondRunning: func(data *model.Task, proc *ProcessBase) bool {
-		return proc.State.State == eum.ProcessStateStart
+		return proc.State.State == eum.ProcessStateRunning
 	},
 	eum.TaskCondNotRunning: func(data *model.Task, proc *ProcessBase) bool {
-		return proc.State.State != eum.ProcessStateStart
+		return proc.State.State != eum.ProcessStateRunning && proc.State.State != eum.ProcessStateStart
 	},
 	eum.TaskCondException: func(data *model.Task, proc *ProcessBase) bool {
 		return proc.State.State == eum.ProcessStateWarnning
@@ -28,7 +28,7 @@ type operationFunc func(data *model.Task, proc *ProcessBase) bool
 
 var OperationHandle = map[eum.TaskOperation]operationFunc{
 	eum.TaskStart: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State == eum.ProcessStateStart {
+		if proc.State.State == eum.ProcessStateRunning || proc.State.State == eum.ProcessStateStart {
 			log.Logger.Debugw("进程已在运行", "proc", proc.Name)
 			return false
 		}
@@ -37,7 +37,7 @@ var OperationHandle = map[eum.TaskOperation]operationFunc{
 	},
 
 	eum.TaskStartWaitDone: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State == eum.ProcessStateStart {
+		if proc.State.State == eum.ProcessStateRunning || proc.State.State == eum.ProcessStateStart {
 			log.Logger.Debugw("进程已在运行", "proc", proc.Name)
 			return false
 		}
@@ -56,7 +56,7 @@ var OperationHandle = map[eum.TaskOperation]operationFunc{
 	},
 
 	eum.TaskStop: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State != eum.ProcessStateStart {
+		if proc.State.State != eum.ProcessStateRunning {
 			log.Logger.Debugw("进程未在运行", "proc", proc.Name)
 			return false
 		}
@@ -67,7 +67,7 @@ var OperationHandle = map[eum.TaskOperation]operationFunc{
 	},
 
 	eum.TaskStopWaitDone: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State != eum.ProcessStateStart {
+		if proc.State.State != eum.ProcessStateRunning {
 			log.Logger.Debugw("进程未在运行", "proc", proc.Name)
 			return false
 		}
