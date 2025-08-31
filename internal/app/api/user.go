@@ -27,7 +27,6 @@ func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any 
 		return err
 	}
 	return gin.H{
-		"code":     0,
 		"token":    token,
 		"username": req.Account,
 		"role":     repository.UserRepository.GetUserByName(req.Account).Role,

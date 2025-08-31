@@ -1,4 +1,9 @@
 export default {
+  login: {
+    account: "账号",
+    password: "密码",
+    button: "登入",
+  },
   common: {
     add: "新增",
     cancel: "取消",
@@ -10,17 +15,6 @@ export default {
     contact: "联系我们",
     tos: "服务条款",
     policy: "隐私政策",
-  },
-  login: {
-    title: "登录",
-    email: "电子邮件",
-    password: "密码",
-    button: "登录",
-    orsign: "或使用",
-    forgot: "忘记密码？",
-    noaccount: "还没有帐号？",
-    create: "在此处创建一个",
-    error: "电子邮件/密码组合无效",
   },
   register: {
     title: "创建帐号",
@@ -34,7 +28,7 @@ export default {
     signin: "登录",
   },
   menu: {
-    process: '进程管理',
+    process: "进程管理",
     search: "搜索（按“ Ctrl + /”进行聚焦）",
     dashboard: "仪表板",
     logout: "登出",
@@ -246,4 +240,5 @@ export default {
       },
     },
   },
-}; ``
+};
+``;

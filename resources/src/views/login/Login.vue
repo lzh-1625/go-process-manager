@@ -6,7 +6,7 @@ const isLoading = ref(false);
 const isSignInDisabled = ref(false);
 
 const refLoginForm = ref();
-const username = ref("");
+const account = ref("");
 const password = ref("");
 const isFormValid = ref(true);
 
@@ -18,7 +18,7 @@ const handleLogin = async () => {
     isLoading.value = true;
     isSignInDisabled.value = true;
     login({
-      username: username.value,
+      account: account.value,
       password: password.value,
     }).then((e) => {
       isLoading.value = false;
@@ -62,7 +62,7 @@ const resetErrors = () => {
       >
         <v-text-field
           ref="refAccount"
-          v-model="username"
+          v-model="account"
           required
           :error="error"
           :label="$t('login.account')"
