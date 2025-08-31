@@ -39,7 +39,8 @@ func (t *TaskJob) Run(ctx context.Context) {
 	if ctx.Value(eum.CtxTaskTraceId{}) == nil {
 		ctx = context.WithValue(ctx, eum.CtxTaskTraceId{}, uuid.NewString())
 	}
-	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceId", ctx.Value(eum.CtxTaskTraceId{}))
+	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string))
+	defer EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string))
 	t.Running = true
 	middle.TaskWaitCond.Trigger()
 	defer func() {
@@ -71,7 +72,7 @@ func (t *TaskJob) Run(ctx context.Context) {
 	// 执行操作
 	log.Logger.Infow("任务开始执行")
 	if !OperationHandle[t.TaskConfig.Operation](t.TaskConfig, proc) {
-		log.Logger.Errorw("任务执行失败")
+		log.Logger.Warnw("任务执行失败")
 		return
 	}
 	log.Logger.Infow("任务执行成功", "target", t.TaskConfig.OperationTarget)
@@ -96,7 +97,6 @@ func (t *TaskJob) Run(ctx context.Context) {
 	} else {
 		log.Logger.Infow("任务流结束")
 	}
-	EventLogic.Create(t.TaskConfig.Name, eum.EventProcessStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}))
 }
 
 func (t *TaskJob) InitCronHandle() error {

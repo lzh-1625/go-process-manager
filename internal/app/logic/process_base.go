@@ -158,12 +158,14 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 func (p *ProcessBase) createEvent(state eum.ProcessState) {
 	var eventType eum.EventType
 	switch state {
-	case eum.ProcessStateStart:
+	case eum.ProcessStateRunning:
 		eventType = eum.EventProcessStart
 	case eum.ProcessStateStop:
 		eventType = eum.EventProcessStop
 	case eum.ProcessStateWarnning:
 		eventType = eum.EventProcessWarning
+	default:
+		return
 	}
 	EventLogic.Create(p.Name, eventType)
 }
