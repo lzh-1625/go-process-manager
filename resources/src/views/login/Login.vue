@@ -25,9 +25,9 @@ const handleLogin = async () => {
       isSignInDisabled.value = false;
 
       if (e.code === 0) {
-        localStorage.setItem("token", e.data.token);
-        localStorage.setItem("permission", e.data.permission);
-        localStorage.setItem("name", username.value);
+        localStorage.setItem("token", e.data?.token!);
+        localStorage.setItem("role", e.data?.role.toString()!);
+        localStorage.setItem("name", e.data?.username!);
         router.push("/");
       }
     });
@@ -90,7 +90,6 @@ const resetErrors = () => {
           variant="underlined"
           color="primary"
           bg-color="#fff"
-          :rules="passwordRules"
           name="password"
           outlined
           validateOn="blur"
