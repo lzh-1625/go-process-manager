@@ -15,7 +15,7 @@ func (p *processRepository) GetAllProcessConfig() []model.Process {
 	tx := db.Find(&result)
 	if tx.Error != nil {
 		log.Logger.Error(tx.Error)
-		return []model.Process{}
+		return nil
 	}
 	return result
 }
@@ -28,7 +28,7 @@ func (p *processRepository) GetProcessConfigByUser(username string) []model.Proc
 		Scan(&result)
 	if err != nil {
 		log.Logger.Error(err)
-		return []model.Process{}
+		return nil
 	}
 	return result
 }
