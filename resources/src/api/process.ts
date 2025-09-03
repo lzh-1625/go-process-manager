@@ -1,11 +1,12 @@
+import { ProcessItem } from "../types/process/process";
 import api from "./api";
 
 export function getProcessList() {
-  return api.get("/process", undefined).then((res) => res);
+  return api.get<ProcessItem[]>("/process", undefined).then((res) => res);
 }
 
 export function getProcessListWait() {
-  return api.get("/process/wait", undefined).then((res) => res);
+  return api.get<ProcessItem[]>("/process/wait", undefined).then((res) => res);
 }
 
 export function killProcessAll(uuid) {

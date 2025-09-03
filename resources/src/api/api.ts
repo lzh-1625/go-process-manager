@@ -40,7 +40,7 @@ class RequestHttp {
     this.service.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem("token") || "";
-        config.headers.Authorization = token;
+        config.headers.Authorization = "bearer " + token;
         config.url = "/api" + config.url;
         return config;
       },
