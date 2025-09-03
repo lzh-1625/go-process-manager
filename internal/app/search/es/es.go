@@ -3,7 +3,6 @@ package es
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -93,8 +92,6 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 		case sr.NotWildCard:
 			notQuery = append(notQuery, elastic.NewWildcardQuery("log.keyword", "*"+v.Content+"*"))
 		}
-		fmt.Printf("v.Cond: %v\n", v.Cond)
-		fmt.Printf("v.Content: %v\n", v.Content)
 	}
 
 	if req.Match.Name != "" {
