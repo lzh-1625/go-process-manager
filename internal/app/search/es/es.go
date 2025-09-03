@@ -85,8 +85,9 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 		switch v.Cond {
 		case sr.Match:
 			queryList = append(queryList, elastic.NewMatchQuery("log", v.Content))
+			queryList = append(queryList, elastic.NewMatchPhraseQuery("log", v.Content))
 		case sr.NotMatch:
-			notQuery = append(notQuery, elastic.NewMatchQuery("log", v.Content))
+			notQuery = append(notQuery, elastic.NewMatchPhraseQuery("log", v.Content))
 		case sr.WildCard:
 			queryList = append(queryList, elastic.NewWildcardQuery("log.keyword", "*"+v.Content+"*"))
 		case sr.NotWildCard:
