@@ -3,8 +3,10 @@ package search
 import (
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/lzh-1625/go_process_manager/utils"
 )
 
 type LogLogic interface {
@@ -46,7 +48,7 @@ func QueryStringAnalysis(s string) (query []Query) {
 	if strings.TrimSpace(s) == "" {
 		return
 	}
-	strList := strings.Fields(s)
+	strList := utils.UnwarpIgnore(shlex.Split(s))
 	for _, v := range strList {
 		switch {
 		case strings.HasPrefix(v, "!^"):
