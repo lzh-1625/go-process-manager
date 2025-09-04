@@ -4,9 +4,9 @@ import (
 	"errors"
 	"runtime"
 	"slices"
-	"strings"
 	"sync"
 
+	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -209,7 +209,7 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	result.Config.cpuLimit = config.CpuLimit
 	result.Config.AutoRestart = config.AutoRestart
 	result.Config.compulsoryRestart = config.CompulsoryRestart
-	result.StartCommand = strings.Fields(config.Cmd)
+	result.StartCommand = utils.UnwarpIgnore(shlex.Split(config.Cmd))
 	result.WorkDir = config.Cwd
 	result.Name = config.Name
 	return nil
