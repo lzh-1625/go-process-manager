@@ -1,7 +1,6 @@
 package search
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -47,7 +46,7 @@ func QueryStringAnalysis(s string) (query []Query) {
 	if strings.TrimSpace(s) == "" {
 		return
 	}
-	strList := strings.Split(s, " ")
+	strList := strings.Fields(s)
 	for _, v := range strList {
 		switch {
 		case strings.HasPrefix(v, "!^"):
@@ -64,6 +63,5 @@ func QueryStringAnalysis(s string) (query []Query) {
 			query = append(query, Query{Match, v})
 		}
 	}
-	fmt.Printf("query: %v\n", query)
 	return
 }
