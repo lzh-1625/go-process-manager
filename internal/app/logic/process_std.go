@@ -143,10 +143,7 @@ func NewProcessStd(pconfig model.Process) *ProcessBase {
 		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
 		WorkDir:      pconfig.Cwd,
 	}
-	processStd := ProcessStd{
-		ProcessBase: &p,
-	}
-	p.Process = &processStd
-	processStd.setProcessConfig(pconfig)
+	p.Process = &ProcessStd{ProcessBase: &p}
+	p.setProcessConfig(pconfig)
 	return &p
 }
