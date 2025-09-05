@@ -44,9 +44,8 @@ func (p *processRepository) AddProcessConfig(process model.Process) (id int, err
 }
 
 func (p *processRepository) DeleteProcessConfig(uuid int) error {
-	return db.Delete(&model.Process{
-		Uuid: uuid,
-	}).Error
+	_, err := query.Process.Where(query.Process.Uuid.Eq(uuid)).Delete()
+	return err
 }
 
 func (p *processRepository) GetProcessConfigById(uuid int) (data model.Process, err error) {
