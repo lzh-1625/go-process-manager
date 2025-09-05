@@ -144,10 +144,7 @@ func NewProcessPty(pconfig model.Process) *ProcessBase {
 		StartCommand: strings.Split(pconfig.Cmd, " "),
 		WorkDir:      pconfig.Cwd,
 	}
-	processPty := ProcessPty{
-		ProcessBase: &p,
-	}
-	p.Process = &processPty
-	processPty.setProcessConfig(pconfig)
+	p.Process = &ProcessPty{ProcessBase: &p}
+	p.setProcessConfig(pconfig)
 	return &p
 }
