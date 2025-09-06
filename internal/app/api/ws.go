@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -46,9 +47,15 @@ func (w *WsConnetInstance) Cancel() {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // 允许所有跨域请求
+	},
 }
 
 func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
+	if !hasOprPermission(ctx, req.Uuid, eum.OperationTerminal) {
+		return errors.New("not permission")
+	}
 	reqUser := getUserName(ctx)
 	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil {

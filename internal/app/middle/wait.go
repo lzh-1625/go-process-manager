@@ -43,7 +43,7 @@ func (p *waitCond) Trigger() {
 }
 
 func (p *waitCond) WaitGetMiddel(c *gin.Context) {
-	reqUser := c.GetHeader("token")
+	reqUser := c.GetHeader("Uuid")
 	defer p.timeMap.Store(reqUser, p.ts)
 	if ts, ok := p.timeMap.Load(reqUser); !ok || ts.(int64) > p.ts {
 		c.Next()

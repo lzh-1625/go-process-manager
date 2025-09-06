@@ -45,12 +45,18 @@ func (p *procApi) DeleteNewProcess(ctx *gin.Context, req struct {
 func (p *procApi) KillProcess(ctx *gin.Context, req struct {
 	Uuid int `form:"uuid" binding:"required"`
 }) (err error) {
+	if !hasOprPermission(ctx, req.Uuid, eum.OperationStop) {
+		return errors.New("not permission")
+	}
 	return logic.ProcessCtlLogic.KillProcess(req.Uuid)
 }
 
 func (p *procApi) StartProcess(ctx *gin.Context, req struct {
-	Uuid int `form:"uuid" binding:"required"`
+	Uuid int `json:"uuid" binding:"required"`
 }) (err error) {
+	if !hasOprPermission(ctx, req.Uuid, eum.OperationStart) {
+		return errors.New("not permission")
+	}
 	prod, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
 	if err != nil { // 进程不存在则创建
 		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)

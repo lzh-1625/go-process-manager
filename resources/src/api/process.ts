@@ -1,4 +1,4 @@
-import { ProcessItem } from "../types/process/process";
+import { ProcessConfig, ProcessItem } from "../types/process/process";
 import api from "./api";
 
 export function getProcessList() {
@@ -30,7 +30,7 @@ export function getContorl(uuid) {
 }
 
 export function getProcessConfig(uuid) {
-  return api.get("/process/config", { uuid }).then((res) => res);
+  return api.get<ProcessConfig>("/process/config", { uuid }).then((res) => res);
 }
 
 export function deleteProcessConfig(uuid) {

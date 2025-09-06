@@ -58,16 +58,16 @@ func routePathInit(r *gin.Engine) {
 	{
 		wsGroup := apiGroup.Group("/ws")
 		{
-			wsGroup.GET("", middle.OprPermission(eum.OperationTerminal), bind(api.WsApi.WebsocketHandle, Query))
+			wsGroup.GET("", bind(api.WsApi.WebsocketHandle, Query))
 			wsGroup.GET("/share", bind(api.WsApi.WebsocketShareHandle, Query))
 		}
 
 		processGroup := apiGroup.Group("/process")
 		{
-			processGroup.DELETE("", middle.OprPermission(eum.OperationStop), bind(api.ProcApi.KillProcess, Query))
+			processGroup.DELETE("", bind(api.ProcApi.KillProcess, Query))
 			processGroup.GET("", bind(api.ProcApi.GetProcessList, None))
 			processGroup.GET("/wait", middle.ProcessWaitCond.WaitGetMiddel, bind(api.ProcApi.GetProcessList, None))
-			processGroup.PUT("", middle.OprPermission(eum.OperationStart), bind(api.ProcApi.StartProcess, Query))
+			processGroup.PUT("", bind(api.ProcApi.StartProcess, Body))
 			processGroup.PUT("/all", bind(api.ProcApi.StartAllProcess, None))
 			processGroup.DELETE("/all", bind(api.ProcApi.KillAllProcess, None))
 			processGroup.POST("/share", middle.RolePermission(eum.RoleAdmin), bind(api.ProcApi.ProcessCreateShare, Body))

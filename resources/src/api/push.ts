@@ -1,3 +1,4 @@
+import { PushItem } from "../types/push/push";
 import api from "./api";
 
 export function createPush(data) {
@@ -5,7 +6,7 @@ export function createPush(data) {
 }
 
 export function getPushList() {
-  return api.get("/push/list", undefined).then((res) => res);
+  return api.get<PushItem[]>("/push/list", undefined).then((res) => res);
 }
 
 export function deletePush(id) {

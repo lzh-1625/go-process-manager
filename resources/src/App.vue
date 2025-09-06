@@ -45,7 +45,6 @@ onMounted(() => {
     <component :is="currentLayout" v-if="isRouterLoaded">
       <router-view> </router-view>
     </component>
-    <BackToTop />
     <Snackbar />
   </v-app>
 </template>
