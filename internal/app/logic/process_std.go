@@ -87,10 +87,14 @@ func (p *ProcessStd) doOnInit() {
 	p.cacheLine = make([]string, config.CF.ProcessMsgCacheLinesLimit)
 }
 
-func (p *ProcessStd) ReadCache(ws ConnectInstance) {
+func (p *ProcessStd) ReadCache(ws ConnectInstance) error {
+	if len(p.cacheLine) == 0 {
+		return errors.New("cache is null")
+	}
 	for _, line := range p.cacheLine {
 		ws.WriteString(line)
 	}
+	return nil
 }
 
 func (p *ProcessStd) doOnKilled() {

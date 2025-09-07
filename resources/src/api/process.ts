@@ -9,12 +9,12 @@ export function getProcessListWait() {
   return api.get<ProcessItem[]>("/process/wait", undefined).then((res) => res);
 }
 
-export function killProcessAll(uuid) {
-  return api.delete("/process/all", { uuid }).then((res) => res);
+export function killProcessAll() {
+  return api.delete("/process/all", {  }).then((res) => res);
 }
 
-export function startProcessAll(uuid) {
-  return api.put("/process/all", { uuid }).then((res) => res);
+export function startProcessAll() {
+  return api.put("/process/all", {  }).then((res) => res);
 }
 
 export function killProcess(uuid) {

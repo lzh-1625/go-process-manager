@@ -2,6 +2,7 @@ package logic
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"strings"
@@ -113,10 +114,12 @@ func (p *ProcessPty) readInit() {
 	}
 }
 
-func (p *ProcessPty) ReadCache(ws ConnectInstance) {
-	if p.cacheBytesBuf != nil {
-		ws.Write(p.cacheBytesBuf.Bytes())
+func (p *ProcessPty) ReadCache(ws ConnectInstance) error {
+	if p.cacheBytesBuf == nil {
+		return errors.New("cache is null")
 	}
+	ws.Write(p.cacheBytesBuf.Bytes())
+	return nil
 }
 
 func (p *ProcessPty) bufHanle(b []byte) {

@@ -122,8 +122,12 @@ func (p *ProcessPty) readInit() {
 	}
 }
 
-func (p *ProcessPty) ReadCache(ws ConnectInstance) {
+func (p *ProcessPty) ReadCache(ws ConnectInstance) error {
+	if p.cacheBytesBuf == nil {
+		return errors.New("cache is null")
+	}
 	ws.Write(p.cacheBytesBuf.Bytes())
+	return nil
 }
 
 func (p *ProcessPty) bufHanle(b []byte) {

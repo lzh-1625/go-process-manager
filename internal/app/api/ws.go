@@ -71,7 +71,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	if err != nil {
 		return err
 	}
-
+	defer conn.Close()
 	log.Logger.Infow("ws连接成功")
 
 	wsCtx, cancel := context.WithCancel(context.Background())
@@ -79,8 +79,10 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 		WsConnect:  conn,
 		CancelFunc: cancel,
 		wsLock:     sync.Mutex{},
+	} 
+	if err := proc.ReadCache(wci); err != nil {
+		return nil
 	}
-	proc.ReadCache(wci)
 	if proc.State.State == eum.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
 		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, eum.OperationTerminalWrite))
@@ -99,7 +101,6 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	case <-wsCtx.Done():
 		log.Logger.Infow("ws连接断开", "操作类型", "tcp连接建立已被关闭")
 	}
-	conn.Close()
 	return
 }
 
@@ -129,7 +130,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if err != nil {
 		return err
 	}
-
+	defer conn.Close()
 	log.Logger.Infow("ws连接成功")
 	data.UpdatedAt = time.Now()
 	repository.WsShare.Edit(data)
@@ -141,7 +142,9 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 		CancelFunc: cancel,
 		wsLock:     sync.Mutex{},
 	}
-	proc.ReadCache(wci)
+	if err := proc.ReadCache(wci); err != nil {
+		return nil
+	}
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddConn(guestName, wci)
 	defer proc.DeleteConn(guestName)
@@ -159,7 +162,6 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	case <-time.After(time.Until(data.ExpireTime)):
 		log.Logger.Infow("ws连接断开", "操作类型", "分享时间已结束")
 	}
-	conn.Close()
 	return
 }
 

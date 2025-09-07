@@ -2,7 +2,12 @@
 import { ProcessItem } from "~/src/types/process/process";
 import { init } from "echarts";
 import TerminalPty from "./TerminalPty.vue";
-import { killProcess, startProcess } from "~/src/api/process";
+import {
+  deleteProcessConfig,
+  getContorl,
+  killProcess,
+  startProcess,
+} from "~/src/api/process";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
 let chartInstance;
@@ -17,7 +22,7 @@ const initEChart = () => {
   );
   const cpu = props.data.usage.cpu[props.data.usage.cpu.length - 1] ?? "-";
   const mem = props.data.usage.mem[props.data.usage.mem.length - 1] ?? "-";
-  var myChart = init(document.getElementById("echarts" + props.index));
+  var myChart = init(document.getElementById("echarts" + props.data.uuid));
   var option = {
     tooltip: {
       trigger: "axis",
@@ -95,7 +100,7 @@ const initEChart = () => {
         name: "CPU限制（%）",
         type: "line",
         yAxisIndex: 0,
-        data: new Array(props.data.usage.time!.length).fill(
+        data: new Array(props.data.usage.time?.length ?? 0).fill(
           props.data.cpuLimit
         ),
         lineStyle: {
@@ -110,7 +115,7 @@ const initEChart = () => {
         name: "内存限制（MB）",
         type: "line",
         yAxisIndex: 1,
-        data: new Array(props.data.usage.time!.length).fill(
+        data: new Array(props.data.usage.time?.length ?? 0).fill(
           props.data.memoryLimit
         ),
         lineStyle: {
@@ -132,7 +137,6 @@ const terminalComponent = ref<WsHandle | null>(null);
 
 type ConfigHandle = {
   openConfigDialog: () => void;
-  test: () => void;
 };
 const processConfigComponent = ref<ConfigHandle | null>(null);
 
@@ -182,8 +186,23 @@ onMounted(() => {
 
 const props = defineProps<{
   data: ProcessItem;
-  index: Number;
 }>();
+
+const control = () => {
+  getContorl(props.data.uuid).then((e) => {
+    if (e.code === 0) {
+      snackbarStore.showSuccessMessage("sucess");
+    }
+  });
+};
+
+const del = () => {
+  deleteProcessConfig(props.data.uuid).then((e) => {
+    if (e.code === 0) {
+      snackbarStore.showSuccessMessage("sucess");
+    }
+  });
+};
 </script>
 <template>
   <div class="chart-container">
@@ -231,8 +250,8 @@ const props = defineProps<{
           </template>
 
           <v-list nav dense>
-            <v-list-item @click=""> 获取控制权 </v-list-item>
-            <v-list-item @click=""> 删除进程 </v-list-item>
+            <v-list-item @click="control"> 获取控制权 </v-list-item>
+            <v-list-item @click="del"> 删除进程 </v-list-item>
             <v-list-item @click=""> 创建分享链接 </v-list-item>
           </v-list>
         </v-menu>
@@ -240,7 +259,7 @@ const props = defineProps<{
     </div>
 
     <!-- 中间：ECharts -->
-    <div :id="'echarts' + props.index" class="chart"></div>
+    <div :id="'echarts' + props.data.uuid" class="chart"></div>
 
     <!-- 底部：按钮组 + 时间 -->
     <div class="footer">
@@ -274,7 +293,10 @@ const props = defineProps<{
       ref="terminalComponent"
     ></TerminalPty>
     <TerminalPty v-else :data="props.data"></TerminalPty>
-    <ProcessConfig :data="props.data" ref="processConfigComponent"></ProcessConfig>
+    <ProcessConfig
+      :data="props.data"
+      ref="processConfigComponent"
+    ></ProcessConfig>
   </div>
 </template>
 

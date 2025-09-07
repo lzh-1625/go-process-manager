@@ -5,8 +5,8 @@ import { ProcessItem } from "~/src/types/process/process";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { AttachAddon } from "xterm-addon-attach";
-import { CanvasAddon } from '@xterm/addon-canvas';
-import 'xterm/css/xterm.css';
+import { CanvasAddon } from "@xterm/addon-canvas";
+import "xterm/css/xterm.css";
 
 const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
@@ -35,7 +35,6 @@ watch(dialog, (newValue) => {
   }
 });
 
-
 const initWebSocketPty = () => {
   if (!xtermEl.value) {
     snackbarStore.showErrorMessage("终端容器初始化失败");
@@ -46,7 +45,9 @@ const initWebSocketPty = () => {
   const initialRows = Math.floor(xtermEl.value.clientHeight / 19);
 
   const baseUrl = `ws://${window.location.hostname}:8797/api/ws`;
-  const url = `${baseUrl}?uuid=${props.data.uuid}&token=${localStorage.getItem("token")}&cols=${initialCols}&rows=${initialRows}`;
+  const url = `${baseUrl}?uuid=${props.data.uuid}&token=${localStorage.getItem(
+    "token"
+  )}&cols=${initialCols}&rows=${initialRows}`;
 
   initSocket(url);
 };
@@ -61,6 +62,7 @@ const initSocket = (url: string) => {
 
   socket.onclose = () => {
     snackbarStore.showErrorMessage("终端连接断开");
+    dialog.value = false;
   };
 
   socket.onerror = (err) => {
@@ -71,15 +73,15 @@ const initSocket = (url: string) => {
 
 const initTerm = () => {
   if (!socket || !xtermEl.value) return;
-
+  const showCursor = props.data.state.state === 3;
   term = new Terminal({
-    // rendererType: "canvas", // 已通过插件方式加载，此处无需设置
     convertEol: true,
     disableStdin: false,
-    cursorBlink: true,
+    cursorBlink: showCursor,
+    cursorStyle: "block",
     theme: {
       foreground: "#ECECEC",
-      cursor: "help",
+      cursor:  "help"
     },
   });
 
@@ -106,6 +108,13 @@ const wsClose = () => {
   cleanup();
 };
 
+const toolbarColor = computed(() => {
+  if (props.data.state.state == 3) {
+    return;
+  }
+  return "red";
+});
+
 const cleanup = () => {
   window.removeEventListener("resize", handleResize);
   if (term) {
@@ -129,7 +138,7 @@ onUnmounted(() => {
     hide-overlay
     transition="dialog-bottom-transition"
     v-model="dialog"
-    @update:modelValue="val => !val && cleanup()"
+    @update:modelValue="(val) => !val && cleanup()"
   >
     <v-card
       style="
@@ -141,8 +150,8 @@ onUnmounted(() => {
     >
       <v-toolbar
         dense
+        :color="toolbarColor"
         dark
-        color="blue-grey darken-4"
         style="height: 35px; flex-grow: 0"
       >
         <v-toolbar-title style="height: 100%"
@@ -155,7 +164,11 @@ onUnmounted(() => {
           </v-btn>
         </v-toolbar-items>
       </v-toolbar>
-      <div id="xterm" ref="xtermEl" style="flex-grow: 1; height: 100%; width: 100%;"></div>
+      <div
+        id="xterm"
+        ref="xtermEl"
+        style="flex-grow: 1; height: 100%; width: 100%"
+      ></div>
     </v-card>
   </v-dialog>
 </template>
