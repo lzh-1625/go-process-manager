@@ -5,8 +5,8 @@ import menuCharts from "./menus/charts.menu";
 import menuUML from "./menus/uml.menu";
 import menuLanding from "./menus/landing.menu";
 import menuData from "./menus/data.menu";
-import menuAi from "./menus/ai.menu";
-import menuProcess from "./menus/process.menus"
+import menuProcess from "./menus/process.menus";
+import menuTask from "./menus/task.menus";
 
 export default {
   menu: [
@@ -25,6 +25,10 @@ export default {
     {
       text: "process",
       items: menuProcess,
+    },
+    {
+      text: "task",
+      items: menuTask,
     },
     {
       text: "Apps",

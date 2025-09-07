@@ -1,5 +1,5 @@
 <template>
-  <div class="toolbar">
+  <!-- <div class="toolbar">
     <ConfirmButton @confirm="startAll" color="#3CB371">全部启动</ConfirmButton>
     <ConfirmButton @confirm="killAll" color="#CD5555">全部停止</ConfirmButton>
     <v-btn
@@ -9,7 +9,7 @@
       @click="processCreateComponent?.createProcessDialog()"
       >创建<v-icon dark right> mdi-plus-circle </v-icon>
     </v-btn>
-  </div>
+  </div> -->
   <v-container>
     <!-- 顶部工具栏 -->
 
@@ -100,7 +100,6 @@ onMounted(() => {
   gap: 10px;
   margin-bottom: 20px;
   padding: 4px 0;
-  border-bottom: 1px solid #eee; /* 轻量分隔线 */
 }
 
 /* 原来的网格样式 */
@@ -126,5 +125,16 @@ onMounted(() => {
 .responsive-box:hover {
   transform: translateY(-6px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
 }
 </style>
