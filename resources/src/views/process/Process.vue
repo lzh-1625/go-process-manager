@@ -31,7 +31,6 @@ import {
   killProcessAll,
   startProcessAll,
 } from "~/src/api/process";
-import ConfirmButton from "~/src/components/ConfirmButton.vue";
 import ProcessCreate from "~/src/components/process/ProcessCreate.vue";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { ProcessItem } from "~/src/types/process/process";

@@ -1,7 +1,8 @@
+import { TaskItem } from "../types/tassk/task";
 import api from "./api";
 
 export function getTaskAll() {
-  return api.get("/task/all", undefined).then((res) => res);
+  return api.get<TaskItem[]>("/task/all", undefined).then((res) => res);
 }
 
 export function getTaskAllWait() {
@@ -9,7 +10,7 @@ export function getTaskAllWait() {
 }
 
 export function getTaskById(id) {
-  return api.get("/task", { id }).then((res) => res);
+  return api.get<TaskItem>("/task", { id }).then((res) => res);
 }
 
 export function startTaskById(id) {
