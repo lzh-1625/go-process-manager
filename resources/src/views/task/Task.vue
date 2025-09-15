@@ -66,121 +66,160 @@
         <!-- 这里可以放底部说明或按钮 -->
         <v-icon class="mr-2" v-if="!item.running"> mdi-play </v-icon>
         <v-icon class="mr-2" v-else> mdi-stop </v-icon>
-        <v-icon class="mr-2"> mdi-pencil </v-icon>
+        <v-icon class="mr-2" @click="editTaskBefore(item)"> mdi-pencil </v-icon>
         <v-icon> mdi-delete </v-icon>
       </template>
     </v-data-table>
   </v-card>
 
-  <v-dialog v-model="taskDialog" max-width="500px">
-    <v-card>
-      <v-card-title class="text-h5">{{
-        addTask ? "添加任务" : "修改任务"
-      }}</v-card-title>
-      <v-card-text style="margin-top: 20px">
-        <v-autocomplete
-          label="判断条件"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="conditionSelect"
-          v-model="taskForm.condition"
-        ></v-autocomplete>
-        <v-autocomplete
-          v-if="taskForm.condition != 3"
-          label="判断目标"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="processSelect"
-          v-model="taskForm.processId"
-        ></v-autocomplete>
-        <v-autocomplete
-          label="操作目标"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="processSelect"
-          v-model="taskForm.operationTarget"
-        ></v-autocomplete>
-        <v-autocomplete
-          label="执行操作"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="operationSelect"
-          v-model="taskForm.operation"
-        ></v-autocomplete>
-        <v-autocomplete
-          label="触发目标"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="processSelect"
-          v-model="taskForm.triggerTarget"
-        ></v-autocomplete>
-        <v-autocomplete
-          v-if="taskForm.triggerTarget != null"
-          label="触发事件"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="eventSelect"
-          v-model="taskForm.triggerEvent"
-        ></v-autocomplete>
-        <v-autocomplete
-          label="后续任务"
-          item-text="name"
-          item-value="value"
-          filled
-          dense
-          :items="taskSelect"
-          v-model="taskForm.nextId"
-        ></v-autocomplete>
-        <v-text-field
-          label="定时任务"
-          filled
-          dense
-          v-model="taskForm.cron"
-        ></v-text-field>
-        <v-text-field
-          @click="copyToClipboard"
-          :disabled="taskForm?.key == null"
-          label="api"
-          filled
-          dense
-          readonly
-          :value="taskForm.key != null ? urlBase + taskForm.key : '未创建api'"
-        ></v-text-field>
+  <v-dialog v-model="taskDialog" max-width="600px" persistent>
+    <v-card class="rounded-xl">
+      <!-- 标题 -->
+      <v-card-title class="text-h6 font-weight-medium">
+        {{ isAdd ? "添加任务" : "修改任务" }}
+      </v-card-title>
 
-        <v-btn @click="changeApi" color="primary">
-          {{ taskForm?.key != null ? "刷新api" : "创建api" }}
-          <v-icon right dark>
-            {{ taskForm?.key != null ? "mdi-refresh" : "mdi-plus" }}</v-icon
-          >
-        </v-btn>
+      <v-divider></v-divider>
+
+      <!-- 表单内容 -->
+      <v-card-text class="pt-6">
+        <v-container fluid>
+          <v-row dense>
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                label="判断条件"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="conditionSelect"
+                v-model="taskForm.condition"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                :disabled="taskForm.condition == 3"
+                label="判断目标"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="processSelect"
+                v-model="taskForm.processId"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                label="操作目标"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="processSelect"
+                v-model="taskForm.operationTarget"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                label="执行操作"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="operationSelect"
+                v-model="taskForm.operation"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                label="触发目标"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="processSelect"
+                v-model="taskForm.triggerTarget"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                :disabled="taskForm.triggerTarget == null"
+                label="触发事件"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="eventSelect"
+                v-model="taskForm.triggerEvent"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                label="后续任务"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="taskSelect"
+                v-model="taskForm.nextId"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
+                label="定时任务"
+                variant="outlined"
+                density="comfortable"
+                v-model="taskForm.cron"
+              />
+            </v-col>
+
+            <v-col cols="12">
+              <v-text-field
+                label="API"
+                variant="outlined"
+                density="comfortable"
+                readonly
+                v-model="apiUrl"
+                append-inner-icon="mdi-content-copy"
+                @click:append-inner="copyToClipboard"
+              />
+            </v-col>
+          </v-row>
+
+          <div class="d-flex justify-end mt-3">
+            <v-btn @click="changeApi" color="primary" variant="tonal">
+              {{ taskForm?.key != null ? "刷新 API" : "创建 API" }}
+              <v-icon end>
+                {{ taskForm?.key != null ? "mdi-refresh" : "mdi-plus" }}
+              </v-icon>
+            </v-btn>
+          </div>
+        </v-container>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text @click="taskDialog = false"
-          >取消</v-btn
-        >
-        <v-btn color="blue darken-1" text @click="submit">确认</v-btn>
-        <v-spacer></v-spacer>
+
+      <v-divider></v-divider>
+
+      <!-- 底部操作按钮 -->
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="taskDialog = false">取消</v-btn>
+        <v-btn color="primary" @click="submit">确认</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed } from "vue";
+import { ref, onMounted } from "vue";
 import {
+  addTask,
   changeTaskKey,
   editTask,
   editTaskEnable,
@@ -191,13 +230,41 @@ import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { TaskItem } from "~/src/types/tassk/task";
 
 const snackbarStore = useSnackbarStore();
+
+// 弹窗 & 表单
 const taskDialog = ref(false);
 const taskForm = ref<Partial<TaskItem>>({});
-const addTask = ref(false);
-/**
- * 自定义列头：title -> 显示标题（中文），key -> 对应数据字段名
- * （Vuetify 3 的 headers 使用 title/key 风格）
- */
+const isAdd = ref(false);
+
+// 下拉框选项
+const taskSelect = ref<any[]>([]);
+const processSelect = ref<any[]>([]);
+const eventSelect = ref<any[]>([]);
+const operationSelect = ref<any[]>([]);
+const conditionSelect = ref<any[]>([]);
+
+// 映射表
+const conditionMap = {
+  0: "运行中",
+  1: "已停止",
+  2: "错误",
+  3: "无条件",
+};
+const operationMap = {
+  0: "异步启动",
+  1: "异步停止",
+  2: "完成启动",
+  3: "完成停止",
+};
+const eventMap = {
+  0: "停止",
+  1: "启动",
+  2: "异常",
+};
+
+const urlBase = ref(`${window.location.origin}/api/task/api-key/`);
+
+// 表头
 const headers = [
   { title: "任务ID", key: "id" },
   { title: "任务名", key: "processName" },
@@ -210,18 +277,19 @@ const headers = [
   { title: "启用API", key: "apiEnable" },
   { title: "操作", key: "operate" },
 ];
+const apiUrl = computed(() =>
+  taskForm.value?.key ? urlBase.value + taskForm.value.key : "未创建api"
+);
+// 任务数据
+const taskData = ref<TaskItem[]>([]);
 
-// 单行数组（v-data-table 接受 items 数组）
-const taskData = ref<TaskItem[]>();
-
-/** 格式化开始时间（兼容 null / 空字符串） */
-const formatStartTime = (v) => {
+// 格式化时间
+const formatStartTime = (v: Date) => {
   if (!v) return "-";
   try {
-    const d = new Date(v);
-    if (Number.isNaN(d.getTime())) return v;
-    return d.toLocaleString();
-  } catch (e) {
+    if (Number.isNaN(v.getTime())) return v;
+    return v.toLocaleString();
+  } catch {
     return v;
   }
 };
@@ -230,42 +298,128 @@ onMounted(() => {
   initTask();
 });
 
+// 打开添加任务弹窗
+const addTaskBefore = () => {
+  isAdd.value = true;
+  taskForm.value = {}; // 清空表单
+  taskDialog.value = true;
+};
+
+// 打开编辑任务弹窗
+const editTaskBefore = (row: TaskItem) => {
+  isAdd.value = false;
+  getTaskById(row.id).then((res) => {
+    taskForm.value = res.data ?? {};
+  });
+  taskDialog.value = true;
+};
+
+// 复制 API 地址
+const copyToClipboard = () => {
+  if (!taskForm.value?.key) return;
+  navigator.clipboard
+    .writeText(urlBase.value + taskForm.value.key)
+    .then(() => {
+      snackbarStore.showSuccessMessage("复制成功");
+    })
+    .catch((err) => {
+      console.error("复制失败:", err);
+    });
+};
+
+// 初始化任务 & 下拉框选项
 const initTask = () => {
-  getTaskAll().then((e) => {
-    taskData.value = e.data!;
+  getTaskAll().then((res) => {
+    const list = res.data ?? [];
+    taskData.value = list;
+
+    // 任务选择
+    taskSelect.value = list.map((t) => ({
+      name: t.id,
+      value: t.id,
+    }));
+    taskSelect.value.push({ name: "无", value: null });
+
+    // 进程选择
+    processSelect.value = list.map((t) => ({
+      name: t.processName,
+      value: t.processId,
+    }));
+
+    // 操作/事件/条件
+    operationSelect.value = Object.entries(operationMap).map(
+      ([value, name]) => ({
+        name,
+        value: parseInt(value),
+      })
+    );
+
+    eventSelect.value = Object.entries(eventMap).map(([value, name]) => ({
+      name,
+      value: parseInt(value),
+    }));
+
+    conditionSelect.value = Object.entries(conditionMap).map(
+      ([value, name]) => ({
+        name,
+        value: parseInt(value),
+      })
+    );
   });
 };
 
-const edit = (item) => {
-  editTask(item).then((e) => {
-    if (e.code == 0) {
-      snackbarStore.showSuccessMessage("success");
+// 修改任务
+const edit = (item: TaskItem) => {
+  editTask(item).then((res) => {
+    if (res.code === 0) {
+      snackbarStore.showSuccessMessage("修改成功");
       initTask();
     }
   });
 };
 
-const changeEnable = (item) => {
-  editTaskEnable({
-    id: item.id,
-    enable: item.enable,
-  }).then((e) => {
-    if (e.code == 0) {
-      snackbarStore.showSuccessMessage("success");
+// 切换启用状态
+const changeEnable = (item: TaskItem) => {
+  editTaskEnable({ id: item.id, enable: item.enable }).then((res) => {
+    if (res.code === 0) {
+      snackbarStore.showSuccessMessage("修改成功");
       initTask();
     }
   });
 };
 
+// 生成/刷新 API Key
 const changeApi = () => {
-  changeTaskKey(taskForm.value?.id).then((resp) => {
-    if (resp.code == 0) {
-      snackbarStore.showSuccessMessage("success");
+  if (!taskForm.value?.id) return;
+  changeTaskKey(taskForm.value.id).then((res) => {
+    if (res.code === 0) {
+      snackbarStore.showSuccessMessage("API 更新成功");
       getTaskById(taskForm.value?.id).then((e) => {
         Object.assign(taskForm.value, e.data);
       });
     }
   });
+};
+
+// 提交
+const submit = () => {
+  if (isAdd.value) {
+    addTask(taskForm.value).then((res) => {
+      if (res.code === 0) {
+        taskDialog.value = false;
+        snackbarStore.showSuccessMessage("添加成功");
+        initTask();
+      }
+    });
+  } else {
+    editTask(taskForm.value).then((res) => {
+      if (res.code === 0) {
+        taskDialog.value = false;
+        snackbarStore.showSuccessMessage("修改成功");
+        initTask();
+      }
+    });
+  }
 };
 </script>
 
