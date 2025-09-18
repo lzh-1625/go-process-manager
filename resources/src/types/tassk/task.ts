@@ -1,5 +1,6 @@
 export interface TaskItem {
   id: number;
+  name: string;
   processId: number;
   condition: number;
   nextId: null;

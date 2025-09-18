@@ -26,7 +26,7 @@ func (t *taskRepository) GetTaskByKey(key string) (result model.Task, err error)
 }
 
 func (t *taskRepository) AddTask(data model.Task) (taskId int, err error) {
-	err = db.Create(&data).Error
+	err = query.Task.Create(&data)
 	taskId = data.Id
 	return
 }

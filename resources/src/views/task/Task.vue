@@ -1,11 +1,16 @@
 <template>
   <v-card class="pa-4">
-    <v-card-title>任务明细（单行）</v-card-title>
+    <v-card-title class="d-flex justify-space-between align-center">
+      <span>任务</span>
+      <v-btn color="primary" variant="tonal" @click="addTaskBefore">
+        <v-icon left>mdi-plus</v-icon> 新建任务
+      </v-btn>
+    </v-card-title>
 
     <v-data-table
       :headers="headers"
       :items="taskData"
-      :items-per-page="5"
+      :items-per-page="10"
       item-key="id"
       class="elevation-1"
     >
@@ -72,7 +77,7 @@
     </v-data-table>
   </v-card>
 
-  <v-dialog v-model="taskDialog" max-width="600px" persistent>
+  <v-dialog v-model="taskDialog" max-width="600px">
     <v-card class="rounded-xl">
       <!-- 标题 -->
       <v-card-title class="text-h6 font-weight-medium">
@@ -85,21 +90,17 @@
       <v-card-text class="pt-6">
         <v-container fluid>
           <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-autocomplete
-                label="判断条件"
-                item-title="name"
-                item-value="value"
+            <v-col cols="12" sm="12">
+              <v-text-field
+                label="任务名"
                 variant="outlined"
                 density="comfortable"
-                :items="conditionSelect"
-                v-model="taskForm.condition"
+                v-model="taskForm.name"
               />
             </v-col>
 
             <v-col cols="12" sm="6">
               <v-autocomplete
-                :disabled="taskForm.condition == 3"
                 label="判断目标"
                 item-title="name"
                 item-value="value"
@@ -107,6 +108,19 @@
                 density="comfortable"
                 :items="processSelect"
                 v-model="taskForm.processId"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-autocomplete
+                :disabled="taskForm.processId == null"
+                label="判断条件"
+                item-title="name"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                :items="conditionSelect"
+                v-model="taskForm.condition"
               />
             </v-col>
 
@@ -124,6 +138,7 @@
 
             <v-col cols="12" sm="6">
               <v-autocomplete
+                :disabled="taskForm.operationTarget == null"
                 label="执行操作"
                 item-title="name"
                 item-value="value"
@@ -180,7 +195,7 @@
               />
             </v-col>
 
-            <v-col cols="12">
+            <v-col cols="12" v-if="!isAdd">
               <v-text-field
                 label="API"
                 variant="outlined"
@@ -189,18 +204,31 @@
                 v-model="apiUrl"
                 append-inner-icon="mdi-content-copy"
                 @click:append-inner="copyToClipboard"
-              />
+              >
+                <!-- 把按钮放进输入框右侧 -->
+                <template v-slot:append>
+                  <v-btn
+                    v-if="taskForm?.key == null"
+                    @click="changeApi"
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    icon="mdi-plus"
+                  >
+                  </v-btn>
+                  <v-btn
+                    v-else
+                    @click="changeApi"
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    icon="mdi-refresh"
+                  >
+                  </v-btn>
+                </template>
+              </v-text-field>
             </v-col>
           </v-row>
-
-          <div class="d-flex justify-end mt-3">
-            <v-btn @click="changeApi" color="primary" variant="tonal">
-              {{ taskForm?.key != null ? "刷新 API" : "创建 API" }}
-              <v-icon end>
-                {{ taskForm?.key != null ? "mdi-refresh" : "mdi-plus" }}
-              </v-icon>
-            </v-btn>
-          </div>
         </v-container>
       </v-card-text>
 
@@ -218,6 +246,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ref, onMounted } from "vue";
+import { getProcessList } from "~/src/api/process";
 import {
   addTask,
   changeTaskKey,
@@ -267,15 +296,18 @@ const urlBase = ref(`${window.location.origin}/api/task/api-key/`);
 // 表头
 const headers = [
   { title: "任务ID", key: "id" },
-  { title: "任务名", key: "processName" },
-  { title: "进程ID", key: "processId" },
+  { title: "任务名", key: "name" },
   { title: "下一步 ID", key: "nextId" },
   { title: "定时任务", key: "cron" },
   { title: "开始时间", key: "startTime" },
   { title: "状态", key: "running" },
   { title: "启用定时任务", key: "enable" },
   { title: "启用API", key: "apiEnable" },
-  { title: "操作", key: "operate" },
+  {
+    title: "操作",
+    key: "operate",
+    headerProps: { style: "min-width: 150px;" },
+  },
 ];
 const apiUrl = computed(() =>
   taskForm.value?.key ? urlBase.value + taskForm.value.key : "未创建api"
@@ -339,32 +371,36 @@ const initTask = () => {
       value: t.id,
     }));
     taskSelect.value.push({ name: "无", value: null });
+  });
 
-    // 进程选择
-    processSelect.value = list.map((t) => ({
-      name: t.processName,
-      value: t.processId,
-    }));
+  // 操作/事件/条件
+  operationSelect.value = Object.entries(operationMap).map(([value, name]) => ({
+    name,
+    value: parseInt(value),
+  }));
 
-    // 操作/事件/条件
-    operationSelect.value = Object.entries(operationMap).map(
-      ([value, name]) => ({
-        name,
-        value: parseInt(value),
-      })
-    );
+  eventSelect.value = Object.entries(eventMap).map(([value, name]) => ({
+    name,
+    value: parseInt(value),
+  }));
 
-    eventSelect.value = Object.entries(eventMap).map(([value, name]) => ({
-      name,
-      value: parseInt(value),
-    }));
-
-    conditionSelect.value = Object.entries(conditionMap).map(
-      ([value, name]) => ({
-        name,
-        value: parseInt(value),
-      })
-    );
+  conditionSelect.value = Object.entries(conditionMap).map(([value, name]) => ({
+    name,
+    value: parseInt(value),
+  }));
+  getProcessList().then((resp) => {
+    if (resp.code == 0) {
+      processSelect.value = resp.data!.map((e) => {
+        return {
+          name: e.name,
+          value: e.uuid,
+        };
+      });
+      processSelect.value.push({
+        name: "无",
+        value: null,
+      });
+    }
   });
 };
 
