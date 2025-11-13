@@ -49,6 +49,9 @@ func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
 
 func (u *userApi) EditUser(ctx *gin.Context, req model.User) (err error) {
 	reqUser := getUserName(ctx)
+	if reqUser=="root"{
+		return errors.New("can not edit root user")
+	}
 	if getRole(ctx) != eum.RoleRoot && req.Account != "" {
 		return errors.New("invalid parameters")
 	}
