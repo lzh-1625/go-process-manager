@@ -112,8 +112,7 @@ func (t *taskLogic) EditTask(data model.Task) error {
 	}
 
 	tj.TaskConfig = &data
-	tj.TaskConfig.Enable = false
-
+	t.EditTaskEnable(data.Id, tj.TaskConfig.Enable)
 	return repository.TaskRepository.EditTask(data)
 }
 

@@ -47,25 +47,24 @@ func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
 	return
 }
 
-func (u *userApi) ChangePassword(ctx *gin.Context, req model.User) (err error) {
+func (u *userApi) EditUser(ctx *gin.Context, req model.User) (err error) {
 	reqUser := getUserName(ctx)
 	if getRole(ctx) != eum.RoleRoot && req.Account != "" {
 		return errors.New("invalid parameters")
 	}
-	var userName string
-	if req.Account != "" {
-		userName = req.Account
-	} else {
-		userName = reqUser
+	if req.Account == "" {
+		req.Account = reqUser
 	}
 	if len(req.Password) < config.CF.UserPassWordMinLength {
 		return errors.New("password is too short")
 	}
-	err = repository.UserRepository.UpdatePassword(userName, req.Password)
+	err = repository.UserRepository.EditUser(req)
 	return
 }
 
-func (u *userApi) DeleteUser(ctx *gin.Context, req model.User) (err error) {
+func (u *userApi) DeleteUser(ctx *gin.Context, req struct {
+	Account string `form:"account"`
+}) (err error) {
 	if req.Account == "root" {
 		return errors.New("deletion of root accounts is forbidden")
 	}

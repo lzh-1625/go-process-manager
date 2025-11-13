@@ -1,23 +1,57 @@
 <template>
   <!-- <div class="toolbar">
-    <ConfirmButton @confirm="startAll" color="#3CB371">全部启动</ConfirmButton>
-    <ConfirmButton @confirm="killAll" color="#CD5555">全部停止</ConfirmButton>
-    <v-btn
-      size="small"
-      variant="tonal"
-      color="blue"
-      @click="processCreateComponent?.createProcessDialog()"
-      >创建<v-icon dark right> mdi-plus-circle </v-icon>
-    </v-btn>
-  </div> -->
-  <v-container>
-    <!-- 顶部工具栏 -->
 
+  </div> -->
+  <v-container fluid class="py-6 px-8  rounded-lg">
+    <!-- 顶部工具栏 -->
+    <v-card
+      class="pa-4 mb-8 rounded-2xl elevation-3"
+    >
+      <div class="d-flex align-center justify-space-between flex-wrap">
+        <div class="d-flex align-center mb-2 mb-sm-0">
+          <v-icon size="40" color="primary" class="mr-3">mdi-application-braces</v-icon>
+          <span class="text-h5 font-weight-bold text-primary">进程管理</span>
+        </div>
+
+        <div class="d-flex align-center ga-3 flex-wrap">
+          <ConfirmButton
+            @confirm="startAll"
+            color="success"
+            variant="flat"
+            class="rounded-lg px-4"
+          >
+            <v-icon start>mdi-play-circle</v-icon>
+            全部启动
+          </ConfirmButton>
+
+          <ConfirmButton
+            @confirm="killAll"
+            color="error"
+            variant="flat"
+            class="rounded-lg px-4"
+          >
+            <v-icon start>mdi-stop-circle</v-icon>
+            全部停止
+          </ConfirmButton>
+
+          <v-btn
+            size="small"
+            variant="flat"
+            color="primary"
+            class="rounded-lg px-4"
+            @click="processCreateComponent?.createProcessDialog()"
+          >
+            <v-icon start>mdi-plus-circle</v-icon>
+            创建
+          </v-btn>
+        </div>
+      </div>
+    </v-card>
     <!-- 主体网格 -->
     <div class="flex-grid">
-      <div v-for="(i, v) in processData" :key="i.uuid" class="responsive-box">
+      <v-card v-for="(i, v) in processData" :key="i.uuid" class="responsive-box">
         <ProcessCard :data="i" :index="v" />
-      </div>
+      </v-card>
     </div>
   </v-container>
   <ProcessCreate ref="processCreateComponent"></ProcessCreate>
@@ -113,7 +147,6 @@ onMounted(() => {
   flex: 1 1 300px;
   min-width: 300px;
   max-width: 100%;
-  background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   text-align: center;
@@ -122,18 +155,7 @@ onMounted(() => {
 }
 
 .responsive-box:hover {
-  transform: translateY(-6px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 999;
-  border-radius: 50%;
-  width: 80px;
-  height: 80px;
-}
 </style>

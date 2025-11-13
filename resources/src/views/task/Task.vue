@@ -12,7 +12,9 @@
       :items="taskData"
       :items-per-page="10"
       item-key="id"
-      class="elevation-1"
+      class="text-body-2"
+      hover
+      density="comfortable"
     >
       <!-- 自定义列渲染 -->
       <template #item.nextId="{ item }">
@@ -69,10 +71,12 @@
       <!-- 如果需要可以加 actions 列 -->
       <template #item.operate="{ item }">
         <!-- 这里可以放底部说明或按钮 -->
-        <v-icon class="mr-2" v-if="!item.running"> mdi-play </v-icon>
-        <v-icon class="mr-2" v-else> mdi-stop </v-icon>
+        <v-icon class="mr-2" v-if="!item.running" @click="startTask(item)">
+          mdi-play
+        </v-icon>
+        <v-icon class="mr-2" v-else @click="stopTask(item)"> mdi-stop </v-icon>
         <v-icon class="mr-2" @click="editTaskBefore(item)"> mdi-pencil </v-icon>
-        <v-icon> mdi-delete </v-icon>
+        <v-icon @click="deleteTask(item)"> mdi-delete </v-icon>
       </template>
     </v-data-table>
   </v-card>
@@ -191,6 +195,7 @@
                 label="定时任务"
                 variant="outlined"
                 density="comfortable"
+                placeholder="* * * * *"
                 v-model="taskForm.cron"
               />
             </v-col>
@@ -254,6 +259,9 @@ import {
   editTaskEnable,
   getTaskAll,
   getTaskById,
+  deleteTaskById,
+  startTaskById,
+  stopTaskById,
 } from "~/src/api/task";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { TaskItem } from "~/src/types/tassk/task";
@@ -342,8 +350,24 @@ const editTaskBefore = (row: TaskItem) => {
   isAdd.value = false;
   getTaskById(row.id).then((res) => {
     taskForm.value = res.data ?? {};
+    if (taskForm.value.processId === 0) {
+      taskForm.value.processId = undefined;
+    }
+    if (taskForm.value.operationTarget === 0) {
+      taskForm.value.operationTarget = undefined;
+    }
   });
   taskDialog.value = true;
+};
+
+// 打开编辑任务弹窗
+const deleteTask = (row: TaskItem) => {
+  deleteTaskById(row.id).then((res) => {
+    if (res.code === 0) {
+      snackbarStore.showSuccessMessage("操作成功");
+      initTask();
+    }
+  });
 };
 
 // 复制 API 地址
@@ -417,9 +441,26 @@ const edit = (item: TaskItem) => {
 // 切换启用状态
 const changeEnable = (item: TaskItem) => {
   editTaskEnable({ id: item.id, enable: item.enable }).then((res) => {
+    initTask();
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("修改成功");
-      initTask();
+    }
+  });
+};
+
+const startTask = (item: TaskItem) => {
+  startTaskById(item.id).then((res) => {
+    initTask();
+    if (res.code === 0) {
+      snackbarStore.showSuccessMessage("修改成功");
+    }
+  });
+};
+const stopTask = (item: TaskItem) => {
+  stopTaskById(item.id).then((res) => {
+    initTask();
+    if (res.code === 0) {
+      snackbarStore.showSuccessMessage("修改成功");
     }
   });
 };

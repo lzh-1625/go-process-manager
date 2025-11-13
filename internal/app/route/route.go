@@ -101,7 +101,7 @@ func routePathInit(r *gin.Engine) {
 		{
 			userGroup.POST("/login", bind(api.UserApi.LoginHandler, Body))
 			userGroup.POST("", middle.RolePermission(eum.RoleRoot), bind(api.UserApi.CreateUser, Body))
-			userGroup.PUT("/password", middle.RolePermission(eum.RoleUser), bind(api.UserApi.ChangePassword, Body))
+			userGroup.PUT("", middle.RolePermission(eum.RoleUser), bind(api.UserApi.EditUser, Body))
 			userGroup.DELETE("", middle.RolePermission(eum.RoleRoot), bind(api.UserApi.DeleteUser, Query))
 			userGroup.GET("", middle.RolePermission(eum.RoleRoot), bind(api.UserApi.GetUserList, None))
 		}

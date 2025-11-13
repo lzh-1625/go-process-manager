@@ -267,7 +267,6 @@ const del = () => {
         <v-chip
           size="small"
           variant="outlined"
-          style="border-color: grey; color: black"
           class="d-flex align-center"
         >
           <v-btn
@@ -306,7 +305,6 @@ const del = () => {
   flex-direction: column;
   width: 100%;
   height: 250px; /* 可根据实际容器调整 */
-  background: #fff;
   overflow: hidden;
 }
 

@@ -24,8 +24,9 @@ func (u *userRepository) CreateUser(user model.User) error {
 	return tx.Error
 }
 
-func (u *userRepository) UpdatePassword(name string, password string) error {
-	return db.Model(&model.User{}).Where(&model.User{Account: name}).Updates(&model.User{Password: utils.Md5(password)}).Error
+func (u *userRepository) EditUser(data model.User) error {
+	data.Password = utils.Md5(data.Password)
+	return db.Model(&model.User{}).Where(&model.User{Account: data.Account}).Updates(&data).Error
 }
 
 func (u *userRepository) DeleteUser(name string) error {

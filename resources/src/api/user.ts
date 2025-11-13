@@ -16,8 +16,8 @@ export function deleteUser(account) {
   return api.delete("/user", { account }).then((res) => res);
 }
 
-export function changePassword(data) {
-  return api.put("/user/password", data).then((res) => res);
+export function editUser(data) {
+  return api.put("/user", data).then((res) => res);
 }
 
 export function registerAdmin(password) {
