@@ -131,7 +131,10 @@
   <!-- ✅ 操作权限对话框 -->
   <v-dialog v-model="oprEditdialog" max-width="900">
     <v-card class="rounded-xl">
-      <v-card-title class="text-h6 font-weight-medium">操作权限</v-card-title>
+      <v-card-title class="text-h6 font-weight-medium">
+        <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
+        <span class="text-h6 font-weight-medium">修改权限</span></v-card-title
+      >
       <v-card-text class="pa-4">
         <v-data-table
           :headers="permissionHeaders"
@@ -178,62 +181,53 @@
   <v-dialog
     v-model="oprEditdiaFormDialog"
     max-width="420"
-    transition="dialog-bottom-transition"
+    transition="dialog-fade-transition"
   >
-    <v-card class="rounded-xl elevation-6 overflow-hidden">
-      <!-- 顶部标题栏 -->
-      <v-sheet color="primary" class="pa-4 d-flex align-center text-white">
-        <v-icon class="mr-2" color="white">mdi-shield-account</v-icon>
-        <span class="text-h6 font-weight-medium">修改权限</span>
-      </v-sheet>
+    <v-card class="prime-card rounded-xl elevation-2">
+      <!-- Header -->
+      <div class="prime-header d-flex align-center justify-space-between">
+        <v-card-title class="text-h6 font-weight-medium">
+          <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
+          <span class="text-h6 font-weight-medium">修改权限</span></v-card-title
+        >
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          @click="oprEditdiaFormDialog = false"
+        ></v-btn>
+      </div>
 
-      <!-- 内容区 -->
-      <v-card-text class="py-6 bg-grey-lighten-5">
-        <v-container fluid>
-          <v-row dense>
-            <v-col
-              cols="6"
-              v-for="(label, key) in switchLabels"
-              :key="key"
-              class="d-flex align-center justify-start"
-            >
-              <v-hover v-slot="{ isHovering, props }">
-                <v-card
-                  v-bind="props"
-                  class="pa-2 d-flex align-center justify-space-between w-100 transition-all"
-                  :elevation="isHovering ? 4 : 1"
-                  :class="[
-                    'rounded-lg cursor-pointer',
-                    isHovering ? 'bg-grey-lighten-4' : 'bg-white',
-                  ]"
-                  @click="permissionEditForm[key] = !permissionEditForm[key]"
-                >
-                  <span class="font-weight-medium text-body-1">{{
-                    label
-                  }}</span>
-                  <v-switch
-                    hide-details
-                    inset
-                    color="primary"
-                    density="comfortable"
-                    v-model="permissionEditForm[key]"
-                  ></v-switch>
-                </v-card>
-              </v-hover>
-            </v-col>
-          </v-row>
-        </v-container>
+      <v-divider></v-divider>
+
+      <!-- Content -->
+      <v-card-text class="px-6 py-5">
+        <div v-for="(label, key) in switchLabels" :key="key" class="prime-item">
+          <div class="d-flex align-center justify-space-between">
+            <span class="font-weight-medium text-body-1">{{ label }}</span>
+            <v-switch
+              color="primary"
+              inset
+              density="compact"
+              hide-details
+              v-model="permissionEditForm[key]"
+            ></v-switch>
+          </div>
+        </div>
       </v-card-text>
 
       <v-divider></v-divider>
 
-      <!-- 底部操作区 -->
-      <v-card-actions class="pa-4 bg-grey-lighten-4">
-        <v-spacer></v-spacer>
-        <v-btn variant="text" color="grey" @click="oprEditdiaFormDialog = false"
+      <!-- Footer -->
+      <v-card-actions class="pa-4 d-flex justify-end">
+        <v-btn
+          variant="text"
+          color="grey-darken-1"
+          @click="oprEditdiaFormDialog = false"
           >取消</v-btn
         >
-        <v-btn color="primary" variant="flat" @click="submit">确认</v-btn>
+        <v-btn color="primary" variant="flat" class="prime-btn" @click="submit"
+          >确认</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
