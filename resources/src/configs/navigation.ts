@@ -7,7 +7,8 @@ import menuLanding from "./menus/landing.menu";
 import menuData from "./menus/data.menu";
 import menuProcess from "./menus/process.menus";
 import menuTask from "./menus/task.menus";
-import menuUser from "./menus/user.menus"
+import menuUser from "./menus/user.menus";
+import menuLog from "./menus/log.menus";
 
 export default {
   menu: [
@@ -30,6 +31,10 @@ export default {
     {
       text: "task",
       items: menuTask,
+    },
+    {
+      text: "log",
+      items: menuLog,
     },
     {
       text: "user",

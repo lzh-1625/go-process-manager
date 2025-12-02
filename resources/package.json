@@ -20,6 +20,8 @@
     "@vueuse/integrations": "^10.11.0",
     "@xterm/addon-canvas": "^0.7.0",
     "@yeger/vue-masonry-wall": "^5.0.14",
+    "ansi_up": "^6.0.6",
+    "ansi-to-html": "^0.7.2",
     "apexcharts": "^3.52.0",
     "axios": "^1.7.5",
     "clipboard": "^2.0.11",

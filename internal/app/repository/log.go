@@ -41,10 +41,10 @@ func (l *logRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) 
 		q = q.Order(query.ProcessLog.Time.Desc())
 	}
 	if req.TimeRange.StartTime != 0 {
-		q = q.Where(query.ProcessLog.Time.Gte(req.TimeRange.StartTime))
+		q = q.Where(query.ProcessLog.Time.Gt(req.TimeRange.StartTime))
 	}
 	if req.TimeRange.EndTime != 0 {
-		q = q.Where(query.ProcessLog.Time.Lte(req.TimeRange.EndTime))
+		q = q.Where(query.ProcessLog.Time.Lt(req.TimeRange.EndTime))
 	}
 	if len(req.FilterName) != 0 {
 		q = q.Where(query.ProcessLog.Name.In(req.FilterName...))
