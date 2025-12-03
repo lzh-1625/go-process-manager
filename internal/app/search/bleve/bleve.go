@@ -108,7 +108,7 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 		buildQuery.AddMust(usingQuery)
 	}
 	if req.TimeRange.EndTime != 0 || req.TimeRange.StartTime != 0 {
-		st := float64(req.TimeRange.StartTime)
+		st := float64(req.TimeRange.StartTime)-1
 		et := float64(req.TimeRange.EndTime)
 		timeQuery := bleve.NewNumericRangeQuery(&st, &et)
 		buildQuery.AddMust(timeQuery)

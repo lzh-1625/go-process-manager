@@ -9,6 +9,7 @@ import menuProcess from "./menus/process.menus";
 import menuTask from "./menus/task.menus";
 import menuUser from "./menus/user.menus";
 import menuLog from "./menus/log.menus";
+import menuSettings from "./menus/settings.menus";
 
 export default {
   menu: [
@@ -39,6 +40,10 @@ export default {
     {
       text: "user",
       items: menuUser,
+    },
+    {
+      text: "settings",
+      items: menuSettings,
     },
     {
       text: "Apps",

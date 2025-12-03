@@ -12,6 +12,7 @@ import DataRoutes from "./data.routes";
 import ProcessRoutes from "./process.routes";
 import TaskRoutes from "./task.routes";
 import LogRoutes from "./log.routes";
+import SettingsRoutes from "./settings.routes";
 
 export const routes = [
   {
@@ -45,7 +46,8 @@ export const routes = [
   ...DataRoutes,
   ...ProcessRoutes,
   ...TaskRoutes,
-  ...LogRoutes
+  ...LogRoutes,
+  ...SettingsRoutes
 ];
 
 // 动态路由，基于用户权限动态去加载

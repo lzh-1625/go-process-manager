@@ -72,12 +72,12 @@
                 <!-- 使用类型 -->
                 <v-col cols="12" sm="6" md="4">
                   <v-text-field
-                    label="使用类型"
+                    label="使用者"
                     variant="outlined"
                     density="comfortable"
                     v-model="searchForm.using"
                     clearable
-                    prepend-inner-icon="mdi-tag"
+                    prepend-inner-icon="mdi-account"
                   />
                 </v-col>
 
@@ -144,10 +144,8 @@
       <v-data-table
         :headers="headers"
         :items="logData"
-        :items-length="totalLogs"
         :loading="loading"
-        v-model:page="currentPage"
-        v-model:items-per-page="pageSize"
+        :items-per-page="-1"
         item-key="id"
         class="text-body-2 log-table-seamless"
         density="compact"
@@ -172,6 +170,18 @@
             {{ item.using || '-' }}
           </v-chip>
         </template>
+
+        <template #item.actions="{ item }">
+          <v-btn
+            color="primary"
+            size="x-small"
+            variant="tonal"
+            @click="viewLogContext(item)"
+          >
+            <v-icon size="small">mdi-text-search</v-icon>
+            上下文
+          </v-btn>
+        </template>
         <!-- 底部分页 -->
         <template #bottom>
           <div class="text-center pa-4">
@@ -190,7 +200,11 @@
     </v-card>
 
     <!-- 终端日志查看器 -->
-    <LogTerminal ref="logTerminalRef" :search-form="searchForm" />
+    <LogTerminal
+      ref="logTerminalRef"
+      :search-form="searchForm"
+      :process-list="processList"
+    />
   </v-container>
 </template>
 
@@ -223,6 +237,7 @@ const headers = [
   { title: "时间", key: "time", width: "150px" },
   { title: "进程名", key: "name", width: "30px" },
   { title: "类型", key: "using", width: "30px" },
+  { title: "操作", key: "actions", width: "100px", sortable: false },
 ];
 
 // 数据
@@ -371,6 +386,13 @@ const openTerminalView = () => {
   }
 };
 
+// 查看日志上下文
+const viewLogContext = (log: ProcessLog) => {
+  if (logTerminalRef.value) {
+    logTerminalRef.value.openWithContext(log.time, log.name);
+  }
+};
+
 // 加载进程列表
 const loadProcessList = async () => {
   try {
@@ -399,11 +421,13 @@ onMounted(() => {
   padding: 3px 10px;
   border-radius: 0;
   font-family: "Consolas", "Monaco", "Courier New", monospace;
-  overflow-x: auto;
   max-width: 100%;
   line-height: 1.2;
   display: block;
   margin: -1px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ANSI 颜色样式 */
@@ -449,6 +473,16 @@ onMounted(() => {
 
 /* 移除hover背景色，避免破坏连续效果 */
 :deep(.log-table-seamless tbody tr:hover) {
+  background-color: transparent !important;
+}
+
+/* 禁用所有单元格的 hover 效果 */
+:deep(.log-table-seamless tbody tr:hover td) {
+  background-color: transparent !important;
+}
+
+/* 禁用日志内容的 hover 效果 */
+.log-content:hover {
   background-color: transparent !important;
 }
 

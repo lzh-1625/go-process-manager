@@ -73,7 +73,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	queryList := []elastic.Query{}
 	timeRangeQuery := elastic.NewRangeQuery("time")
 	if req.TimeRange.StartTime != 0 {
-		queryList = append(queryList, timeRangeQuery.Gt(req.TimeRange.StartTime))
+		queryList = append(queryList, timeRangeQuery.Gte(req.TimeRange.StartTime))
 	}
 	if req.TimeRange.EndTime != 0 {
 		queryList = append(queryList, timeRangeQuery.Lt(req.TimeRange.EndTime))
