@@ -33,3 +33,7 @@ func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv .
 		log.Logger.Errorw("事件创建失败", "err", err)
 	}
 }
+
+func (e *eventLogic) Get(req model.EventListReq) ([]*model.Event, int64, error) {
+	return repository.EventRepository.GetList(req)
+}

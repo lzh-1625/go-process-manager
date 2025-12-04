@@ -27,34 +27,42 @@ export default {
     },
     {
       text: "process",
+      key: "menu.group.process",
       items: menuProcess,
     },
     {
       text: "task",
+      key: "menu.group.task",
       items: menuTask,
     },
     {
       text: "log",
+      key: "menu.group.log",
       items: menuLog,
     },
     {
       text: "user",
+      key: "menu.group.user",
       items: menuUser,
     },
     {
       text: "settings",
+      key: "menu.group.settings",
       items: menuSettings,
     },
     {
       text: "Apps",
+      key: "menu.group.apps",
       items: menuApps,
     },
     {
       text: "Data",
+      key: "menu.group.data",
       items: menuData,
     },
     {
       text: "Landing",
+      key: "menu.group.landing",
       items: [
         ...menuLanding,
         // {
@@ -68,21 +76,22 @@ export default {
 
     {
       text: "UI - Theme Preview",
+      key: "menu.group.ui",
       items: menuUI,
     },
     {
       text: "Pages",
-      key: "menu.pages",
+      key: "menu.group.pages",
       items: menuPages,
     },
     {
       text: "Charts",
-      key: "menu.charts",
+      key: "menu.group.charts",
       items: menuCharts,
     },
     {
       text: "UML",
-      // key: "menu.uml",
+      key: "menu.group.uml",
       items: menuUML,
     },
   ],

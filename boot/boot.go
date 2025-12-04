@@ -41,16 +41,26 @@ func initDb() {
 func initConfiguration() {
 	defer func() {
 		if err := recover(); err != nil {
-			panic("config init fail")
+			log.Panic("config init fail", err)
 		}
 	}()
+	configKvMap := map[string]string{}
+
+	data, err := repository.ConfigRepository.GetAllConfig()
+	if err != nil {
+		panic(err)
+	}
+	for _, v := range data {
+		configKvMap[v.Key] = *v.Value
+	}
+
 	typeElem := reflect.TypeOf(config.CF).Elem()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)
 		valueField := valueElem.Field(i)
-		value, err := repository.ConfigRepository.GetConfigValue(typeField.Name)
-		if err != nil {
+		value, ok := configKvMap[typeField.Name]
+		if !ok {
 			value = typeField.Tag.Get("default")
 		}
 		if value == "-" {

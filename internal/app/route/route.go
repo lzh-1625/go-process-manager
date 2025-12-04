@@ -122,6 +122,11 @@ func routePathInit(r *gin.Engine) {
 			fileGroup.GET("", bind(api.FileApi.FileReadHandler, Query))
 		}
 
+		eventGroup := apiGroup.Group("/event").Use(middle.RolePermission(eum.RoleAdmin))
+		{
+			eventGroup.GET("", bind(api.EventApi.GetEventList, Query))
+		}
+
 		permissionGroup := apiGroup.Group("/permission").Use(middle.RolePermission(eum.RoleRoot))
 		{
 			permissionGroup.GET("/list", bind(api.PermissionApi.GetPermissionList, Query))
@@ -138,7 +143,7 @@ func routePathInit(r *gin.Engine) {
 		{
 			configGroup.GET("", bind(api.ConfigApi.GetSystemConfiguration, None))
 			configGroup.PUT("", bind(api.ConfigApi.SetSystemConfiguration, None))
-			configGroup.GET("/reload", bind(api.ConfigApi.LogConfigReload, None))
+			configGroup.PUT("/reload", bind(api.ConfigApi.LogConfigReload, None))
 		}
 	}
 }

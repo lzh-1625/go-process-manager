@@ -12,7 +12,7 @@ const props = defineProps({
   <v-list nav dense>
     <template v-for="menuArea in props.menu" :key="menuArea.key">
       <div v-if="menuArea.key || menuArea.text" class="pa-1 mt-2 text-overline">
-        {{ menuArea.text }}
+        {{ menuArea.key ? $t(menuArea.key) : menuArea.text }}
       </div>
       <template v-if="menuArea.items">
         <template v-for="menuItem in menuArea.items" :key="menuItem.key">
@@ -28,7 +28,7 @@ const props = defineProps({
               <Icon class="mx-2 mr-5" width="20" :icon="menuItem.icon" />
             </template>
             <v-list-item-title
-              v-text="$t(menuItem.key)"
+              v-text="menuItem.key ? $t(menuItem.key) : menuItem.text"
               class="font-weight-bold"
             ></v-list-item-title>
           </v-list-item>
@@ -40,7 +40,7 @@ const props = defineProps({
                   <Icon class="mx-2 mr-5" width="20" :icon="menuItem.icon" />
                 </template>
                 <v-list-item-title
-                  v-text="menuItem.text"
+                  v-text="menuItem.key ? $t(menuItem.key) : menuItem.text"
                   class="font-weight-bold"
                 ></v-list-item-title>
               </v-list-item>
@@ -57,7 +57,7 @@ const props = defineProps({
                 <Icon class="mx-2 mr-5" width="20" :icon="subMenuItem.icon" />
               </template>
               <v-list-item-title
-                v-text="subMenuItem.text"
+                v-text="subMenuItem.key ? $t(subMenuItem.key) : subMenuItem.text"
                 class="font-weight-bold"
               ></v-list-item-title>
             </v-list-item>

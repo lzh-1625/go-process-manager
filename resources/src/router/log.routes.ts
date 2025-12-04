@@ -9,5 +9,14 @@ export default [
       category: "Data",
     },
   },
+  {
+    path: "/event",
+    component: () => import("@/views/log/Event.vue"),
+    meta: {
+      requiresAuth: true,
+      layout: "landing",
+      category: "Data",
+    },
+  },
 ];
 

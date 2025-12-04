@@ -2,6 +2,8 @@ package logic
 
 import (
 	"context"
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,12 +37,14 @@ func NewTaskJob(data model.Task) (*TaskJob, error) {
 	return tj, nil
 }
 
-func (t *TaskJob) Run(ctx context.Context) {
+func (t *TaskJob) Run(ctx context.Context) (err error) {
 	if ctx.Value(eum.CtxTaskTraceId{}) == nil {
 		ctx = context.WithValue(ctx, eum.CtxTaskTraceId{}, uuid.NewString())
 	}
 	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string))
-	defer EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string))
+	defer func() {
+		EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string), "success", strconv.FormatBool(err == nil))
+	}()
 	t.Running = true
 	middle.TaskWaitCond.Trigger()
 	defer func() {
@@ -48,11 +52,12 @@ func (t *TaskJob) Run(ctx context.Context) {
 		middle.TaskWaitCond.Trigger()
 	}()
 	var ok bool
+	var proc *ProcessBase
 	// 判断条件是否满足
-	if t.TaskConfig.Condition == eum.TaskCondPass {
+	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessId == 0 {
 		ok = true
 	} else {
-		proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+		proc, err = ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
 		if err != nil {
 			return
 		}
@@ -63,7 +68,7 @@ func (t *TaskJob) Run(ctx context.Context) {
 		return
 	}
 
-	proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+	proc, err = ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
 	if err != nil {
 		log.Logger.Debugw("不存在该进程，结束任务")
 		return
@@ -73,12 +78,14 @@ func (t *TaskJob) Run(ctx context.Context) {
 	log.Logger.Infow("任务开始执行")
 	if !OperationHandle[t.TaskConfig.Operation](t.TaskConfig, proc) {
 		log.Logger.Warnw("任务执行失败")
+		err = errors.New("task execute failed")
 		return
 	}
 	log.Logger.Infow("任务执行成功", "target", t.TaskConfig.OperationTarget)
 
 	if t.TaskConfig.NextId != nil {
-		nextTask, err := TaskLogic.getTaskJob(*t.TaskConfig.NextId)
+		var nextTask *TaskJob
+		nextTask, err = TaskLogic.getTaskJob(*t.TaskConfig.NextId)
 		if err != nil {
 			log.Logger.Errorw("无法获取到下一个节点,结束任务", "nextId", t.TaskConfig.NextId)
 			return
@@ -92,11 +99,12 @@ func (t *TaskJob) Run(ctx context.Context) {
 				log.Logger.Errorw("下一个节点已在运行，结束任务", "nextId", t.TaskConfig.NextId)
 				return
 			}
-			nextTask.Run(ctx)
+			err = nextTask.Run(ctx)
 		}
 	} else {
 		log.Logger.Infow("任务流结束")
 	}
+	return
 }
 
 func (t *TaskJob) InitCronHandle() error {

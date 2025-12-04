@@ -19,6 +19,11 @@ func (c *configRepository) GetConfigValue(key string) (string, error) {
 	return *data.Value, err
 }
 
+func (c *configRepository) GetAllConfig() ([]*model.Config, error) {
+	data, err := query.Config.Select(query.Config.Value).Find()
+	return data, err
+}
+
 func (c *configRepository) SetConfigValue(key, value string) error {
 	config := model.Config{Key: key}
 	updateData := model.Config{Value: &value}
