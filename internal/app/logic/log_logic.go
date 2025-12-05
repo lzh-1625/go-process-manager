@@ -2,11 +2,11 @@ package logic
 
 import (
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/search"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 
-	_ "github.com/lzh-1625/go_process_manager/internal/app/search/bleve"
-	_ "github.com/lzh-1625/go_process_manager/internal/app/search/es"
-	_ "github.com/lzh-1625/go_process_manager/internal/app/search/sqlite"
+	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/bleve"
+	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/es"
+	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
 )
 
 var LogLogicImpl search.LogLogic

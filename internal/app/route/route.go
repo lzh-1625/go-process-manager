@@ -7,6 +7,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/resources"
@@ -22,6 +23,7 @@ func Route() {
 	if !config.CF.Tui {
 		r.Use(middle.Logger())
 	}
+	r.Use(middle.EventLogger())
 	routePathInit(r)
 	staticInit(r)
 	pprofInit(r)
@@ -52,6 +54,9 @@ func pprofInit(r *gin.Engine) {
 
 func routePathInit(r *gin.Engine) {
 
+	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond)
+	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond)
+
 	apiGroup := r.Group("/api")
 	apiGroup.Use(middle.CheckToken())
 	// apiGroup.Use(middle.DemoMiddle())
@@ -66,17 +71,17 @@ func routePathInit(r *gin.Engine) {
 		{
 			processGroup.DELETE("", bind(api.ProcApi.KillProcess, Query))
 			processGroup.GET("", bind(api.ProcApi.GetProcessList, None))
-			processGroup.GET("/wait", middle.ProcessWaitCond.WaitGetMiddel, bind(api.ProcApi.GetProcessList, None))
+			processGroup.GET("/wait", ProcessWaitCond.WaitGetMiddel, bind(api.ProcApi.GetProcessList, None))
 			processGroup.PUT("", bind(api.ProcApi.StartProcess, Body))
 			processGroup.PUT("/all", bind(api.ProcApi.StartAllProcess, None))
 			processGroup.DELETE("/all", bind(api.ProcApi.KillAllProcess, None))
 			processGroup.POST("/share", middle.RolePermission(eum.RoleAdmin), bind(api.ProcApi.ProcessCreateShare, Body))
-			processGroup.GET("/control", middle.RolePermission(eum.RoleRoot), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.ProcessControl, Query))
+			processGroup.GET("/control", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.ProcessControl, Query))
 
 			proConfigGroup := processGroup.Group("/config")
 			{
-				proConfigGroup.POST("", middle.RolePermission(eum.RoleRoot), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.CreateNewProcess, Body))
-				proConfigGroup.DELETE("", middle.RolePermission(eum.RoleRoot), middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.DeleteNewProcess, Query))
+				proConfigGroup.POST("", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.CreateNewProcess, Body))
+				proConfigGroup.DELETE("", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.DeleteNewProcess, Query))
 				proConfigGroup.PUT("", middle.RolePermission(eum.RoleRoot), bind(api.ProcApi.UpdateProcessConfig, Body))
 				proConfigGroup.GET("", middle.RolePermission(eum.RoleAdmin), bind(api.ProcApi.GetProcessConfig, Query))
 			}
@@ -86,11 +91,11 @@ func routePathInit(r *gin.Engine) {
 		{
 			taskGroup.GET("", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.GetTaskById, Query))
 			taskGroup.GET("/all", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.GetTaskList, None))
-			taskGroup.GET("/all/wait", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitGetMiddel, bind(api.TaskApi.GetTaskList, None))
-			taskGroup.POST("", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.CreateTask, Body))
-			taskGroup.DELETE("", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.DeleteTaskById, Query))
-			taskGroup.PUT("", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTask, Body))
-			taskGroup.PUT("/enable", middle.RolePermission(eum.RoleAdmin), middle.TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTaskEnable, Body))
+			taskGroup.GET("/all/wait", middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitGetMiddel, bind(api.TaskApi.GetTaskList, None))
+			taskGroup.POST("", middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.CreateTask, Body))
+			taskGroup.DELETE("", middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.DeleteTaskById, Query))
+			taskGroup.PUT("", middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTask, Body))
+			taskGroup.PUT("/enable", middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel, bind(api.TaskApi.EditTaskEnable, Body))
 			taskGroup.GET("/start", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.StartTask, Query))
 			taskGroup.GET("/stop", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.StopTask, Query))
 			taskGroup.POST("/key", middle.RolePermission(eum.RoleAdmin), bind(api.TaskApi.CreateTaskApiKey, Body))
@@ -130,7 +135,7 @@ func routePathInit(r *gin.Engine) {
 		permissionGroup := apiGroup.Group("/permission").Use(middle.RolePermission(eum.RoleRoot))
 		{
 			permissionGroup.GET("/list", bind(api.PermissionApi.GetPermissionList, Query))
-			permissionGroup.PUT("", middle.ProcessWaitCond.WaitTriggerMiddel, bind(api.PermissionApi.EditPermssion, Body))
+			permissionGroup.PUT("", ProcessWaitCond.WaitTriggerMiddel, bind(api.PermissionApi.EditPermssion, Body))
 		}
 
 		logGroup := apiGroup.Group("/log").Use(middle.RolePermission(eum.RoleUser))

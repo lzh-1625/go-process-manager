@@ -8,4 +8,5 @@ const (
 	EventProcessWarning EventType = "ProcessWarning"
 	EventTaskStart      EventType = "TaskStart"
 	EventTaskStop       EventType = "TaskStop"
+	EventApiRequest     EventType = "ApiRequest"
 )

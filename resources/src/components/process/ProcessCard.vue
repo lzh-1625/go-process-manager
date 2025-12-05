@@ -2,6 +2,7 @@
 import { ProcessItem } from "~/src/types/process/process";
 import { init } from "echarts";
 import TerminalPty from "./TerminalPty.vue";
+import TerminalStd from "./TerminalStd.vue";
 import {
   deleteProcessConfig,
   getContorl,
@@ -291,7 +292,12 @@ const del = () => {
       :data="props.data"
       ref="terminalComponent"
     ></TerminalPty>
-    <TerminalPty v-else :data="props.data"></TerminalPty>
+    <TerminalStd
+      v-else-if="props.data.termType == 'std'"
+      :data="props.data"
+      ref="terminalComponent"
+    ></TerminalStd>
+    <TerminalPty v-else :data="props.data" ref="terminalComponent"></TerminalPty>
     <ProcessConfig
       :data="props.data"
       ref="processConfigComponent"

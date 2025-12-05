@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/robfig/cron/v3"
@@ -43,23 +42,23 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	}
 	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string))
 	defer func() {
-		EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string), "success", strconv.FormatBool(err == nil))
+		EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
 	}()
 	t.Running = true
-	middle.TaskWaitCond.Trigger()
+	t.StartTime = time.Now()
+	TaskWaitCond.Trigger()
 	defer func() {
 		t.Running = false
-		middle.TaskWaitCond.Trigger()
+		TaskWaitCond.Trigger()
 	}()
 	var ok bool
-	var proc *ProcessBase
 	// 判断条件是否满足
 	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessId == 0 {
 		ok = true
 	} else {
-		proc, err = ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+		proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
 		if err != nil {
-			return
+			return err
 		}
 		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
 	}
@@ -68,18 +67,17 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 		return
 	}
 
-	proc, err = ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+	proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
 	if err != nil {
 		log.Logger.Debugw("不存在该进程，结束任务")
-		return
+		return err
 	}
 
 	// 执行操作
 	log.Logger.Infow("任务开始执行")
 	if !OperationHandle[t.TaskConfig.Operation](t.TaskConfig, proc) {
 		log.Logger.Warnw("任务执行失败")
-		err = errors.New("task execute failed")
-		return
+		return errors.New("task execute failed")
 	}
 	log.Logger.Infow("任务执行成功", "target", t.TaskConfig.OperationTarget)
 
@@ -88,7 +86,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 		nextTask, err = TaskLogic.getTaskJob(*t.TaskConfig.NextId)
 		if err != nil {
 			log.Logger.Errorw("无法获取到下一个节点,结束任务", "nextId", t.TaskConfig.NextId)
-			return
+			return err
 		}
 		select {
 		case <-ctx.Done():
@@ -99,7 +97,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 				log.Logger.Errorw("下一个节点已在运行，结束任务", "nextId", t.TaskConfig.NextId)
 				return
 			}
-			err = nextTask.Run(ctx)
+			return nextTask.Run(ctx)
 		}
 	} else {
 		log.Logger.Infow("任务流结束")

@@ -1,10 +1,11 @@
 // 事件类型枚举
-export type EventType = 
-  | "ProcessStart" 
-  | "ProcessStop" 
-  | "ProcessWarning" 
-  | "TaskStart" 
-  | "TaskStop";
+export type EventType =
+  | "ProcessStart"
+  | "ProcessStop"
+  | "ProcessWarning"
+  | "TaskStart"
+  | "TaskStop"
+  | "ApiRequest";
 
 // 事件模型
 export interface Event {

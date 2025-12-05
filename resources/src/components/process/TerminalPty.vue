@@ -44,7 +44,7 @@ const initWebSocketPty = () => {
   const initialCols = Math.floor(xtermEl.value.clientWidth / 9);
   const initialRows = Math.floor(xtermEl.value.clientHeight / 19);
 
-  const baseUrl = `ws://${window.location.hostname}:8797/api/ws`;
+  const baseUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
   const url = `${baseUrl}?uuid=${props.data.uuid}&token=${localStorage.getItem(
     "token"
   )}&cols=${initialCols}&rows=${initialRows}`;

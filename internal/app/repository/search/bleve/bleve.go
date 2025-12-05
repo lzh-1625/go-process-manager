@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	sr "github.com/lzh-1625/go_process_manager/internal/app/search"
+	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
 	gse "github.com/vcaesar/gse-bleve"
 	// gse "github.com/lzh-1625/gse-bleve"

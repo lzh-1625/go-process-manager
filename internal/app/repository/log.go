@@ -5,7 +5,7 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
-	"github.com/lzh-1625/go_process_manager/internal/app/search"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 

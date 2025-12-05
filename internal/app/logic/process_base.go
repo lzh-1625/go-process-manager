@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -77,11 +77,29 @@ type ProcessBase struct {
 		enable bool
 		delete func() error
 	}
+	operate struct {
+		user atomic.Pointer[string]
+		time time.Time
+	}
 }
 type ConnectInstance interface {
 	Write([]byte)
 	WriteString(string)
 	Cancel()
+}
+
+func (p *ProcessBase) SetOpertor(operator string) {
+	if p.operate.user.CompareAndSwap(nil, &operator) {
+		p.operate.time = time.Now()
+	}
+}
+
+func (p *ProcessBase) GetOpertor() string {
+	s := p.operate.user.Swap(nil)
+	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) {
+		return ""
+	}
+	return *s
 }
 
 func (p *ProcessBase) watchDog() {
@@ -149,7 +167,7 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 		}
 	}
 	p.State.State = state
-	middle.ProcessWaitCond.Trigger()
+	ProcessWaitCond.Trigger()
 	p.createEvent(state)
 	go TaskLogic.RunTaskByTriggerEvent(p.Name, state)
 	return true
@@ -157,17 +175,22 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 
 func (p *ProcessBase) createEvent(state eum.ProcessState) {
 	var eventType eum.EventType
+	kv := []string{}
 	switch state {
 	case eum.ProcessStateRunning:
 		eventType = eum.EventProcessStart
+		kv = append(kv, "restartTimes", strconv.Itoa(p.State.restartTimes))
 	case eum.ProcessStateStop:
 		eventType = eum.EventProcessStop
+		kv = append(kv, "startTime", p.State.startTime.Format(time.DateTime))
 	case eum.ProcessStateWarnning:
 		eventType = eum.EventProcessWarning
+		kv = append(kv, "reason", p.State.Info, "startTime", p.State.startTime.Format(time.DateTime))
 	default:
 		return
 	}
-	EventLogic.Create(p.Name, eventType)
+	kv = append(kv, "operator", p.GetOpertor())
+	EventLogic.Create(p.Name, eventType, kv...)
 }
 
 func (p *ProcessBase) GetUserString() string {
@@ -194,14 +217,14 @@ func (p *ProcessBase) AddConn(user string, c ConnectInstance) {
 	p.wsLock.Lock()
 	defer p.wsLock.Unlock()
 	p.ws[user] = c
-	middle.ProcessWaitCond.Trigger()
+	ProcessWaitCond.Trigger()
 }
 
 func (p *ProcessBase) DeleteConn(user string) {
 	p.wsLock.Lock()
 	defer p.wsLock.Unlock()
 	delete(p.ws, user)
-	middle.ProcessWaitCond.Trigger()
+	ProcessWaitCond.Trigger()
 }
 
 func (p *ProcessBase) logReportHandler(log string) {

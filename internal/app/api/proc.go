@@ -48,7 +48,12 @@ func (p *procApi) KillProcess(ctx *gin.Context, req struct {
 	if !hasOprPermission(ctx, req.Uuid, eum.OperationStop) {
 		return errors.New("not permission")
 	}
-	return logic.ProcessCtlLogic.KillProcess(req.Uuid)
+	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	if err != nil {
+		return err
+	}
+	proc.SetOpertor(getUserName(ctx))
+	return proc.Kill()
 }
 
 func (p *procApi) StartProcess(ctx *gin.Context, req struct {
@@ -67,6 +72,7 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 		if err != nil {
 			return err
 		}
+		proc.SetOpertor(getUserName(ctx))
 		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
 		return nil
 	}
@@ -74,6 +80,7 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 		return errors.New("process is currently running")
 	}
 	prod.ResetRestartTimes()
+	prod.SetOpertor(getUserName(ctx))
 	err = prod.Start()
 	return
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	sr "github.com/lzh-1625/go_process_manager/internal/app/search"
+	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/olivere/elastic/v7"

@@ -138,20 +138,6 @@ func (p *processCtlLogic) ProcessStartAll() {
 	})
 }
 
-func (p *processCtlLogic) RunPrcessById(id int) (*ProcessBase, error) {
-	config, err := repository.ProcessRepository.GetProcessConfigById(id)
-	if err != nil {
-		return nil, err
-	}
-	proc, err := p.RunNewProcess(config)
-	if err != nil {
-		log.Logger.Warnw("初始化启动进程失败", config.Name, "name", "err", err)
-		return nil, err
-	}
-	p.AddProcess(id, proc)
-	return proc, nil
-}
-
 func (p *processCtlLogic) ProcessInit() {
 	config := repository.ProcessRepository.GetAllProcessConfig()
 	for _, v := range config {

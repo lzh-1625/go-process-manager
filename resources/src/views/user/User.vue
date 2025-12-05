@@ -1,97 +1,179 @@
 <template>
-  <!-- 用户表格 -->
-  <v-card class="pa-4">
-    <v-card-title class="d-flex justify-space-between align-center">
-      <span>任务</span>
-      <v-btn color="primary" variant="tonal" @click="addDialog = true">
-        <v-icon left>mdi-plus</v-icon> 添加用户
-      </v-btn>
-    </v-card-title>
+  <v-container fluid class="py-6 px-8">
+    <v-card class="rounded-lg">
+      <!-- loading spinner -->
+      <div
+        v-if="loading"
+        class="h-full d-flex flex-grow-1 align-center justify-center"
+        style="min-height: 400px"
+      >
+        <v-progress-circular
+          indeterminate
+          color="primary"
+        ></v-progress-circular>
+      </div>
 
-    <v-data-table
-      :loading="loading"
-      :headers="headers"
-      :items="desserts"
-      class="text-body-2"
-      hover
-      density="comfortable"
-    >
-      <template #item.createTime="{ item }">
-        {{ timeHanlder(item.createTime) }}
-      </template>
+      <div v-else>
+        <!-- 标题栏 -->
+        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+          <v-icon color="primary" class="mr-2">mdi-account-multiple</v-icon>
+          <span class="flex-fill">用户管理</span>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            @click="refreshUsers"
+          >
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            size="small"
+            @click="addDialog = true"
+          >
+            <v-icon left>mdi-plus</v-icon>
+            添加用户
+          </v-btn>
+        </h6>
 
-      <template #item.role="{ item }">
-        <v-chip
-          :color="
-            item.role === 1 ? 'primary' : item.role === 2 ? 'success' : 'grey'
-          "
-          variant="flat"
-          class="rounded-pill"
-          small
-        >
-          {{ getRole(item.role) }}
-        </v-chip>
-      </template>
+        <!-- 用户列表 -->
+        <v-table class="pa-3">
+          <thead>
+            <tr>
+              <th class="text-left" v-for="header in headers" :key="header.title">
+                {{ header.title }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in paginatedUsers" :key="item.account">
+              <td class="font-weight-bold">{{ item.account }}</td>
+              <td>
+                <v-chip
+                  :color="
+                    item.role === 1 ? 'primary' : item.role === 2 ? 'success' : 'grey'
+                  "
+                  size="small"
+                  class="font-weight-bold"
+                >
+                  {{ getRole(item.role) }}
+                </v-chip>
+              </td>
+              <td>{{ timeHanlder(item.createTime) }}</td>
+              <td>{{ item.remark || '-' }}</td>
+              <td>
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  :disabled="item.role != 2"
+                  @click="oprEdit(item)"
+                >
+                  <v-icon color="primary">mdi-application-edit</v-icon>
+                </v-btn>
+                <v-btn icon variant="text" size="small" @click="editItem(item)">
+                  <v-icon color="warning">mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon variant="text" size="small" @click="deleteItem(item)">
+                  <v-icon color="error">mdi-delete</v-icon>
+                </v-btn>
+              </td>
+            </tr>
+            <tr v-if="desserts.length === 0">
+              <td colspan="5" class="text-center text-secondary pa-8">
+                暂无数据
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
 
-      <template #item.actions="{ item }">
-        <v-btn
-          icon
-          variant="text"
-          size="small"
-          :disabled="item.role != 2"
-          @click="oprEdit(item)"
-        >
-          <v-icon color="primary">mdi-application-edit</v-icon>
-        </v-btn>
-        <v-btn icon variant="text" size="small" @click="editItem(item)">
-          <v-icon color="warning">mdi-pencil</v-icon>
-        </v-btn>
-        <v-btn icon variant="text" size="small" @click="deleteItem(item)">
-          <v-icon color="error">mdi-delete</v-icon>
-        </v-btn>
-      </template>
-    </v-data-table>
-  </v-card>
+        <!-- 分页 -->
+        <div class="text-center pa-4">
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            :total-visible="7"
+            density="compact"
+            @update:model-value="handlePageChange"
+          ></v-pagination>
+          <div class="mt-2 text-caption text-secondary">
+            共 {{ desserts.length }} 个用户
+          </div>
+        </div>
+      </div>
+    </v-card>
+  </v-container>
 
   <!-- 修改密码对话框 -->
-  <v-dialog v-model="dialog" max-width="480">
+  <v-dialog v-model="dialog" max-width="520">
     <v-card class="rounded-xl">
-      <v-card-title class="text-h6 font-weight-medium">修改</v-card-title>
-      <v-card-text>
-        <v-select
-          v-model="userForm.role"
-          :items="items"
-          item-title="label"
-          label="选择用户角色"
-        ></v-select>
-        <v-text-field
-          v-model="userForm.password"
-          :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="show1 ? 'text' : 'password'"
-          label="新密码"
-          hint="长度不能小于4"
-          @click:append-inner="show1 = !show1"
-        ></v-text-field>
-        <v-text-field v-model="userForm.remark" label="备注"></v-text-field>
+      <v-card-title class="text-h6 font-weight-medium">修改用户</v-card-title>
+
+      <v-divider></v-divider>
+
+      <v-card-text class="pt-6">
+        <v-container fluid>
+          <v-row dense>
+            <v-col cols="12">
+              <v-select
+                v-model="userForm.role"
+                :items="items"
+                item-title="label"
+                label="选择用户角色"
+                variant="outlined"
+                density="comfortable"
+              ></v-select>
+            </v-col>
+            <v-col cols="12">
+              <v-text-field
+                v-model="userForm.password"
+                :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                :type="show1 ? 'text' : 'password'"
+                label="新密码"
+                hint="长度不能小于4"
+                variant="outlined"
+                density="comfortable"
+                @click:append-inner="show1 = !show1"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12">
+              <v-text-field
+                v-model="userForm.remark"
+                label="备注"
+                variant="outlined"
+                density="comfortable"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+        </v-container>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn variant="text" @click="close">取消</v-btn>
-        <v-btn color="primary" variant="flat" @click="save">确认</v-btn>
+
+      <v-divider></v-divider>
+
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="close">取消</v-btn>
+        <v-btn color="primary" @click="save">确认</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
   <!-- 删除确认对话框 -->
-  <v-dialog v-model="dialogDelete" max-width="420">
-    <v-card>
-      <v-card-title>确认删除该用户？</v-card-title>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn variant="text" @click="closeDelete">取消</v-btn>
-        <v-btn color="error" variant="flat" @click="deleteItemConfirm"
-          >确认</v-btn
-        >
+  <v-dialog v-model="dialogDelete" max-width="480">
+    <v-card class="rounded-xl">
+      <v-card-title class="text-h6 font-weight-medium">确认删除</v-card-title>
+
+      <v-divider></v-divider>
+
+      <v-card-text class="pt-6">
+        确认删除该用户吗？此操作无法撤销。
+      </v-card-text>
+
+      <v-divider></v-divider>
+
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="closeDelete">取消</v-btn>
+        <v-btn color="error" @click="deleteItemConfirm">确认删除</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -100,30 +182,58 @@
   <v-dialog v-model="addDialog" max-width="520">
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium">添加新用户</v-card-title>
-      <v-card-text>
-        <v-text-field
-          v-model="addUserForm.account"
-          label="用户名"
-        ></v-text-field>
-        <v-text-field
-          v-model="addUserForm.password"
-          :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="show1 ? 'text' : 'password'"
-          label="密码"
-          @click:append-inner="show1 = !show1"
-        ></v-text-field>
-        <v-select
-          v-model="addUserForm.role"
-          :items="items"
-          item-title="label"
-          label="选择用户角色"
-        ></v-select>
-        <v-text-field v-model="addUserForm.remark" label="备注"></v-text-field>
+
+      <v-divider></v-divider>
+
+      <v-card-text class="pt-6">
+        <v-container fluid>
+          <v-row dense>
+            <v-col cols="12">
+              <v-text-field
+                v-model="addUserForm.account"
+                label="用户名"
+                variant="outlined"
+                density="comfortable"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12">
+              <v-text-field
+                v-model="addUserForm.password"
+                :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                :type="show1 ? 'text' : 'password'"
+                label="密码"
+                variant="outlined"
+                density="comfortable"
+                @click:append-inner="show1 = !show1"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12">
+              <v-select
+                v-model="addUserForm.role"
+                :items="items"
+                item-title="label"
+                label="选择用户角色"
+                variant="outlined"
+                density="comfortable"
+              ></v-select>
+            </v-col>
+            <v-col cols="12">
+              <v-text-field
+                v-model="addUserForm.remark"
+                label="备注"
+                variant="outlined"
+                density="comfortable"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+        </v-container>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn variant="text" @click="addDialog = false">取消</v-btn>
-        <v-btn color="primary" variant="flat" @click="add">确认</v-btn>
+
+      <v-divider></v-divider>
+
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="addDialog = false">取消</v-btn>
+        <v-btn color="primary" @click="add">确认</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -133,9 +243,12 @@
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium">
         <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
-        <span class="text-h6 font-weight-medium">修改权限</span></v-card-title
-      >
-      <v-card-text class="pa-4">
+        <span>修改权限</span>
+      </v-card-title>
+
+      <v-divider></v-divider>
+
+      <v-card-text class="pt-6">
         <v-data-table
           :headers="permissionHeaders"
           :items="oprList"
@@ -167,12 +280,10 @@
         </v-data-table>
       </v-card-text>
 
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn variant="text" @click="oprEditdialog = false">取消</v-btn>
-        <v-btn color="primary" variant="flat" @click="oprEditdialog = false"
-          >确认</v-btn
-        >
+      <v-divider></v-divider>
+
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="oprEditdialog = false">关闭</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -180,61 +291,48 @@
   <!-- ✅ 修改权限对话框 -->
   <v-dialog
     v-model="oprEditdiaFormDialog"
-    max-width="420"
+    max-width="520"
     transition="dialog-fade-transition"
   >
-    <v-card class="prime-card rounded-xl elevation-2">
-      <!-- Header -->
-      <div class="prime-header d-flex align-center justify-space-between">
-        <v-card-title class="text-h6 font-weight-medium">
-          <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
-          <span class="text-h6 font-weight-medium">修改权限</span></v-card-title
-        >
-        <v-btn
-          icon="mdi-close"
-          variant="text"
-          @click="oprEditdiaFormDialog = false"
-        ></v-btn>
-      </div>
+    <v-card class="rounded-xl">
+      <v-card-title class="text-h6 font-weight-medium">
+        <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
+        <span>修改权限</span>
+      </v-card-title>
 
       <v-divider></v-divider>
 
-      <!-- Content -->
-      <v-card-text class="px-6 py-5">
-        <div v-for="(label, key) in switchLabels" :key="key" class="prime-item">
-          <div class="d-flex align-center justify-space-between">
-            <span class="font-weight-medium text-body-1">{{ label }}</span>
-            <v-switch
-              color="primary"
-              inset
-              density="compact"
-              hide-details
-              v-model="permissionEditForm[key]"
-            ></v-switch>
-          </div>
-        </div>
+      <v-card-text class="pt-6">
+        <v-container fluid>
+          <v-row dense>
+            <v-col cols="12" v-for="(label, key) in switchLabels" :key="key">
+              <div class="d-flex align-center justify-space-between py-2">
+                <span class="font-weight-medium text-body-1">{{ label }}</span>
+                <v-switch
+                  color="primary"
+                  inset
+                  density="compact"
+                  hide-details
+                  v-model="permissionEditForm[key]"
+                ></v-switch>
+              </div>
+            </v-col>
+          </v-row>
+        </v-container>
       </v-card-text>
 
       <v-divider></v-divider>
 
-      <!-- Footer -->
-      <v-card-actions class="pa-4 d-flex justify-end">
-        <v-btn
-          variant="text"
-          color="grey-darken-1"
-          @click="oprEditdiaFormDialog = false"
-          >取消</v-btn
-        >
-        <v-btn color="primary" variant="flat" class="prime-btn" @click="submit"
-          >确认</v-btn
-        >
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="oprEditdiaFormDialog = false">取消</v-btn>
+        <v-btn color="primary" @click="submit">确认</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import {
   login,
   createUser,
@@ -258,6 +356,11 @@ const uuid = ref("");
 const oprEditdialog = ref(false);
 const permissionEditForm = ref({});
 const oprEditdiaFormDialog = ref(false);
+
+// 分页
+const currentPage = ref(1);
+const pageSize = ref(10);
+
 const headers = [
   { title: "用户名", key: "account" },
   { title: "角色", key: "role" },
@@ -296,6 +399,24 @@ const rules = {
   required: (v) => !!v || "必填项",
   min: (v) => v.length >= 4 || "至少4个字符",
 };
+
+// 计算总页数
+const totalPages = computed(() => {
+  return Math.ceil(desserts.value.length / pageSize.value);
+});
+
+// 计算当前页数据
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return desserts.value.slice(start, end);
+});
+
+// 处理页码变化
+const handlePageChange = (page) => {
+  currentPage.value = page;
+};
+
 onMounted(() => {
   initialize();
 });
@@ -357,6 +478,10 @@ const initialize = () => {
   });
 };
 
+const refreshUsers = () => {
+  initialize();
+};
+
 const editItem = (item) => {
   userForm.value = {
     account: item.account,
@@ -397,13 +522,38 @@ const submit = () => {
 };
 </script>
 
-<style scoped>
-.v-data-table {
-  border-radius: 16px;
+<style lang="scss" scoped>
+.v-table {
+  table {
+    padding: 4px;
+    padding-bottom: 8px;
+
+    th {
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 0 !important;
+    }
+
+    tbody {
+      tr {
+        transition: box-shadow 0.2s, transform 0.2s;
+
+        &:not(.v-data-table__selected):hover {
+          box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
+          transform: translateY(-4px);
+        }
+      }
+    }
+  }
 }
+
 .v-card-title {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
+
 .v-card-actions {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }

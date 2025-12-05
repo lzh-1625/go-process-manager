@@ -1,74 +1,38 @@
 package middle
 
 import (
-	"sync"
-	"time"
-
-	"github.com/lzh-1625/go_process_manager/config"
-
 	"github.com/gin-gonic/gin"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 )
 
-type waitCond struct {
-	cond    sync.Cond
-	ts      int64
-	timeMap sync.Map
-	trigger chan struct{}
+type WaitCondMiddle struct {
+	wc *logic.WaitCond
 }
 
-var (
-	ProcessWaitCond *waitCond
-	TaskWaitCond    *waitCond
-)
-
-func InitWaitCond() {
-	ProcessWaitCond = newWaitCond()
-	TaskWaitCond = newWaitCond()
-}
-
-func newWaitCond() *waitCond {
-	wc := &waitCond{
-		cond:    *sync.NewCond(&sync.Mutex{}),
-		ts:      time.Now().UnixNano(),
-		timeMap: sync.Map{},
-		trigger: make(chan struct{}),
+func NewWaitCond(wc *logic.WaitCond) *WaitCondMiddle {
+	return &WaitCondMiddle{
+		wc: wc,
 	}
-	go wc.timing()
-	return wc
 }
 
-func (p *waitCond) Trigger() {
-	p.trigger <- struct{}{}
-	p.ts = time.Now().UnixMicro()
+func (p *WaitCondMiddle) Trigger() {
+	p.wc.Trigger()
 }
 
-func (p *waitCond) WaitGetMiddel(c *gin.Context) {
+func (p *WaitCondMiddle) WaitGetMiddel(c *gin.Context) {
 	reqUser := c.GetHeader("Uuid")
-	defer p.timeMap.Store(reqUser, p.ts)
-	if ts, ok := p.timeMap.Load(reqUser); !ok || ts.(int64) > p.ts {
+	defer p.wc.TimeMap.Store(reqUser, p.wc.Ts)
+	if ts, ok := p.wc.TimeMap.Load(reqUser); !ok || ts.(int64) > p.wc.Ts {
 		c.Next()
 		return
 	}
-	p.cond.L.Lock()
-	defer p.cond.L.Unlock()
-	p.cond.Wait()
+	p.wc.Cond.L.Lock()
+	defer p.wc.Cond.L.Unlock()
+	p.wc.Cond.Wait()
 	c.Next()
 }
 
-func (p *waitCond) WaitTriggerMiddel(c *gin.Context) {
+func (p *WaitCondMiddle) WaitTriggerMiddel(c *gin.Context) {
 	defer p.Trigger()
 	c.Next()
-}
-
-func (p *waitCond) timing() { // 添加定时信号清理阻塞协程
-	ticker := time.NewTicker(time.Second * time.Duration(config.CF.CondWaitTime))
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-		case <-p.trigger:
-		}
-		ticker.Reset(time.Second * time.Duration(config.CF.CondWaitTime))
-		p.cond.Broadcast()
-	}
 }

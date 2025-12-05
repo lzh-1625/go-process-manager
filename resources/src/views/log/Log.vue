@@ -1,202 +1,210 @@
 <template>
   <v-container fluid class="py-6 px-8">
-    <!-- 日志查看工具栏 -->
-    <v-card class="mb-6 rounded-2xl elevation-3">
-      <!-- 顶部标题和操作按钮 -->
-      <div class="pa-4 d-flex align-center justify-space-between flex-wrap">
-        <div class="d-flex align-center mb-2 mb-sm-0">
-          <v-icon size="40" color="primary" class="mr-3">mdi-text-box-search</v-icon>
-          <span class="text-h5 font-weight-bold text-primary">日志查看</span>
-        </div>
-
-        <div class="d-flex align-center ga-3 flex-wrap">
-          <v-btn
-            color="success"
-            variant="flat"
-            class="rounded-lg px-4"
-            @click="openTerminalView"
-          >
-            <v-icon start>mdi-console</v-icon>
-            终端视图
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            class="rounded-lg px-4"
-            @click="refreshLogs"
-            :loading="loading"
-          >
-            <v-icon start>mdi-refresh</v-icon>
-            刷新
-          </v-btn>
-        </div>
+    <v-card class="rounded-lg">
+      <!-- loading spinner -->
+      <div
+        v-if="loading && logData.length === 0"
+        class="h-full d-flex flex-grow-1 align-center justify-center"
+        style="min-height: 400px"
+      >
+        <v-progress-circular
+          indeterminate
+          color="primary"
+        ></v-progress-circular>
       </div>
 
-      <v-divider></v-divider>
-
-      <!-- 筛选条件 -->
-      <v-expansion-panels flat>
-        <v-expansion-panel>
-          <v-expansion-panel-title>
-            <v-icon start>mdi-filter</v-icon>
-            筛选条件
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <v-container fluid>
-              <v-row dense>
-                <!-- 进程名筛选 -->
-                <v-col cols="12" sm="6" md="4">
-                  <v-autocomplete
-                    label="进程名"
-                    variant="outlined"
-                    density="comfortable"
-                    v-model="searchForm.name"
-                    :items="processList"
-                    clearable
-                    prepend-inner-icon="mdi-application"
-                  />
-                </v-col>
-
-                <!-- 日志内容搜索 -->
-                <v-col cols="12" sm="6" md="4">
-                  <v-text-field
-                    label="日志内容"
-                    variant="outlined"
-                    density="comfortable"
-                    v-model="searchForm.log"
-                    clearable
-                    prepend-inner-icon="mdi-text-search"
-                  />
-                </v-col>
-
-                <!-- 使用类型 -->
-                <v-col cols="12" sm="6" md="4">
-                  <v-text-field
-                    label="使用者"
-                    variant="outlined"
-                    density="comfortable"
-                    v-model="searchForm.using"
-                    clearable
-                    prepend-inner-icon="mdi-account"
-                  />
-                </v-col>
-
-                <!-- 开始时间 -->
-                <v-col cols="12" sm="6" md="4">
-                  <v-text-field
-                    label="开始时间"
-                    variant="outlined"
-                    density="comfortable"
-                    type="datetime-local"
-                    v-model="searchForm.startTime"
-                    clearable
-                    prepend-inner-icon="mdi-calendar-start"
-                  />
-                </v-col>
-
-                <!-- 结束时间 -->
-                <v-col cols="12" sm="6" md="4">
-                  <v-text-field
-                    label="结束时间"
-                    variant="outlined"
-                    density="comfortable"
-                    type="datetime-local"
-                    v-model="searchForm.endTime"
-                    clearable
-                    prepend-inner-icon="mdi-calendar-end"
-                  />
-                </v-col>
-
-                <!-- 排序选择 -->
-                <v-col cols="12" sm="6" md="4">
-                  <v-select
-                    label="排序方式"
-                    variant="outlined"
-                    density="comfortable"
-                    v-model="searchForm.sort"
-                    :items="sortOptions"
-                    item-title="label"
-                    item-value="value"
-                    prepend-inner-icon="mdi-sort"
-                  />
-                </v-col>
-
-                <!-- 操作按钮 -->
-                <v-col cols="12" sm="6" md="4" class="d-flex align-center ga-2">
-                  <v-btn color="primary" @click="searchLogs" :loading="loading">
-                    <v-icon start>mdi-magnify</v-icon>
-                    搜索
-                  </v-btn>
-                  <v-btn color="grey" variant="tonal" @click="resetSearch">
-                    <v-icon start>mdi-refresh</v-icon>
-                    重置
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </v-card>
-
-    <!-- 日志列表 -->
-    <v-card class="rounded-2xl elevation-2">
-      <v-data-table
-        :headers="headers"
-        :items="logData"
-        :loading="loading"
-        :items-per-page="-1"
-        item-key="id"
-        class="text-body-2 log-table-seamless"
-        density="compact"
-      >
-        <!-- 自定义列渲染 -->
-        <template #item.log="{ item }">
-          <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
-        </template>
-
-        <template #item.time="{ item }">
-          <span class="text-caption">{{ formatTime(item.time) }}</span>
-        </template>
-
-        <template #item.name="{ item }">
-          <v-chip color="primary" size="x-small" variant="tonal">
-            {{ item.name }}
-          </v-chip>
-        </template>
-
-        <template #item.using="{ item }">
-          <v-chip color="secondary" size="x-small" variant="tonal">
-            {{ item.using || '-' }}
-          </v-chip>
-        </template>
-
-        <template #item.actions="{ item }">
+      <div v-else>
+        <!-- 标题栏 -->
+        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+          <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
+          <span class="flex-fill">日志查看</span>
           <v-btn
-            color="primary"
-            size="x-small"
-            variant="tonal"
-            @click="viewLogContext(item)"
+            icon
+            variant="text"
+            size="small"
+            @click="openTerminalView"
+            class="mr-1"
           >
-            <v-icon size="small">mdi-text-search</v-icon>
-            上下文
+            <v-icon>mdi-console</v-icon>
           </v-btn>
-        </template>
-        <!-- 底部分页 -->
-        <template #bottom>
-          <div class="text-center pa-4">
-            <v-pagination
-              v-model="currentPage"
-              :length="totalPages"
-              :total-visible="7"
-              @update:model-value="handlePageChange"
-            ></v-pagination>
-            <div class="mt-2 text-caption text-grey">
-              共 {{ totalLogs }} 条日志，每页 {{ pageSize }} 条
-            </div>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            @click="refreshLogs"
+          >
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            @click="showFilter = !showFilter"
+          >
+            <v-icon>mdi-filter</v-icon>
+          </v-btn>
+        </h6>
+
+        <!-- 筛选条件 -->
+        <v-expand-transition>
+          <div v-show="showFilter" class="px-5 pb-4">
+            <v-row dense>
+              <!-- 进程名筛选 -->
+              <v-col cols="12" sm="6" md="3">
+                <v-autocomplete
+                  label="进程名"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.name"
+                  :items="processList"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+
+              <!-- 日志内容搜索 -->
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  label="日志内容"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.log"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+
+              <!-- 使用类型 -->
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  label="使用者"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.using"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+
+              <!-- 排序选择 -->
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  label="排序方式"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.sort"
+                  :items="sortOptions"
+                  item-title="label"
+                  item-value="value"
+                  hide-details
+                />
+              </v-col>
+
+              <!-- 开始时间 -->
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  label="开始时间"
+                  variant="outlined"
+                  density="compact"
+                  type="datetime-local"
+                  v-model="searchForm.startTime"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+
+              <!-- 结束时间 -->
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  label="结束时间"
+                  variant="outlined"
+                  density="compact"
+                  type="datetime-local"
+                  v-model="searchForm.endTime"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+
+              <!-- 操作按钮 -->
+              <v-col cols="12" sm="6" md="3" class="d-flex ga-2">
+                <v-btn
+                  color="primary"
+                  size="small"
+                  elevation="4"
+                  variant="elevated"
+                  @click="searchLogs"
+                >
+                  搜索
+                </v-btn>
+                <v-btn size="small" variant="tonal" @click="resetSearch">
+                  重置
+                </v-btn>
+              </v-col>
+            </v-row>
           </div>
-        </template>
-      </v-data-table>
+        </v-expand-transition>
+
+        <!-- 日志列表 -->
+        <v-table class="pa-3 log-table">
+          <thead>
+            <tr>
+              <th class="text-left" v-for="header in headers" :key="header.title">
+                {{ header.title }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in logData" :key="item.id">
+              <td class="log-cell">
+                <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
+              </td>
+              <td>
+                <span class="text-caption">{{ formatTime(item.time) }}</span>
+              </td>
+              <td>
+                <v-chip color="primary" size="small" class="font-weight-bold">
+                  {{ item.name }}
+                </v-chip>
+              </td>
+              <td>
+                <v-chip color="secondary" size="small" class="font-weight-bold">
+                  {{ item.using || '-' }}
+                </v-chip>
+              </td>
+              <td>
+                <v-btn
+                  elevation="4"
+                  variant="elevated"
+                  size="small"
+                  @click="viewLogContext(item)"
+                >
+                  上下文
+                </v-btn>
+              </td>
+            </tr>
+            <tr v-if="logData.length === 0">
+              <td colspan="5" class="text-center text-secondary pa-8">
+                暂无数据
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+
+        <!-- 分页 -->
+        <div class="text-center pa-4">
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            :total-visible="7"
+            density="compact"
+            @update:model-value="handlePageChange"
+          ></v-pagination>
+          <div class="mt-2 text-caption text-secondary">
+            共 {{ totalLogs }} 条日志
+          </div>
+        </div>
+      </div>
     </v-card>
 
     <!-- 终端日志查看器 -->
@@ -246,6 +254,7 @@ const totalLogs = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(20);
 const loading = ref(false);
+const showFilter = ref(false);
 
 // 搜索表单
 const searchForm = ref({
@@ -415,7 +424,7 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .log-content {
   font-size: 0.8rem;
   padding: 3px 10px;
@@ -436,64 +445,38 @@ onMounted(() => {
   word-break: break-word;
 }
 
-:deep(.v-data-table__th) {
-  font-weight: 600 !important;
-  font-size: 0.8rem !important;
-  text-align: center !important;
+.v-table {
+  table {
+    padding: 4px;
+    padding-bottom: 8px;
+
+    th {
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 0 !important;
+    }
+
+    tbody {
+      tr {
+        transition: box-shadow 0.2s, transform 0.2s;
+
+        &:not(.v-data-table__selected):hover {
+          box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
+          transform: translateY(-4px);
+        }
+      }
+    }
+  }
 }
 
-/* 日志内容列无间距 */
-:deep(.log-table-seamless .v-data-table__td:first-child) {
+/* 日志内容列样式 */
+.log-cell {
   padding: 0 !important;
   height: auto !important;
   line-height: 1 !important;
-}
-
-/* 其他列保持小间距 */
-:deep(.log-table-seamless .v-data-table__td:not(:first-child)) {
-  padding: 4px 8px !important;
-  font-size: 0.75rem;
-  vertical-align: middle;
-}
-
-/* 移除表格行间距和边框，设置最小高度 */
-:deep(.log-table-seamless tbody tr) {
-  border: none !important;
-  height: 0 !important;
-}
-
-:deep(.log-table-seamless .v-data-table__tr) {
-  border-bottom: none !important;
-  height: 0 !important;
-}
-
-:deep(.log-table-seamless tbody tr td) {
-  border: none !important;
-}
-
-/* 移除hover背景色，避免破坏连续效果 */
-:deep(.log-table-seamless tbody tr:hover) {
-  background-color: transparent !important;
-}
-
-/* 禁用所有单元格的 hover 效果 */
-:deep(.log-table-seamless tbody tr:hover td) {
-  background-color: transparent !important;
-}
-
-/* 禁用日志内容的 hover 效果 */
-.log-content:hover {
-  background-color: transparent !important;
-}
-
-/* 移除表格的内边距和间距 */
-:deep(.log-table-seamless .v-table__wrapper) {
-  border-spacing: 0 !important;
-}
-
-:deep(.log-table-seamless table) {
-  border-collapse: collapse !important;
-  border-spacing: 0 !important;
 }
 </style>
 

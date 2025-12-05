@@ -11,7 +11,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/termui"
 	logger "github.com/lzh-1625/go_process_manager/log"
@@ -145,5 +144,5 @@ func initLogHandle() {
 }
 
 func initWaitCond() {
-	middle.InitWaitCond()
+	logic.InitWaitCond()
 }

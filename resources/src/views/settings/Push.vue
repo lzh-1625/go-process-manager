@@ -1,191 +1,192 @@
 <template>
   <v-container fluid class="py-6 px-8">
-    <!-- 页面标题和操作按钮 -->
-    <v-card class="mb-6 rounded-2xl elevation-3">
-      <div class="pa-4 d-flex align-center justify-space-between flex-wrap">
-        <div class="d-flex align-center mb-2 mb-sm-0">
-          <v-icon size="40" color="primary" class="mr-3">mdi-bell-ring</v-icon>
-          <span class="text-h5 font-weight-bold text-primary">推送管理</span>
-        </div>
-        <v-btn
+    <v-card class="rounded-lg">
+      <!-- loading spinner -->
+      <div
+        v-if="loading"
+        class="h-full d-flex flex-grow-1 align-center justify-center"
+        style="min-height: 400px"
+      >
+        <v-progress-circular
+          indeterminate
           color="primary"
-          variant="flat"
-          class="rounded-lg px-4"
-          @click="openAddDialog"
-        >
-          <v-icon start>mdi-plus</v-icon>
-          新增推送
-        </v-btn>
+        ></v-progress-circular>
+      </div>
+
+      <div v-else>
+        <!-- 标题栏 -->
+        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+          <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
+          <span class="flex-fill">推送管理</span>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            @click="refreshPushList"
+          >
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            size="small"
+            @click="openAddDialog"
+          >
+            <v-icon left>mdi-plus</v-icon>
+            新增推送
+          </v-btn>
+        </h6>
+
+        <!-- 推送列表 -->
+        <v-table class="pa-3">
+          <thead>
+            <tr>
+              <th class="text-left" v-for="header in headers" :key="header.title">
+                {{ header.title }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in paginatedPushList" :key="item.id">
+              <td>
+                <v-chip
+                  :color="getMethodColor(item.method)"
+                  size="small"
+                  class="font-weight-bold"
+                >
+                  {{ item.method }}
+                </v-chip>
+              </td>
+              <td>
+                <div class="text-truncate" style="max-width: 300px;" :title="item.url">
+                  {{ item.url }}
+                </div>
+              </td>
+              <td>
+                <div class="text-truncate" style="max-width: 200px;" :title="item.body">
+                  {{ item.body || '-' }}
+                </div>
+              </td>
+              <td>
+                <div class="text-truncate" style="max-width: 150px;" :title="item.remark">
+                  {{ item.remark || '-' }}
+                </div>
+              </td>
+              <td>
+                <v-switch
+                  :model-value="item.enable"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  @update:model-value="toggleEnable(item)"
+                ></v-switch>
+              </td>
+              <td>
+                <v-icon class="mr-2" @click="openEditDialog(item)" size="small">
+                  mdi-pencil
+                </v-icon>
+                <v-icon @click="confirmDelete(item)" size="small">
+                  mdi-delete
+                </v-icon>
+              </td>
+            </tr>
+            <tr v-if="pushList.length === 0">
+              <td colspan="6" class="text-center text-secondary pa-8">
+                暂无数据
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+
+        <!-- 分页 -->
+        <div class="text-center pa-4">
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            :total-visible="7"
+            density="compact"
+            @update:model-value="handlePageChange"
+          ></v-pagination>
+          <div class="mt-2 text-caption text-secondary">
+            共 {{ pushList.length }} 条推送配置
+          </div>
+        </div>
       </div>
     </v-card>
 
-    <!-- 推送列表 -->
-    <v-card class="rounded-2xl elevation-2" :loading="loading">
-      <v-data-table
-        :headers="headers"
-        :items="pushList"
-        :loading="loading"
-        item-key="id"
-        class="text-body-2"
-        density="comfortable"
-      >
-        <!-- HTTP方法列 -->
-        <template #item.method="{ item }">
-          <v-chip
-            :color="getMethodColor(item.method)"
-            size="small"
-            variant="flat"
-            class="font-weight-bold"
-          >
-            {{ item.method }}
-          </v-chip>
-        </template>
-
-        <!-- URL列 -->
-        <template #item.url="{ item }">
-          <div class="text-truncate" style="max-width: 300px;" :title="item.url">
-            {{ item.url }}
-          </div>
-        </template>
-
-        <!-- Body列 -->
-        <template #item.body="{ item }">
-          <div class="text-truncate" style="max-width: 200px;" :title="item.body">
-            {{ item.body || '-' }}
-          </div>
-        </template>
-
-        <!-- 备注列 -->
-        <template #item.remark="{ item }">
-          <div class="text-truncate" style="max-width: 150px;" :title="item.remark">
-            {{ item.remark || '-' }}
-          </div>
-        </template>
-
-        <!-- 启用状态列 -->
-        <template #item.enable="{ item }">
-          <v-switch
-            :model-value="item.enable"
-            color="success"
-            density="compact"
-            hide-details
-            @update:model-value="toggleEnable(item)"
-          ></v-switch>
-        </template>
-
-        <!-- 操作列 -->
-        <template #item.actions="{ item }">
-          <div class="d-flex ga-1">
-            <v-btn
-              color="primary"
-              size="small"
-              variant="tonal"
-              icon
-              @click="openEditDialog(item)"
-            >
-              <v-icon size="small">mdi-pencil</v-icon>
-              <v-tooltip activator="parent" location="top">编辑</v-tooltip>
-            </v-btn>
-            <v-btn
-              color="error"
-              size="small"
-              variant="tonal"
-              icon
-              @click="confirmDelete(item)"
-            >
-              <v-icon size="small">mdi-delete</v-icon>
-              <v-tooltip activator="parent" location="top">删除</v-tooltip>
-            </v-btn>
-          </div>
-        </template>
-
-        <!-- 无数据提示 -->
-        <template #no-data>
-          <div class="text-center py-8">
-            <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-bell-off</v-icon>
-            <div class="text-h6 text-grey">暂无推送配置</div>
-            <div class="text-body-2 text-grey-lighten-1 mb-4">点击上方按钮添加新的推送配置</div>
-          </div>
-        </template>
-      </v-data-table>
-    </v-card>
-
     <!-- 新增/编辑对话框 -->
-    <v-dialog v-model="dialog" max-width="600" persistent>
+    <v-dialog v-model="dialog" max-width="600px">
       <v-card class="rounded-xl">
-        <v-card-title class="d-flex align-center pa-4">
-          <v-icon color="primary" class="mr-2">
-            {{ isEdit ? 'mdi-pencil' : 'mdi-plus' }}
-          </v-icon>
+        <v-card-title class="text-h6 font-weight-medium">
           {{ isEdit ? '编辑推送' : '新增推送' }}
         </v-card-title>
+
         <v-divider></v-divider>
-        <v-card-text class="pa-4">
+
+        <v-card-text class="pt-6">
           <v-form ref="formRef" v-model="formValid">
-            <v-row dense>
-              <v-col cols="12" sm="4">
-                <v-select
-                  v-model="form.method"
-                  label="HTTP方法"
-                  :items="methodOptions"
-                  variant="outlined"
-                  density="comfortable"
-                  :rules="[rules.required]"
-                  prepend-inner-icon="mdi-web"
-                ></v-select>
-              </v-col>
-              <v-col cols="12" sm="8">
-                <v-text-field
-                  v-model="form.url"
-                  label="推送URL"
-                  variant="outlined"
-                  density="comfortable"
-                  :rules="[rules.required, rules.url]"
-                  prepend-inner-icon="mdi-link"
-                  placeholder="https://example.com/webhook"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="form.body"
-                  label="请求体 (Body)"
-                  variant="outlined"
-                  density="comfortable"
-                  rows="4"
-                  prepend-inner-icon="mdi-code-json"
-                  placeholder='{"message": "{{.Message}}", "time": "{{.Time}}"}'
-                  hint="支持模板变量: {{.Message}}, {{.Time}}, {{.Level}} 等"
-                  persistent-hint
-                ></v-textarea>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="form.remark"
-                  label="备注"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-note-text"
-                  placeholder="推送配置描述"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-switch
-                  v-model="form.enable"
-                  label="启用推送"
-                  color="success"
-                  hide-details
-                ></v-switch>
-              </v-col>
-            </v-row>
+            <v-container fluid>
+              <v-row dense>
+                <v-col cols="12" sm="4">
+                  <v-select
+                    v-model="form.method"
+                    label="HTTP方法"
+                    :items="methodOptions"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[rules.required]"
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" sm="8">
+                  <v-text-field
+                    v-model="form.url"
+                    label="推送URL"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[rules.required, rules.url]"
+                    placeholder="https://example.com/webhook"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="form.body"
+                    label="请求体 (Body)"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="4"
+                    placeholder='{"message": "{$messsage}", "user": "{$user}"}'
+                    hint="占位符：{$name}进程名称 {$user}使用者 {$messsage}消息内容 {$status}进程状态"
+                    persistent-hint
+                  ></v-textarea>
+                </v-col>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="form.remark"
+                    label="备注"
+                    variant="outlined"
+                    density="comfortable"
+                    placeholder="推送配置描述"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-switch
+                    v-model="form.enable"
+                    label="启用推送"
+                    color="primary"
+                    hide-details
+                  ></v-switch>
+                </v-col>
+              </v-row>
+            </v-container>
           </v-form>
         </v-card-text>
+
         <v-divider></v-divider>
-        <v-card-actions class="pa-4">
-          <v-spacer></v-spacer>
-          <v-btn variant="tonal" @click="closeDialog">取消</v-btn>
+
+        <v-card-actions class="justify-end pa-4">
+          <v-btn text @click="closeDialog">取消</v-btn>
           <v-btn
             color="primary"
-            variant="flat"
             @click="submitForm"
             :loading="submitLoading"
             :disabled="!formValid"
@@ -197,26 +198,25 @@
     </v-dialog>
 
     <!-- 删除确认对话框 -->
-    <v-dialog v-model="deleteDialog" max-width="400">
+    <v-dialog v-model="deleteDialog" max-width="480">
       <v-card class="rounded-xl">
-        <v-card-title class="d-flex align-center pa-4">
-          <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
-          确认删除
-        </v-card-title>
+        <v-card-title class="text-h6 font-weight-medium">确认删除</v-card-title>
+
         <v-divider></v-divider>
-        <v-card-text class="pa-4">
-          <p>确定要删除这个推送配置吗？</p>
-          <p class="text-caption text-grey mt-2">
+
+        <v-card-text class="pt-6">
+          确定要删除这个推送配置吗？
+          <div class="text-caption text-secondary mt-2">
             备注: {{ deleteItem?.remark || '无备注' }}
-          </p>
+          </div>
         </v-card-text>
+
         <v-divider></v-divider>
-        <v-card-actions class="pa-4">
-          <v-spacer></v-spacer>
-          <v-btn variant="tonal" @click="deleteDialog = false">取消</v-btn>
+
+        <v-card-actions class="justify-end pa-4">
+          <v-btn text @click="deleteDialog = false">取消</v-btn>
           <v-btn
             color="error"
-            variant="flat"
             @click="handleDelete"
             :loading="deleteLoading"
           >
@@ -229,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { getPushList, createPush, editPush, deletePush } from "~/src/api/push";
 import type { PushItem } from "~/src/types/push/push";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
@@ -252,8 +252,12 @@ const deleteDialog = ref(false);
 const deleteItem = ref<PushItem | null>(null);
 const deleteLoading = ref(false);
 
+// 分页
+const currentPage = ref(1);
+const pageSize = ref(10);
+
 // HTTP方法选项
-const methodOptions = ["GET", "POST", "PUT", "DELETE"];
+const methodOptions = ["GET", "POST"];
 
 // 表单数据
 const defaultForm = {
@@ -268,12 +272,12 @@ const form = ref({ ...defaultForm });
 
 // 表格列定义
 const headers = [
-  { title: "HTTP方法", key: "method", width: "100px" },
+  { title: "HTTP方法", key: "method" },
   { title: "推送URL", key: "url" },
   { title: "请求体", key: "body" },
   { title: "备注", key: "remark" },
-  { title: "启用", key: "enable", width: "80px" },
-  { title: "操作", key: "actions", width: "120px", sortable: false },
+  { title: "启用", key: "enable" },
+  { title: "操作", key: "actions" },
 ];
 
 // 验证规则
@@ -288,6 +292,23 @@ const rules = {
       return "请输入有效的URL";
     }
   },
+};
+
+// 计算总页数
+const totalPages = computed(() => {
+  return Math.ceil(pushList.value.length / pageSize.value);
+});
+
+// 计算当前页数据
+const paginatedPushList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return pushList.value.slice(start, end);
+});
+
+// 处理页码变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
 };
 
 // 获取HTTP方法颜色
@@ -315,6 +336,11 @@ const loadPushList = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// 刷新推送列表
+const refreshPushList = () => {
+  loadPushList();
 };
 
 // 打开新增对话框
@@ -422,9 +448,31 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-.v-data-table :deep(th) {
-  font-weight: 600 !important;
+<style lang="scss" scoped>
+.v-table {
+  table {
+    padding: 4px;
+    padding-bottom: 8px;
+
+    th {
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 0 !important;
+    }
+
+    tbody {
+      tr {
+        transition: box-shadow 0.2s, transform 0.2s;
+
+        &:not(.v-data-table__selected):hover {
+          box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
+          transform: translateY(-4px);
+        }
+      }
+    }
+  }
 }
 </style>
-
