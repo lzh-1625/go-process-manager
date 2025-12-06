@@ -65,6 +65,8 @@ func routePathInit(r *gin.Engine) {
 		{
 			wsGroup.GET("", bind(api.WsApi.WebsocketHandle, Query))
 			wsGroup.GET("/share", bind(api.WsApi.WebsocketShareHandle, Query))
+			wsGroup.GET("/token/list", middle.RolePermission(eum.RoleAdmin), bind(api.GetWsShareList, None))
+			wsGroup.DELETE("/token", middle.RolePermission(eum.RoleAdmin), bind(api.DeleteWsShareById, Query))
 		}
 
 		processGroup := apiGroup.Group("/process")

@@ -9,4 +9,13 @@ export default [
       category: "Data",
     },
   },
+  {
+    path: "/process/share-manage",
+    component: () => import("@/views/share/ShareManage.vue"),
+    meta: {
+      requiresAuth: true,
+      layout: "landing",
+      category: "Data",
+    },
+  },
 ];

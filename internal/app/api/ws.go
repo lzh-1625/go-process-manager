@@ -79,7 +79,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 		WsConnect:  conn,
 		CancelFunc: cancel,
 		wsLock:     sync.Mutex{},
-	} 
+	}
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
@@ -132,7 +132,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	}
 	defer conn.Close()
 	log.Logger.Infow("ws连接成功")
-	data.UpdatedAt = time.Now()
+	data.LastLink = time.Now()
 	repository.WsShare.Edit(data)
 
 	proc.SetTerminalSize(req.Cols, req.Rows)
@@ -210,6 +210,8 @@ func GetWsShareList(ctx *gin.Context, _ any) any {
 	return logic.WsSahreLogic.GetWsShareList()
 }
 
-func DeleteWsShareById(ctx *gin.Context, _ any) any {
-	return logic.WsSahreLogic.DeleteById(ctx.GetInt("id"))
+func DeleteWsShareById(ctx *gin.Context, req struct {
+	ID int `form:"id"`
+}) any {
+	return logic.WsSahreLogic.DeleteById(req.ID)
 }

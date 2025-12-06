@@ -36,6 +36,7 @@ export default {
   menu: {
     // コア機能メニュー
     process: "プロセス管理",
+    shareManage: "共有管理",
     task: "スケジュールタスク",
     log: "ログビューア",
     event: "システムイベント",

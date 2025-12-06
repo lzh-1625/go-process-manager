@@ -1,9 +1,12 @@
 <template>
   <v-container fluid class="py-6 px-8 rounded-lg">
-
     <!-- 主体网格 -->
     <div v-if="processData && processData.length > 0" class="flex-grid">
-      <v-card v-for="(i, v) in processData" :key="i.uuid" class="responsive-box">
+      <v-card
+        v-for="(i, v) in processData"
+        :key="i.uuid"
+        class="responsive-box"
+      >
         <ProcessCard :data="i" :index="v" />
       </v-card>
     </div>
@@ -14,16 +17,17 @@
       class="pa-12 rounded-2xl elevation-2 text-center"
       style="min-height: 400px"
     >
-      <div class="d-flex flex-column align-center justify-center" style="height: 100%">
+      <div
+        class="d-flex flex-column align-center justify-center"
+        style="height: 100%"
+      >
         <v-icon size="120" color="grey-lighten-1" class="mb-6">
           mdi-application-outline
         </v-icon>
         <h3 class="text-h5 font-weight-medium text-grey-darken-1 mb-3">
           暂无进程
         </h3>
-        <p class="text-body-1 text-grey mb-8">
-          还没有创建任何进程，点击下方按钮创建你的第一个进程
-        </p>
+        <p class="text-body-1 text-grey mb-8">先创建你的第一个进程</p>
         <v-btn
           size="large"
           color="primary"
@@ -32,7 +36,7 @@
           elevation="4"
           @click="processCreateComponent?.createProcessDialog()"
         >
-          <v-icon start size="large">mdi-plus-circle</v-icon>
+          <v-icon start size="large" v-permission="1">mdi-plus-circle</v-icon>
           创建进程
         </v-btn>
       </div>
@@ -65,6 +69,7 @@
       <v-tooltip location="start" text="创建进程">
         <template v-slot:activator="{ props: tooltipProps }">
           <v-btn
+            v-permission="1"
             v-bind="tooltipProps"
             icon
             color="primary"
@@ -129,9 +134,7 @@
       <v-divider></v-divider>
 
       <v-card-text class="pt-6">
-        <div class="text-body-1 mb-3">
-          确定要启动所有进程吗？
-        </div>
+        <div class="text-body-1 mb-3">确定要启动所有进程吗？</div>
         <div class="text-caption text-secondary">
           共 {{ processData?.length || 0 }} 个进程将被启动
         </div>

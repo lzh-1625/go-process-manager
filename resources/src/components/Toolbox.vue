@@ -5,8 +5,6 @@
 -->
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
-import ChatAssistant from "@/components/ai/ChatAssistant.vue";
-import TranslationAssistant from "@/components/ai/TranslationAssistant.vue";
 import { useChatGPTStore } from "@/stores/chatGPTStore";
 import ApiKeyDialog from "@/components/ApiKeyDialog.vue";
 const chatGPTStore = useChatGPTStore();

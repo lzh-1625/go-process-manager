@@ -30,6 +30,7 @@ export default {
   menu: {
     // 核心功能菜单
     process: "进程管理",
+    shareManage: "分享管理",
     task: "定时任务",
     log: "日志查看",
     event: "系统事件",

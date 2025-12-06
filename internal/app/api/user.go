@@ -49,7 +49,7 @@ func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
 
 func (u *userApi) EditUser(ctx *gin.Context, req model.User) (err error) {
 	reqUser := getUserName(ctx)
-	if reqUser=="root"{
+	if req.Account == "root" {
 		return errors.New("can not edit root user")
 	}
 	if getRole(ctx) != eum.RoleRoot && req.Account != "" {
@@ -58,7 +58,7 @@ func (u *userApi) EditUser(ctx *gin.Context, req model.User) (err error) {
 	if req.Account == "" {
 		req.Account = reqUser
 	}
-	if len(req.Password) < config.CF.UserPassWordMinLength {
+	if len(req.Password) != 0 && len(req.Password) < config.CF.UserPassWordMinLength {
 		return errors.New("password is too short")
 	}
 	err = repository.UserRepository.EditUser(req)

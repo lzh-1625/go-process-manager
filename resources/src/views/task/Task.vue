@@ -88,6 +88,7 @@
                   @change="changeEnable(item)"
                   v-model="item.enable"
                   density="compact"
+                  inset
                   hide-details
                 ></v-switch>
               </td>
@@ -97,6 +98,7 @@
                   @change="edit(item)"
                   v-model="item.apiEnable"
                   density="compact"
+                  inset
                   hide-details
                 ></v-switch>
               </td>

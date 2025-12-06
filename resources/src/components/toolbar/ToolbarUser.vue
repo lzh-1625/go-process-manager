@@ -4,56 +4,21 @@
 * @Description:
 -->
 <script setup lang="ts">
-import StatusMenu from "./StatusMenu.vue";
-import { useAuthStore } from "@/stores/authStore";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
 
-const authStore = useAuthStore();
+const userName = computed(() => localStorage.getItem("name") || "User");
+
 const handleLogout = () => {
-  authStore.logout();
-  console.log("---");
-  console.log(router);
+  localStorage.removeItem("token");
+  router.push("/login");
 };
 
-const navs = [
-  {
-    title: "Profile Details",
-    key: "menu.profileDetails",
-    link: "/profile",
-    icon: "mdi-account-box-outline",
-  },
-  {
-    title: "Plans and Billing",
-    key: "menu.plansAndBilling",
-    link: "/plans-and-billing",
-    icon: "mdi-credit-card-outline",
-  },
-  {
-    title: "Team",
-    key: "menu.team",
-    link: "/team",
-    icon: "mdi-account-group-outline",
-  },
-  {
-    title: "API Dashboard",
-    key: "menu.apiDashboard",
-    link: "/api-dashboard",
-    icon: "mdi-monitor-dashboard",
-  },
-  {
-    title: "Integrations",
-    key: "menu.integrations",
-    link: "/integrations",
-    icon: "mdi-puzzle-outline",
-  },
-  {
-    title: "Ask the Community",
-    key: "menu.askCommunity",
-    link: "/ask-the-community",
-    icon: "mdi-help-circle-outline",
-  },
-];
+const openGithub = () => {
+  window.open("https://github.com/lzh-1625/go_process_manager");
+};
+
 </script>
 
 <template>
@@ -67,11 +32,9 @@ const navs = [
     <!-- ---------------------------------------------- -->
     <template v-slot:activator="{ props }">
       <v-btn class="mx-2" icon v-bind="props">
-        <v-badge content="2" color="success" dot bordered>
           <v-avatar size="40">
-            <img src="../../assets/theme-avatar.png"></img>
+            <v-icon>mdi-account-circle</v-icon>
           </v-avatar>
-        </v-badge>
       </v-btn>
     </template>
     <v-card max-width="300">
@@ -79,50 +42,11 @@ const navs = [
         <!-- ---------------------------------------------- -->
         <!-- Profile Area -->
         <!-- ---------------------------------------------- -->
-        <v-list-item to="/profile">
-          <template v-slot:prepend>
-            <v-avatar size="40">
-              <v-img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwrAiMevuwrbU9o0Ck2paVf4ufHUDb2dU48MEDrAlrQw&s"
-              ></v-img>
-            </v-avatar>
-          </template>
+        <v-list-item>
 
           <v-list-item-title class="font-weight-bold text-primary">
-            YANG J.K.
-            <StatusMenu />
+          {{ userName }}
           </v-list-item-title>
-          <v-list-item-subtitle>
-            <!-- {{ $store.state.user.email  }} -->
-            yjkbako@gmail.com
-          </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
-      <v-divider />
-      <!-- ---------------------------------------------- -->
-      <!-- Menu Area -->
-      <!-- ---------------------------------------------- -->
-
-      <v-list variant="flat" elevation="0" :lines="false" density="compact">
-        <v-list-item
-          color="primary"
-          v-for="(nav, i) in navs"
-          :key="i"
-          :to="nav.link"
-          link
-          density="compact"
-        >
-          <template v-slot:prepend>
-            <v-avatar size="30">
-              <v-icon>{{ nav.icon }}</v-icon>
-            </v-avatar>
-          </template>
-
-          <div>
-            <v-list-item-subtitle class="text-body-2">{{
-              nav.title
-            }}</v-list-item-subtitle>
-          </div>
         </v-list-item>
       </v-list>
       <v-divider />
@@ -130,16 +54,16 @@ const navs = [
       <!-- Logout Area -->
       <!-- ---------------------------------------------- -->
       <v-list variant="flat" elevation="0" :lines="false" density="compact">
-        <v-list-item color="primary" to="nav.link" link density="compact">
+        <v-list-item v-permission="0" color="primary" @click="openGithub" link density="compact" >
           <template v-slot:prepend>
             <v-avatar size="30">
-              <v-icon>mdi-lifebuoy</v-icon>
+              <v-icon>mdi-github</v-icon>
             </v-avatar>
           </template>
 
           <div>
             <v-list-item-subtitle class="text-body-2">
-              Help Center
+              Github
             </v-list-item-subtitle>
           </div>
         </v-list-item>

@@ -1,14 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 import UserRoutes from "./user.routes";
-import AuthRoutes from "./auth.routes";
-import UIRoutes from "./ui.routes";
-import LandingRoutes from "./landing.routes";
-import UtilityRoutes from "./utility.routes";
-import PagesRoutes from "./pages.routes";
-import ChartsRoutes from "./charts.routes";
-import UmlRoutes from "./uml.routes";
-import AppsRoutes from "./apps.routes";
-import DataRoutes from "./data.routes";
 import ProcessRoutes from "./process.routes";
 import TaskRoutes from "./task.routes";
 import LogRoutes from "./log.routes";
@@ -17,7 +8,7 @@ import SettingsRoutes from "./settings.routes";
 export const routes = [
   {
     path: "/",
-    redirect: "/dashboard",
+    redirect: parseInt(window.localStorage.getItem("role") ?? "0") < 2 ? "/dashboard" : "/process",
     meta: {},
   } as any,
   {
@@ -29,21 +20,28 @@ export const routes = [
     component: () => import("@/views/pages/DashBoard.vue"),
   },
   {
+    path: "/login",
+    component: () => import("@/views/login/Login.vue"),
+    meta: {
+      requiresAuth: false,
+      layout: "auth",
+    },
+  },
+  {
+    path: "/share",
+    component: () => import("@/views/share/ShareTerminal.vue"),
+    meta: {
+      requiresAuth: false,
+      layout: "blank",
+    },
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "error",
     component: () =>
       import(/* webpackChunkName: "error" */ "@/views/errors/NotFoundPage.vue"),
   },
   ...UserRoutes,
-  ...LandingRoutes,
-  ...AuthRoutes,
-  ...PagesRoutes,
-  ...UtilityRoutes,
-  ...UIRoutes,
-  ...ChartsRoutes,
-  ...UmlRoutes,
-  ...AppsRoutes,
-  ...DataRoutes,
   ...ProcessRoutes,
   ...TaskRoutes,
   ...LogRoutes,

@@ -44,7 +44,7 @@ export const useAuthStore = defineStore("auth", {
     },
 
     logout() {
-      router.push({ name: "auth-signin" });
+      router.push({ name: "/login" });
     },
   },
 });

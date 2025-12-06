@@ -45,6 +45,6 @@ export function postProcessConfig(data) {
   return api.post("/process/config", data).then((res) => res);
 }
 
-export function createProcessShare(data) {
-  return api.post("/process/share", data).then((res) => res);
+export function createProcessShare(data: { pid: number; minutes: number; write: boolean }) {
+  return api.post<{ token: string }>("/process/share", data).then((res) => res);
 }

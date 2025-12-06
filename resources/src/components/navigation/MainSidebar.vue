@@ -11,13 +11,14 @@ import { Icon } from "@iconify/vue";
 const customizeTheme = useCustomizeThemeStore();
 const navigation = ref(configs.navigation);
 
-const openGithubSite = () => {
-  window.open("https://github.com/yangjiakai", "_blank");
-};
+const permission = ref(0);
+
 
 onMounted(() => {
   scrollToBottom();
+  permission.value = parseInt(localStorage.getItem("role") ?? "0");
 });
+
 
 const scrollToBottom = () => {
   const contentArea = document.querySelector(".v-navigation-drawer__content");
@@ -55,7 +56,20 @@ const scrollToBottom = () => {
     <!---Nav List -->
     <!-- ---------------------------------------------- -->
     <div class="main-menu">
-      <main-menu :menu="navigation.menu"></main-menu>
+      <main-menu
+        :menu="
+          navigation.menu.map((e)=>{
+            return {
+              ...e,
+              items: e.items.filter((item: any)=>{
+                return item.permission == null || permission <= item.permission;
+              })
+            }
+          }).filter((e: any) => {
+           return e.permission == null || permission <= e.permission;
+          })
+        "
+      ></main-menu>
     </div>
   </v-navigation-drawer>
 </template>

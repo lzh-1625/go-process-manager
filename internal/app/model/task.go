@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 )
 
@@ -28,9 +26,9 @@ func (*Task) TableName() string {
 
 type TaskVo struct {
 	Task
-	ProcessName string    `gorm:"column:process_name;" json:"processName"`
-	TargetName  string    `gorm:"column:target_name;" json:"targetName"`
-	TriggerName string    `gorm:"column:trigger_name;" json:"triggerName"`
-	StartTime   time.Time `json:"startTime"`
-	Running     bool      `json:"running"`
+	ProcessName string `gorm:"column:process_name;" json:"processName"`
+	TargetName  string `gorm:"column:target_name;" json:"targetName"`
+	TriggerName string `gorm:"column:trigger_name;" json:"triggerName"`
+	StartTime   string `json:"startTime"`
+	Running     bool   `json:"running"`
 }

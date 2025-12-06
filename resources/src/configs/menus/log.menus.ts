@@ -10,6 +10,7 @@ export default [
     name: "event-page",
     key: "menu.event",
     link: "/event",
+    permission: 1,
   },
 ];
 

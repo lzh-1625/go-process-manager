@@ -41,7 +41,9 @@ func InitDb() {
 	}
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	db = gdb.Session(&defaultConfig)
+	// if config.CF.LogLevel == "debug" {
 	db = db.Debug()
+	// }
 	db.AutoMigrate(
 		&model.Process{},
 		&model.User{},

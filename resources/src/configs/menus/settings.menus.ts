@@ -10,6 +10,7 @@ export default [
     key: "menu.push",
     text: "推送管理",
     link: "/settings/push",
+    permission: 1,
   },
 ];
 

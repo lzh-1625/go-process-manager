@@ -30,6 +30,7 @@ export default {
   menu: {
     // Core feature menus
     process: "Process Manager",
+    shareManage: "Share Management",
     task: "Scheduled Tasks",
     log: "Log Viewer",
     event: "System Events",

@@ -18,12 +18,7 @@
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-account-multiple</v-icon>
           <span class="flex-fill">用户管理</span>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="refreshUsers"
-          >
+          <v-btn icon variant="text" size="small" @click="refreshUsers">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
           <v-btn
@@ -41,7 +36,11 @@
         <v-table class="pa-3">
           <thead>
             <tr>
-              <th class="text-left" v-for="header in headers" :key="header.title">
+              <th
+                class="text-left"
+                v-for="header in headers"
+                :key="header.title"
+              >
                 {{ header.title }}
               </th>
             </tr>
@@ -52,7 +51,11 @@
               <td>
                 <v-chip
                   :color="
-                    item.role === 1 ? 'primary' : item.role === 2 ? 'success' : 'grey'
+                    item.role === 1
+                      ? 'primary'
+                      : item.role === 2
+                      ? 'success'
+                      : 'grey'
                   "
                   size="small"
                   class="font-weight-bold"
@@ -61,7 +64,7 @@
                 </v-chip>
               </td>
               <td>{{ timeHanlder(item.createTime) }}</td>
-              <td>{{ item.remark || '-' }}</td>
+              <td>{{ item.remark || "-" }}</td>
               <td>
                 <v-btn
                   icon
@@ -72,10 +75,22 @@
                 >
                   <v-icon color="primary">mdi-application-edit</v-icon>
                 </v-btn>
-                <v-btn icon variant="text" size="small" @click="editItem(item)">
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  @click="editItem(item)"
+                  :disabled="item.role == 0"
+                >
                   <v-icon color="warning">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon variant="text" size="small" @click="deleteItem(item)">
+                <v-btn
+                  icon
+                  variant="text"
+                  size="small"
+                  @click="deleteItem(item)"
+                  :disabled="item.role == 0"
+                >
                   <v-icon color="error">mdi-delete</v-icon>
                 </v-btn>
               </td>
@@ -256,12 +271,6 @@
           density="compact"
           hover
         >
-          <template #item.actions="{ item }">
-            <v-btn icon variant="text" size="small" @click="oprEditSub(item)">
-              <v-icon color="primary">mdi-application-edit</v-icon>
-            </v-btn>
-          </template>
-
           <template
             v-for="field in [
               'owned',
@@ -273,9 +282,14 @@
             ]"
             #[`item.${field}`]="{ item }"
           >
-            <v-icon small :color="item[field] ? 'success' : 'grey'">{{
-              item[field] ? "mdi-check" : "mdi-close"
-            }}</v-icon>
+            <v-switch
+              color="primary"
+              inset
+              density="compact"
+              hide-details
+              :model-value="item[field]"
+              @update:model-value="updatePermission(item, field, $event)"
+            ></v-switch>
           </template>
         </v-data-table>
       </v-card-text>
@@ -381,7 +395,6 @@ const permissionHeaders = [
   { title: "终端", key: "terminal", sortable: false },
   { title: "写入", key: "write", sortable: false },
   { title: "日志", key: "log", sortable: false },
-  { title: "修改", key: "actions", sortable: false },
 ];
 const desserts = ref([]);
 const search = ref("");
@@ -487,6 +500,8 @@ const editItem = (item) => {
     account: item.account,
   };
   userForm.value.password = "";
+  userForm.value.role = item.role;
+  userForm.value.remark = item.remark;
   dialog.value = true;
 };
 
@@ -513,6 +528,27 @@ const submit = () => {
   editPermission(permissionEditForm.value).then((resp) => {
     if (resp.code == 0) {
       snackbarStore.showSuccessMessage("操作成功");
+      oprEdit({
+        account: account.value,
+        uuid: uuid.value,
+      });
+    }
+  });
+};
+
+const updatePermission = (item, field, newValue) => {
+  const updatedPermission = {
+    ...item,
+    [field]: newValue,
+    account: account.value,
+  };
+  editPermission(updatedPermission).then((resp) => {
+    if (resp.code == 0) {
+      snackbarStore.showSuccessMessage("权限修改成功");
+      // 更新本地数据
+      item[field] = newValue;
+    } else {
+      // 如果失败，刷新数据恢复原状
       oprEdit({
         account: account.value,
         uuid: uuid.value,

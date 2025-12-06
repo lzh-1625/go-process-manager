@@ -5,4 +5,11 @@ export default [
     key: "menu.process",
     link: "/process",
   },
+  {
+    icon: "mdi-share-variant",
+    name: "share-manage",
+    key: "menu.shareManage",
+    link: "/process/share-manage",
+    permission: 1,
+  },
 ];

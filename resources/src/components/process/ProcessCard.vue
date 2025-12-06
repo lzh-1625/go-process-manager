@@ -8,6 +8,7 @@ import {
   getContorl,
   killProcess,
   startProcess,
+  createProcessShare,
 } from "~/src/api/process";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
@@ -141,40 +142,21 @@ type ConfigHandle = {
 };
 const processConfigComponent = ref<ConfigHandle | null>(null);
 
-const buttons = [
-  {
-    icon: "mdi-console",
-    action: () => {
-      terminalComponent.value?.wsConnect();
-    },
-  },
-  {
-    icon: "mdi-play",
-    action: () => {
-      startProcess(props.data.uuid).then((e) => {
-        if (e.code === 0) {
-          snackbarStore.showSuccessMessage("success");
-        }
-      });
-    },
-  },
-  {
-    icon: "mdi-stop",
-    action: () => {
-      killProcess(props.data.uuid).then((e) => {
-        if (e.code === 0) {
-          snackbarStore.showSuccessMessage("success");
-        }
-      });
-    },
-  },
-  {
-    icon: "mdi-pencil",
-    action: () => {
-      processConfigComponent.value?.openConfigDialog();
-    },
-  },
-];
+const handleStart = () => {
+  startProcess(props.data.uuid).then((e) => {
+    if (e.code === 0) {
+      snackbarStore.showSuccessMessage("success");
+    }
+  });
+};
+
+const handleStop = () => {
+  killProcess(props.data.uuid).then((e) => {
+    if (e.code === 0) {
+      snackbarStore.showSuccessMessage("success");
+    }
+  });
+};
 
 const handleResize = () => {
   chartInstance.resize();
@@ -202,6 +184,51 @@ const del = () => {
     if (e.code === 0) {
       snackbarStore.showSuccessMessage("sucess");
     }
+  });
+};
+
+// 分享链接相关
+const shareDialog = ref(false);
+const shareForm = ref({
+  minutes: 60,
+  write: false,
+});
+const shareToken = ref("");
+const shareUrl = ref("");
+
+const openShareDialog = () => {
+  shareDialog.value = true;
+  shareToken.value = "";
+  shareUrl.value = "";
+  shareForm.value = {
+    minutes: 60,
+    write: false,
+  };
+};
+
+const generateShareLink = () => {
+  createProcessShare({
+    pid: props.data.uuid,
+    minutes: shareForm.value.minutes,
+    write: shareForm.value.write,
+  }).then((e) => {
+    if (e.code === 0 && e.data) {
+      shareToken.value = e.data.token;
+      shareUrl.value = `${window.location.origin}/share?token=${e.data.token}`;
+      snackbarStore.showSuccessMessage("分享链接创建成功");
+    }
+  });
+};
+
+const copyShareLink = () => {
+  navigator.clipboard.writeText(shareUrl.value).then(() => {
+    snackbarStore.showSuccessMessage("链接已复制到剪贴板");
+  });
+};
+
+const copyToken = () => {
+  navigator.clipboard.writeText(shareToken.value).then(() => {
+    snackbarStore.showSuccessMessage("Token已复制");
   });
 };
 </script>
@@ -236,7 +263,7 @@ const del = () => {
         </div>
         {{ props.data.name }}
       </div>
-      <div class="top-right">
+      <div class="top-right" v-permission="1">
         <v-menu bottom left>
           <template v-slot:activator="{ props }">
             <v-btn
@@ -253,7 +280,7 @@ const del = () => {
           <v-list nav dense>
             <v-list-item @click="control"> 获取控制权 </v-list-item>
             <v-list-item @click="del"> 删除进程 </v-list-item>
-            <v-list-item @click=""> 创建分享链接 </v-list-item>
+            <v-list-item @click="openShareDialog"> 创建分享链接 </v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -265,17 +292,37 @@ const del = () => {
     <!-- 底部：按钮组 + 时间 -->
     <div class="footer">
       <div class="bottom-left">
-        <v-chip
-          size="small"
-          variant="outlined"
-          class="d-flex align-center"
-        >
+        <v-chip size="small" variant="outlined" class="d-flex align-center">
+          <!-- 终端按钮 -->
           <v-btn
-            v-for="(btn, idx) in buttons"
-            :key="idx"
-            @click="btn.action"
+            @click="terminalComponent?.wsConnect()"
             size="small"
-            :icon="btn.icon"
+            icon="mdi-console"
+            variant="text"
+            density="comfortable"
+          />
+          <!-- 启动按钮 -->
+          <v-btn
+            @click="handleStart"
+            size="small"
+            icon="mdi-play"
+            variant="text"
+            density="comfortable"
+          />
+          <!-- 停止按钮 -->
+          <v-btn
+            @click="handleStop"
+            size="small"
+            icon="mdi-stop"
+            variant="text"
+            density="comfortable"
+          />
+          <!-- 编辑按钮 -->
+          <v-btn
+            v-permission="1"
+            @click="processConfigComponent?.openConfigDialog()"
+            size="small"
+            icon="mdi-pencil"
             variant="text"
             density="comfortable"
           />
@@ -297,11 +344,121 @@ const del = () => {
       :data="props.data"
       ref="terminalComponent"
     ></TerminalStd>
-    <TerminalPty v-else :data="props.data" ref="terminalComponent"></TerminalPty>
+    <TerminalPty
+      v-else
+      :data="props.data"
+      ref="terminalComponent"
+    ></TerminalPty>
     <ProcessConfig
       :data="props.data"
       ref="processConfigComponent"
     ></ProcessConfig>
+
+    <!-- 分享链接对话框 -->
+    <v-dialog v-model="shareDialog" max-width="600">
+      <v-card class="rounded-xl">
+        <v-card-title class="text-h6 font-weight-medium">
+          <v-icon color="primary" class="mr-2">mdi-share-variant</v-icon>
+          <span>创建分享链接</span>
+        </v-card-title>
+
+        <v-divider></v-divider>
+
+        <v-card-text class="pt-6">
+          <v-container fluid v-if="!shareToken">
+            <v-row dense>
+              <v-col cols="12">
+                <v-text-field
+                  v-model.number="shareForm.minutes"
+                  type="number"
+                  label="有效时长（分钟）"
+                  variant="outlined"
+                  density="comfortable"
+                  hint="链接的有效期，单位为分钟"
+                  persistent-hint
+                  :rules="[(v) => v > 0 || '时长必须大于0']"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="font-weight-medium">允许写入权限</div>
+                    <div class="text-caption text-grey">
+                      是否允许通过分享链接进行终端输入操作
+                    </div>
+                  </div>
+                  <v-switch
+                    v-model="shareForm.write"
+                    color="primary"
+                    inset
+                    hide-details
+                  ></v-switch>
+                </div>
+              </v-col>
+            </v-row>
+          </v-container>
+
+          <v-container fluid v-else>
+            <v-row dense>
+              <v-col cols="12">
+                <v-alert type="success" variant="tonal" class="mb-4">
+                  <div class="text-subtitle-2 mb-2">分享链接已生成</div>
+                  <div class="text-caption">
+                    有效期：{{ shareForm.minutes }} 分钟
+                    <span v-if="shareForm.write" class="ml-2"
+                      >• 可写入</span
+                    >
+                    <span v-else class="ml-2">• 只读</span>
+                  </div>
+                </v-alert>
+              </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  :model-value="shareUrl"
+                  label="分享链接"
+                  variant="outlined"
+                  density="comfortable"
+                  readonly
+                  append-inner-icon="mdi-content-copy"
+                  @click:append-inner="copyShareLink"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  :model-value="shareToken"
+                  label="Token"
+                  variant="outlined"
+                  density="comfortable"
+                  readonly
+                  append-inner-icon="mdi-content-copy"
+                  @click:append-inner="copyToken"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions class="justify-end pa-4">
+          <v-btn text @click="shareDialog = false">
+            {{ shareToken ? "关闭" : "取消" }}
+          </v-btn>
+          <v-btn
+            v-if="!shareToken"
+            color="primary"
+            @click="generateShareLink"
+            :disabled="shareForm.minutes <= 0"
+          >
+            生成链接
+          </v-btn>
+          <v-btn v-else color="primary" @click="copyShareLink">
+            <v-icon left>mdi-content-copy</v-icon>
+            复制链接
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 

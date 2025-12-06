@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -67,6 +68,7 @@ func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 		result[i].Id = task.TaskConfig.Id
 		result[i].Running = task.Running
 		result[i].Enable = task.TaskConfig.Enable
+		result[i].StartTime = task.StartTime.Format(time.DateTime)
 	}
 	return result
 }
