@@ -225,6 +225,7 @@ const getEventTypeColor = (type: EventType) => {
     ProcessStart: "success",
     ProcessStop: "error",
     ProcessWarning: "warning",
+    ProcessConnect: "info",
     TaskStart: "info",
     ApiRequest: "primary",
     TaskStop: "secondary",
@@ -239,6 +240,7 @@ const getEventTypeIcon = (type: EventType) => {
     ProcessStop: "mdi-stop-circle",
     ApiRequest: "mdi-api",
     ProcessWarning: "mdi-alert-circle",
+    ProcessConnect: "mdi-console",
     TaskStart: "mdi-clock-start",
     TaskStop: "mdi-clock-end",
   };
@@ -252,6 +254,7 @@ const getEventTypeLabel = (type: EventType) => {
     ProcessStop: "进程停止",
     ProcessWarning: "进程警告",
     ApiRequest: "API请求",
+    ProcessConnect: "进程连接",
     TaskStart: "任务启动",
     TaskStop: "任务停止",
   };

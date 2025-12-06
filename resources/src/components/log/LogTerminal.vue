@@ -230,33 +230,6 @@ const initTerminal = () => {
 
   window.addEventListener("resize", handleResize);
 
-  // 显示欢迎信息
-  term.writeln("\x1b[1;36m========================================\x1b[0m");
-  term.writeln("\x1b[1;32m  欢迎使用终端日志查看器\x1b[0m");
-  term.writeln("\x1b[1;36m========================================\x1b[0m");
-  if (contextTime.value) {
-    const contextTimeStr = formatTime(contextTime.value);
-    term.writeln(
-      `\x1b[33m查询模式: 上下文查看 (时间: ${contextTimeStr})\x1b[0m`
-    );
-    term.writeln(
-      `\x1b[33m进程: ${contextProcessName.value}\x1b[0m`
-    );
-    term.writeln(
-      `\x1b[33m显示前后各100条日志\x1b[0m`
-    );
-  } else if (props.startTime) {
-    const startTimeStr = formatTime(props.startTime);
-    term.writeln(
-      `\x1b[33m查询模式: 从 ${startTimeStr} 开始的日志\x1b[0m`
-    );
-  } else {
-    term.writeln("\x1b[33m查询模式: 最新日志\x1b[0m");
-  }
-  term.writeln("\x1b[33m提示: 滚动到顶部或底部会显示加载按钮\x1b[0m");
-  term.writeln("\x1b[33m      点击按钮可以加载更早或更新的日志\x1b[0m");
-  term.writeln("\x1b[1;36m========================================\x1b[0m");
-  term.writeln("");
 };
 
 // 适应终端大小
@@ -425,7 +398,7 @@ const loadContextLogs = async () => {
   try {
     // 加载之前的100条日志
     const beforeQuery: GetLogReq = {
-      page: { from: 0, size: 15 },
+      page: { from: 0, size: 5 },
       time: { endTime: contextTime.value },
       sort: "desc",
     };
@@ -441,7 +414,7 @@ const loadContextLogs = async () => {
 
     // 加载之后的100条日志
     const afterQuery: GetLogReq = {
-      page: { from: 0, size: 15 },
+      page: { from: 0, size: 5 },
       time: { startTime: contextTime.value },
       sort: "asc",
     };
@@ -476,11 +449,8 @@ const loadContextLogs = async () => {
 
         if (isTargetLog) {
           targetFound = true;
-          // 高亮显示目标日志
-          term!.writeln("\x1b[1;43;30m>>> 目标日志 >>>\x1b[0m");
           linesBeforeTarget += 1; // 标记行
-          writeLogToTerminal(log);
-          term!.writeln("\x1b[1;43;30m<<< 目标日志 <<<\x1b[0m");
+          writeLogToTerminal(log);;
         } else {
           writeLogToTerminal(log);
         }

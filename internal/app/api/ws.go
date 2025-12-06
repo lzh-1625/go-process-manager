@@ -85,7 +85,9 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	}
 	if proc.State.State == eum.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, req.Uuid, eum.OperationTerminalWrite))
+		write := hasOprPermission(ctx, req.Uuid, eum.OperationTerminalWrite)
+		logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
+		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
 	}
@@ -145,6 +147,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
+	logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddConn(guestName, wci)
 	defer proc.DeleteConn(guestName)

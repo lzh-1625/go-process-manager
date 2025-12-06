@@ -3,6 +3,7 @@ export type EventType =
   | "ProcessStart"
   | "ProcessStop"
   | "ProcessWarning"
+  | "ProcessConnect"
   | "TaskStart"
   | "TaskStop"
   | "ApiRequest";

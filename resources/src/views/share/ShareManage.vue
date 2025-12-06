@@ -38,7 +38,7 @@
           </thead>
           <tbody>
             <tr v-for="item in paginatedShares" :key="item.ID">
-              <td class="font-weight-bold">{{ item.ID }}</td>
+              <td class="font-weight-bold">{{ item.id }}</td>
               <td>
                 <v-chip
                   color="primary"

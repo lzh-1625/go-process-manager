@@ -5,7 +5,6 @@ import ActivityCard from "@/components/dashboard/ActivityCard.vue";
 import TableCard from "@/components/dashboard/TableCard.vue";
 import TicketsCard from "@/components/dashboard/TicketsCard.vue";
 // import TrackCard from "@/components/dashboard/TrackCard.vue";
-import TodoCard from "@/components/dashboard/TodoCard.vue";
 import TaskCard from "@/components/dashboard/ChartCard.vue";
 </script>
 <template>

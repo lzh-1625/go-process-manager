@@ -27,12 +27,7 @@
           >
             <v-icon>mdi-console</v-icon>
           </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="refreshLogs"
-          >
+          <v-btn icon variant="text" size="small" @click="refreshLogs">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
           <v-btn
@@ -149,7 +144,11 @@
         <v-table class="pa-3 log-table">
           <thead>
             <tr>
-              <th class="text-left" v-for="header in headers" :key="header.title">
+              <th
+                class="text-left"
+                v-for="header in headers"
+                :key="header.title"
+              >
                 {{ header.title }}
               </th>
             </tr>
@@ -157,7 +156,20 @@
           <tbody>
             <tr v-for="item in logData" :key="item.id">
               <td class="log-cell">
-                <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
+                <div
+                  class="log-content"
+                  v-html="convertAnsiToHtml(item.log)"
+                ></div>
+              </td>
+              <td>
+                <v-btn
+                  elevation="4"
+                  variant="elevated"
+                  size="small"
+                  @click="viewLogContext(item)"
+                >
+                  <v-icon>mdi-arrow-up-down</v-icon>
+                </v-btn>
               </td>
               <td>
                 <span class="text-caption">{{ formatTime(item.time) }}</span>
@@ -169,18 +181,8 @@
               </td>
               <td>
                 <v-chip color="secondary" size="small" class="font-weight-bold">
-                  {{ item.using || '-' }}
+                  {{ item.using || "-" }}
                 </v-chip>
-              </td>
-              <td>
-                <v-btn
-                  elevation="4"
-                  variant="elevated"
-                  size="small"
-                  @click="viewLogContext(item)"
-                >
-                  上下文
-                </v-btn>
               </td>
             </tr>
             <tr v-if="logData.length === 0">
@@ -242,10 +244,10 @@ const sortOptions = [
 // 表头定义 - 日志内容放在最左边
 const headers = [
   { title: "日志内容", key: "log", sortable: false },
+  { title: "上下文", key: "actions", width: "100px", sortable: false },
   { title: "时间", key: "time", width: "150px" },
   { title: "进程名", key: "name", width: "30px" },
-  { title: "类型", key: "using", width: "30px" },
-  { title: "操作", key: "actions", width: "100px", sortable: false },
+  { title: "使用者", key: "using", width: "30px" },
 ];
 
 // 数据
@@ -274,7 +276,9 @@ const totalPages = computed(() => {
 // 转换 ANSI 颜色代码为 HTML
 const convertAnsiToHtml = (text: string) => {
   if (!text) return "";
-  return ansiConverter.ansi_to_html(text).replaceAll("color:rgb(255,255,255)", "color:rgb(160,160,160)");
+  return ansiConverter
+    .ansi_to_html(text)
+    .replaceAll("color:rgb(255,255,255)", "color:rgb(160,160,160)");
 };
 
 // 格式化时间
@@ -479,4 +483,3 @@ onMounted(() => {
   line-height: 1 !important;
 }
 </style>
-
