@@ -231,7 +231,27 @@ watch(
       >
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
       </div>
-      <div v-else>
+      <div v-else style="position: relative">
+        <div
+          v-if="logData"
+          style="
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255, 152, 0, 0.1);
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1.5px solid #ff9800;
+          "
+        >
+          <div style="font-size: 10px; color: #ff9800; font-weight: bold">
+            正在处理
+          </div>
+          <div style="font-size: 18px; color: #ff9800; font-weight: bold; text-align: center">
+            {{ logData.executing }}
+          </div>
+        </div>
         <div ref="chartEl" style="width: 100%; height: 350px"></div>
       </div>
     </v-card-text>

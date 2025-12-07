@@ -61,8 +61,8 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
 				}{
-					StartTime: start.Unix(),
-					EndTime:   end.Unix(),
+					StartTime: start.UnixMilli(),
+					EndTime:   end.UnixMilli(),
 				},
 			})
 			result.Items = append(result.Items, model.LogStatsticMetricItem{
@@ -81,8 +81,8 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
 				}{
-					StartTime: start.Unix(),
-					EndTime:   end.Unix(),
+					StartTime: start.UnixMilli(),
+					EndTime:   end.UnixMilli(),
 				},
 			})
 			result.Items = append(result.Items, model.LogStatsticMetricItem{
@@ -101,8 +101,8 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
 				}{
-					StartTime: start.Unix(),
-					EndTime:   end.Unix(),
+					StartTime: start.UnixMilli(),
+					EndTime:   end.UnixMilli(),
 				},
 			})
 			result.Items = append(result.Items, model.LogStatsticMetricItem{
