@@ -15,10 +15,6 @@ const terminalOutput = ref<HTMLElement | null>(null);
 
 const socket = ref<WebSocket | null>(null);
 
-// 计算属性：检查 socket 是否已连接
-const isSocketConnected = computed(() => {
-  return socket.value && socket.value.readyState === WebSocket.OPEN;
-});
 
 defineExpose({
   wsConnect: () => {

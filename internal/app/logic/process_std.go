@@ -133,7 +133,7 @@ func (p *ProcessStd) readInit() {
 func (p *ProcessStd) Read() string {
 	if p.stdout.Scan() {
 		output := utils.RemoveNotValidUtf8InString(p.stdout.Text())
-		p.logReportHandler(output)
+		p.logReportHandler(output + "\n")
 		p.cacheLine = p.cacheLine[1:]
 		p.cacheLine = append(p.cacheLine, output)
 		return output
