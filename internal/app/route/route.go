@@ -152,6 +152,11 @@ func routePathInit(r *gin.Engine) {
 			configGroup.PUT("", bind(api.ConfigApi.SetSystemConfiguration, None))
 			configGroup.PUT("/reload", bind(api.ConfigApi.LogConfigReload, None))
 		}
+		metricGroup := apiGroup.Group("/metric").Use(middle.RolePermission(eum.RoleAdmin))
+		{
+			metricGroup.GET("/log", bind(api.MetricApi.GetLogicStatsticMetric, Query))
+			metricGroup.GET("/performce", bind(api.MetricApi.GetPerformceUsage, None))
+		}
 	}
 }
 

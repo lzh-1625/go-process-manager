@@ -60,7 +60,7 @@ const initEChart = () => {
       },
       {
         type: "value",
-        name: "内存(" + mem + "MB)",
+        name: "内存(" + (mem/1024).toFixed(2) + "MB)",
         max: parseFloat((props.data.usage.memCapacity / 1024).toFixed(2)),
         axisLine: { show: false },
         axisTick: { show: false },
@@ -84,7 +84,7 @@ const initEChart = () => {
       {
         name: "内存",
         type: "line",
-        data: props.data.usage.mem,
+        data: props.data.usage.mem.map((num) => parseFloat((num/1024).toFixed(2))),
         yAxisIndex: 1,
         showSymbol: false,
         lineStyle: {

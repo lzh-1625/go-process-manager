@@ -124,6 +124,7 @@ require (
 require (
 	github.com/blevesearch/bleve/v2 v2.5.2
 	github.com/creack/pty v1.1.21
+	github.com/duke-git/lancet/v2 v2.3.8
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.2.3
