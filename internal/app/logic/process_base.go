@@ -96,7 +96,7 @@ func (p *ProcessBase) SetOpertor(operator string) {
 
 func (p *ProcessBase) GetOpertor() string {
 	s := p.operate.user.Swap(nil)
-	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) {
+	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) || s == nil {
 		return ""
 	}
 	return *s

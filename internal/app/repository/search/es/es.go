@@ -57,12 +57,10 @@ func (e *esSearch) Insert(logContent string, processName string, using string, t
 
 func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
 	// 检查 req 是否为 nil
-	if req.Page.From < 0 || req.Page.Size <= 0 {
-		log.Logger.Error("无效的分页请求参数")
-		return model.LogResp{Total: 0, Data: []*model.ProcessLog{}}
-	}
-
 	search := e.esClient.Search(config.CF.EsIndex).From(req.Page.From).Size(req.Page.Size).TrackScores(true)
+	if !config.CF.EsWindowLimit {
+		search = search.TrackTotalHits(true)
+	}
 	if req.Sort == "asc" {
 		search.Sort("time", true)
 	}

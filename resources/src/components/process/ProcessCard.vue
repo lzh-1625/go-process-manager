@@ -237,6 +237,7 @@ const copyToken = () => {
   });
 };
 </script>
+
 <template>
   <div class="chart-container">
     <!-- 顶部：进程名字 + 菜单 -->
@@ -258,14 +259,22 @@ const copyToken = () => {
         >
           mdi-stop-circle</v-icon
         >
-        <div v-if="props.data.state.state == 2" style="float: left">
-          <v-tooltip top color="warning">
-            <template>
-              <v-icon color="yellow accent-4" x-large> mdi-alert-circle</v-icon>
-            </template>
-            <span>{{ props.data.state.info }}</span>
-          </v-tooltip>
-        </div>
+        <v-tooltip
+          v-if="props.data.state.state == 2"
+          location="top"
+          :text="props.data.state.info"
+        >
+          <template v-slot:activator="{ props: tooltipProps }">
+            <v-icon
+              v-bind="tooltipProps"
+              color="yellow-accent-4"
+              x-large
+              style="float: left"
+            >
+              mdi-alert-circle
+            </v-icon>
+          </template>
+        </v-tooltip>
         {{ props.data.name }}
       </div>
       <div class="top-right" v-permission="1">
@@ -285,7 +294,9 @@ const copyToken = () => {
           <v-list nav dense>
             <v-list-item @click="control"> 获取控制权 </v-list-item>
             <v-list-item @click="del"> 删除进程 </v-list-item>
-            <v-list-item v-if="data.termType == 'pty'" @click="openShareDialog"> 创建分享链接 </v-list-item>
+            <v-list-item v-if="data.termType == 'pty'" @click="openShareDialog">
+              创建分享链接
+            </v-list-item>
           </v-list>
         </v-menu>
       </div>

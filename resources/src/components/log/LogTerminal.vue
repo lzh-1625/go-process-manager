@@ -533,7 +533,7 @@ const loadOlderLogs = async () => {
 
         // 写入所有日志
         logCache.value.forEach((log) => {
-          term!.write(log.log);
+          term!.write(log.log+"\n");
         });
 
         // 更新最旧时间
@@ -615,7 +615,7 @@ const loadNewerLogs = async () => {
 const writeLogToTerminal = (log: ProcessLog) => {
   if (!term) return;
   // const line = formatLogLine(log);
-  term.write(log.log);
+  term.write(log.log+"\n");
 };
 
 // 时间选择变化

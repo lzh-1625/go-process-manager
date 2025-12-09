@@ -20,7 +20,7 @@ func (c *configRepository) GetConfigValue(key string) (string, error) {
 }
 
 func (c *configRepository) GetAllConfig() ([]*model.Config, error) {
-	data, err := query.Config.Select(query.Config.Value).Find()
+	data, err := query.Config.Select(query.Config.Key, query.Config.Value).Find()
 	return data, err
 }
 
