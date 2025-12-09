@@ -6,34 +6,10 @@
 import { ref, onMounted, computed, Ref } from "vue";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
-import { useTheme } from "vuetify";
 import { getPerformceUsage, PerformceUsage } from "@/api/metric";
 
-const { current } = useTheme();
 const loading = ref(true);
 const performanceData = ref<PerformceUsage | null>(null);
-
-// 预定义的颜色集合
-const colors = [
-  "#f44336",
-  "#e91e63",
-  "#9c27b0",
-  "#673ab7",
-  "#3f51b5",
-  "#2196f3",
-  "#03a9f4",
-  "#00bcd4",
-  "#009688",
-  "#4caf50",
-  "#8bc34a",
-  "#cddc39",
-  "#ffeb3b",
-  "#ffc107",
-  "#ff9800",
-  "#ff5722",
-  "#795548",
-  "#607d8b",
-];
 
 // CPU饼图配置
 const cpuChartEl = ref<HTMLDivElement | null>(null);
@@ -53,10 +29,9 @@ const cpuOption = computed<EChartsOption>(() => {
   );
 
   const data = [
-    ...sortedItems.map((item, index) => ({
+    ...performanceData.value.items.map((item, index) => ({
       value: parseFloat(item.cpu.toFixed(2)),
       name: item.name,
-      itemStyle: { color: colors[index % colors.length] },
     })),
   ];
 
@@ -65,7 +40,6 @@ const cpuOption = computed<EChartsOption>(() => {
     data.push({
       value: parseFloat(otherProcessesCpu.toFixed(2)),
       name: "其他进程",
-      itemStyle: { color: "#9e9e9e" },
     });
   }
 
@@ -73,21 +47,18 @@ const cpuOption = computed<EChartsOption>(() => {
   data.push({
     value: parseFloat(performanceData.value.cpuFree.toFixed(2)),
     name: "空闲",
-    itemStyle: { color: "#4caf50" },
   });
 
   return {
-    backgroundColor: current.value.colors.surface,
     tooltip: {
       trigger: "item",
-      formatter: "{a} <br/>{b}: {c}% ({d}%)",
+      formatter: "{a} ---<br/>{b}: {c}% ({d}%)",
     },
     title: {
       text: "CPU使用率",
       left: "center",
       top: 10,
       textStyle: {
-        color: current.value.colors.onSurface,
         fontSize: 16,
         fontWeight: "bold",
       },
@@ -97,15 +68,9 @@ const cpuOption = computed<EChartsOption>(() => {
       left: "left",
       top: "middle",
       textStyle: {
-        color: current.value.colors.onSurface,
         fontSize: 11,
       },
       type: "scroll",
-      pageIconColor: current.value.colors.primary,
-      pageIconInactiveColor: current.value.colors.onSurface,
-      pageTextStyle: {
-        color: current.value.colors.onSurface,
-      },
     },
     series: [
       {
@@ -116,17 +81,14 @@ const cpuOption = computed<EChartsOption>(() => {
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
-          borderColor: current.value.colors.surface,
           borderWidth: 2,
         },
         label: {
           show: true,
           position: "outside",
           formatter: (params: any) => {
-            if (params.percent < 3) return "";
             return `${params.name}: ${params.value}%`;
           },
-          color: current.value.colors.onSurface,
           fontSize: 10,
         },
         emphasis: {
@@ -162,7 +124,6 @@ const memOption = computed<EChartsOption>(() => {
     ...sortedItems.map((item, index) => ({
       value: parseFloat((item.mem / 1024).toFixed(2)),
       name: item.name,
-      itemStyle: { color: colors[index % colors.length] },
     })),
     // 添加空闲项
     {
@@ -173,7 +134,6 @@ const memOption = computed<EChartsOption>(() => {
   ];
 
   return {
-    backgroundColor: current.value.colors.surface,
     tooltip: {
       trigger: "item",
       formatter: "{a} <br/>{b}: {c}MB ({d}%)",
@@ -183,7 +143,6 @@ const memOption = computed<EChartsOption>(() => {
       left: "center",
       top: 10,
       textStyle: {
-        color: current.value.colors.onSurface,
         fontSize: 16,
         fontWeight: "bold",
       },
@@ -193,15 +152,9 @@ const memOption = computed<EChartsOption>(() => {
       left: "left",
       top: "middle",
       textStyle: {
-        color: current.value.colors.onSurface,
         fontSize: 11,
       },
       type: "scroll",
-      pageIconColor: current.value.colors.primary,
-      pageIconInactiveColor: current.value.colors.onSurface,
-      pageTextStyle: {
-        color: current.value.colors.onSurface,
-      },
     },
     series: [
       {
@@ -212,17 +165,14 @@ const memOption = computed<EChartsOption>(() => {
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
-          borderColor: current.value.colors.surface,
           borderWidth: 2,
         },
         label: {
           show: true,
           position: "outside",
           formatter: (params: any) => {
-            if (params.percent < 3) return "";
             return `${params.name}: ${params.value}MB`;
           },
-          color: current.value.colors.onSurface,
           fontSize: 10,
         },
         emphasis: {

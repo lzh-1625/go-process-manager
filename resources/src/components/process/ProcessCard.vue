@@ -60,7 +60,7 @@ const initEChart = () => {
       },
       {
         type: "value",
-        name: "内存(" + (mem/1024).toFixed(2) + "MB)",
+        name: "内存(" + (mem / 1024).toFixed(2) + "MB)",
         max: parseFloat((props.data.usage.memCapacity / 1024).toFixed(2)),
         axisLine: { show: false },
         axisTick: { show: false },
@@ -84,7 +84,9 @@ const initEChart = () => {
       {
         name: "内存",
         type: "line",
-        data: props.data.usage.mem.map((num) => parseFloat((num/1024).toFixed(2))),
+        data: props.data.usage.mem.map((num) =>
+          parseFloat((num / 1024).toFixed(2))
+        ),
         yAxisIndex: 1,
         showSymbol: false,
         lineStyle: {
@@ -165,6 +167,9 @@ const handleResize = () => {
 onMounted(() => {
   initEChart();
   window.addEventListener("resize", handleResize);
+});
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
 });
 
 const props = defineProps<{
@@ -405,9 +410,7 @@ const copyToken = () => {
                   <div class="text-subtitle-2 mb-2">分享链接已生成</div>
                   <div class="text-caption">
                     有效期：{{ shareForm.minutes }} 分钟
-                    <span v-if="shareForm.write" class="ml-2"
-                      >• 可写入</span
-                    >
+                    <span v-if="shareForm.write" class="ml-2">• 可写入</span>
                     <span v-else class="ml-2">• 只读</span>
                   </div>
                 </v-alert>
