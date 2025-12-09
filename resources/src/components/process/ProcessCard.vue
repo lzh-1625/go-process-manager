@@ -285,7 +285,7 @@ const copyToken = () => {
           <v-list nav dense>
             <v-list-item @click="control"> 获取控制权 </v-list-item>
             <v-list-item @click="del"> 删除进程 </v-list-item>
-            <v-list-item @click="openShareDialog"> 创建分享链接 </v-list-item>
+            <v-list-item v-if="data.termType == 'pty'" @click="openShareDialog"> 创建分享链接 </v-list-item>
           </v-list>
         </v-menu>
       </div>
