@@ -6,59 +6,99 @@
     @update:modelValue="handleDialogChange"
   >
     <v-card class="terminal-card" ref="cardRef">
-      <v-toolbar dense color="grey-darken-4" dark class="terminal-toolbar">
-        <v-toolbar-title>
+      <!-- 主工具栏 -->
+      <v-toolbar color="grey-darken-4" dark class="terminal-toolbar">
+        <v-toolbar-title class="text-h6">
           <v-icon start>mdi-console</v-icon>
           终端日志查看器
         </v-toolbar-title>
+
         <v-spacer></v-spacer>
-        <!-- 进程名多选 -->
-        <div class="process-select-container mr-3">
+
+        <!-- 筛选工具区域 -->
+        <div class="filter-section">
+          <!-- 进程名多选 -->
           <v-autocomplete
             v-model="selectedProcesses"
             :items="processList"
             label="选择进程"
+            placeholder="全部进程"
             multiple
             chips
             closable-chips
             density="compact"
-            variant="outlined"
             hide-details
             clearable
-            style="min-width: 300px; max-width: 400px;"
+            variant="outlined"
+            class="filter-input process-filter"
             @update:model-value="onProcessChange"
           >
             <template #chip="{ props: chipProps, item }">
-              <v-chip
-                v-bind="chipProps"
-                size="small"
-                color="primary"
-              >
+              <v-chip v-bind="chipProps" size="x-small" color="primary" closable>
                 {{ item.title }}
               </v-chip>
             </template>
           </v-autocomplete>
+
+          <!-- 时间选择器 -->
+          <v-text-field
+            v-model="contextTimeInput"
+            label="时间选择"
+            type="datetime-local"
+            density="compact"
+            hide-details
+            clearable
+            variant="outlined"
+            prepend-inner-icon="mdi-clock-outline"
+            class="filter-input time-filter"
+            @update:model-value="onTimeChange"
+          >
+          </v-text-field>
+
+          <!-- 应用筛选按钮 -->
+          <v-btn
+            color="primary"
+            variant="elevated"
+            size="small"
+            @click="applyFilters"
+            :disabled="loading"
+            class="filter-apply-btn"
+          >
+            <v-icon start>mdi-filter</v-icon>
+            应用筛选
+          </v-btn>
         </div>
-        <div class="d-flex align-center ga-2 mr-2">
-          <v-chip size="small" color="info" variant="flat">
-            {{ loadedLogsCount }} 条日志
+
+        <!-- 状态信息和操作按钮 -->
+        <div class="toolbar-actions">
+          <v-chip size="small" color="info" variant="tonal">
+            <v-icon start size="small">mdi-text-box-outline</v-icon>
+            {{ loadedLogsCount }} 条
           </v-chip>
-          <v-chip v-if="loading" size="small" color="warning" variant="flat">
-            加载中...
+          <v-chip v-if="loading" size="small" color="warning" variant="tonal">
+            <v-icon start size="small" class="rotate-icon">mdi-loading</v-icon>
+            加载中
           </v-chip>
         </div>
+
+        <v-divider vertical class="mx-2"></v-divider>
+
         <v-toolbar-items>
-          <v-btn icon @click="clearTerminal">
+          <v-btn icon @click="clearTerminal" density="comfortable">
             <v-icon>mdi-delete-sweep</v-icon>
+            <v-tooltip activator="parent" location="bottom">清空日志</v-tooltip>
           </v-btn>
-          <v-btn icon @click="loadOlderLogs">
+          <v-btn icon @click="loadOlderLogs" density="comfortable">
             <v-icon>mdi-arrow-up-bold</v-icon>
+            <v-tooltip activator="parent" location="bottom">加载更早日志</v-tooltip>
           </v-btn>
-          <v-btn icon @click="loadNewerLogs">
+          <v-btn icon @click="loadNewerLogs" density="comfortable">
             <v-icon>mdi-arrow-down-bold</v-icon>
+            <v-tooltip activator="parent" location="bottom">加载新日志</v-tooltip>
           </v-btn>
-          <v-btn icon @click="closeTerminal">
+          <v-btn icon @click="closeTerminal" density="comfortable">
             <v-icon>mdi-close</v-icon>
+            <v-tooltip activator="parent" location="bottom">关闭</v-tooltip>
           </v-btn>
         </v-toolbar-items>
       </v-toolbar>
@@ -66,38 +106,7 @@
       <!-- 终端容器 -->
       <div class="terminal-wrapper">
         <!-- 顶部加载按钮 -->
-        <v-btn
-          v-show="showLoadOlderBtn"
-          class="load-older-btn"
-          color="primary"
-          size="small"
-          :loading="loading"
-          @click="loadOlderLogs"
-        >
-          <v-icon start>mdi-arrow-up</v-icon>
-          加载更早的日志
-        </v-btn>
-
         <div ref="xtermEl" class="terminal-container"></div>
-
-        <!-- 底部加载按钮 -->
-        <v-btn
-          v-show="showLoadNewerBtn"
-          class="load-newer-btn"
-          color="primary"
-          size="small"
-          :loading="loading"
-          @click="loadNewerLogs"
-        >
-          <v-icon start>mdi-arrow-down</v-icon>
-          加载更新的日志
-        </v-btn>
-      </div>
-
-      <div class="terminal-status">
-        <v-chip size="x-small" variant="text">
-          滚动到顶部或底部显示加载按钮
-        </v-chip>
       </div>
     </v-card>
   </v-dialog>
@@ -129,12 +138,14 @@ const props = defineProps<Props>();
 
 const dialog = ref(false);
 const xtermEl = ref<HTMLElement | null>(null);
-const cardRef = ref<HTMLElement | null>(null);
 const loading = ref(false);
 const loadedLogsCount = ref(0);
 
 // 进程选择
 const selectedProcesses = ref<string[]>([]);
+
+// 时间选择器输入
+const contextTimeInput = ref<string>("");
 
 // 上下文模式
 const contextTime = ref<number | null>(null);
@@ -149,7 +160,7 @@ let fitAddon: FitAddon | null = null;
 
 // 日志缓存
 const logCache = ref<ProcessLog[]>([]);
-const pageSize = 100;
+const pageSize = 10;
 let oldestTime: number | null = null;
 let newestTime: number | null = null;
 let isLoadingMore = false;
@@ -164,6 +175,14 @@ defineExpose({
     contextTime.value = time;
     contextProcessName.value = processName;
     selectedProcesses.value = [processName];
+    // 将时间戳转换为 datetime-local 格式
+    const date = new Date(time);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    contextTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
     dialog.value = true;
   },
 });
@@ -229,7 +248,6 @@ const initTerminal = () => {
   });
 
   window.addEventListener("resize", handleResize);
-
 };
 
 // 适应终端大小
@@ -379,8 +397,6 @@ const loadInitialLogs = async () => {
             fitTerminal();
           }, 100);
         });
-      } else {
-        term.writeln("\x1b[33m未找到日志记录\x1b[0m");
       }
     }
   } catch (error) {
@@ -408,11 +424,10 @@ const loadContextLogs = async () => {
     }
 
     const beforeResponse = await getLog(beforeQuery);
-    const beforeLogs = beforeResponse.code === 0 && beforeResponse.data?.data
-      ? beforeResponse.data.data.reverse()
-      : [];
-
-    // 加载之后的100条日志
+    const beforeLogs =
+      beforeResponse.code === 0 && beforeResponse.data?.data
+        ? beforeResponse.data.data.reverse()
+        : [];
     const afterQuery: GetLogReq = {
       page: { from: 0, size: 5 },
       time: { startTime: contextTime.value },
@@ -424,9 +439,10 @@ const loadContextLogs = async () => {
     }
 
     const afterResponse = await getLog(afterQuery);
-    const afterLogs = afterResponse.code === 0 && afterResponse.data?.data
-      ? afterResponse.data.data
-      : [];
+    const afterLogs =
+      afterResponse.code === 0 && afterResponse.data?.data
+        ? afterResponse.data.data
+        : [];
 
     // 合并日志
     const allLogs = [...beforeLogs, ...afterLogs];
@@ -450,7 +466,7 @@ const loadContextLogs = async () => {
         if (isTargetLog) {
           targetFound = true;
           linesBeforeTarget += 1; // 标记行
-          writeLogToTerminal(log);;
+          writeLogToTerminal(log);
         } else {
           writeLogToTerminal(log);
         }
@@ -459,10 +475,6 @@ const loadContextLogs = async () => {
       oldestTime = Math.min(...allLogs.map((l) => l.time));
       newestTime = Math.max(...allLogs.map((l) => l.time));
       loadedLogsCount.value = allLogs.length;
-
-      term.writeln("");
-      term.writeln(`\x1b[32m加载完成: 共 ${allLogs.length} 条日志\x1b[0m`);
-      term.writeln(`\x1b[32m前: ${beforeLogs.length} 条，后: ${afterLogs.length} 条\x1b[0m`);
 
       // 加载完成后滚动到目标日志位置
       if (targetFound) {
@@ -473,7 +485,8 @@ const loadContextLogs = async () => {
               if (term) {
                 // 滚动到目标位置，将目标日志置于屏幕中央偏上的位置
                 const viewportRows = term.rows;
-                const scrollToLine = linesBeforeTarget - Math.floor(viewportRows / 3);
+                const scrollToLine =
+                  linesBeforeTarget - Math.floor(viewportRows / 3);
 
                 // 先滚动到顶部
                 term.scrollToTop();
@@ -486,12 +499,9 @@ const loadContextLogs = async () => {
           }, 150);
         });
       }
-    } else {
-      term.writeln("\x1b[33m未找到上下文日志\x1b[0m");
     }
   } catch (error) {
     console.error("加载上下文日志错误:", error);
-    term.writeln("\x1b[31m加载上下文日志失败\x1b[0m");
   }
 };
 
@@ -534,13 +544,7 @@ const loadOlderLogs = async () => {
         nextTick(() => {
           setTimeout(() => {
             if (term) {
-              // 计算新内容的行数
-              const newLineCount = logs.reduce((count, log) => {
-                return count + (log.log.match(/\n/g) || []).length + 1;
-              }, 0);
-
-              // 滚动到之前查看的内容位置
-              term.scrollLines(newLineCount);
+              term.scrollToTop();
             }
           }, 100);
         });
@@ -588,9 +592,11 @@ const loadNewerLogs = async () => {
         nextTick(() => {
           setTimeout(() => {
             fitTerminal();
+            if (term) {
+              term.scrollToBottom();
+            }
           }, 100);
         });
-
         snackbarStore.showSuccessMessage(`已加载 ${logs.length} 条新日志`);
       } else {
         snackbarStore.showInfoMessage("没有更新的日志了");
@@ -612,34 +618,25 @@ const writeLogToTerminal = (log: ProcessLog) => {
   term.write(log.log);
 };
 
-// 格式化日志行
-// const formatLogLine = (log: ProcessLog): string => {
-//   const time = formatTime(log.time);
-//   const name = log.name || "-";
-//   const using = log.using || "-";
-//   const logContent = log.log || "";
+// 时间选择变化
+const onTimeChange = (value: string | null) => {
+  if (value) {
+    // 将 datetime-local 格式转换为时间戳（毫秒）
+    const date = new Date(value);
+    contextTime.value = date.getTime();
+  } else {
+    contextTime.value = null;
+  }
+};
 
-//   // 使用 ANSI 颜色代码格式化输出
-//   return `\x1b[90m[${time}]\x1b[0m \x1b[36m[${name}]\x1b[0m \x1b[35m[${using}]\x1b[0m ${logContent}`;
-// };
-
-// 格式化时间
-const formatTime = (timestamp: number): string => {
-  if (!timestamp) return "-";
-  const date = new Date(timestamp);
-  return date.toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+// 应用筛选
+const applyFilters = () => {
+  clearTerminal();
 };
 
 // 进程选择变化
 const onProcessChange = () => {
-  // 重新加载日志
-  clearTerminal();
+  // 进程改变时不自动刷新，等待用户点击应用筛选
 };
 
 // 清空终端
@@ -652,17 +649,6 @@ const clearTerminal = () => {
     newestTime = null;
     showLoadOlderBtn.value = false;
     showLoadNewerBtn.value = false;
-
-    // 显示欢迎信息
-    term.writeln("\x1b[1;36m========================================\x1b[0m");
-    term.writeln("\x1b[1;32m  重新加载日志...\x1b[0m");
-    term.writeln("\x1b[1;36m========================================\x1b[0m");
-
-    if (selectedProcesses.value && selectedProcesses.value.length > 0) {
-      term.writeln(`\x1b[33m选择的进程: ${selectedProcesses.value.join(', ')}\x1b[0m`);
-    }
-
-    term.writeln("");
 
     loadInitialLogs();
   }
@@ -689,6 +675,7 @@ const cleanup = () => {
   selectedProcesses.value = [];
   contextTime.value = null;
   contextProcessName.value = null;
+  contextTimeInput.value = "";
 };
 
 onUnmounted(() => {
@@ -707,14 +694,61 @@ onUnmounted(() => {
 }
 
 .terminal-toolbar {
-  height: 48px;
+  height: auto !important;
+  min-height: 64px;
   flex-shrink: 0;
   flex-grow: 0;
-}
-
-.process-select-container {
+  padding: 8px 12px !important;
   display: flex;
   align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  margin: 0 16px;
+}
+
+.filter-input {
+  min-width: 180px;
+  max-width: 250px;
+}
+
+.process-filter {
+  min-width: 200px;
+}
+
+.time-filter {
+  min-width: 220px;
+}
+
+.filter-apply-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.rotate-icon {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .terminal-wrapper {
@@ -785,13 +819,31 @@ onUnmounted(() => {
   height: 100% !important;
 }
 
-/* 多选框样式调整 */
-:deep(.v-autocomplete .v-field) {
-  background-color: rgba(255, 255, 255, 0.1);
+/* 表单控件样式调整 */
+:deep(.filter-input .v-field) {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
 }
 
-:deep(.v-autocomplete .v-field__input) {
+:deep(.filter-input .v-field__input) {
   color: white;
+  font-size: 0.875rem;
+}
+
+:deep(.filter-input .v-label) {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+}
+
+:deep(.filter-input .v-field--variant-outlined .v-field__outline) {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.filter-input .v-field--focused .v-field__outline) {
+  color: rgb(33, 150, 243);
+}
+
+:deep(.filter-input .v-icon) {
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>
-
