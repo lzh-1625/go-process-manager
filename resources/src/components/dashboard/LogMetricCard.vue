@@ -6,10 +6,8 @@
 import { ref, onMounted, computed, Ref } from "vue";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
-import { useTheme } from "vuetify";
 import { getLogMetric, LogStatsticMetric } from "@/api/metric";
 
-const { current } = useTheme();
 const loading = ref(true);
 const logData = ref<LogStatsticMetric | null>(null);
 const dateType = ref(1); // 1: 日, 2: 周, 3: 月
@@ -31,19 +29,18 @@ const chartOption = computed<EChartsOption>(() => {
   const counts = items.map((item) => item.count);
 
   return {
-    backgroundColor: current.value.colors.surface,
     title: {
-      text: `日志统计 (${dateTypes.find((t) => t.value === dateType.value)?.title})`,
+      text: `日志统计 (${
+        dateTypes.find((t) => t.value === dateType.value)?.title
+      })`,
       left: "center",
       top: 10,
       textStyle: {
-        color: current.value.colors.onSurface,
         fontSize: 16,
         fontWeight: "bold",
       },
       subtext: `正在执行: ${logData.value.executing} 个任务`,
       subtextStyle: {
-        color: current.value.colors.onSurface,
         fontSize: 12,
       },
     },
@@ -71,33 +68,21 @@ const chartOption = computed<EChartsOption>(() => {
       type: "category",
       boundaryGap: false,
       data: dates,
-      axisLine: {
-        lineStyle: {
-          color: current.value.colors.onSurface,
-        },
-      },
       axisLabel: {
         rotate: dateType.value === 1 ? 45 : 0,
-        color: current.value.colors.onSurface,
       },
     },
-    yAxis: {
-      type: "value",
-      name: "日志数量",
-      nameTextStyle: {
-        color: current.value.colors.onSurface,
-      },
-      axisLine: {
-        lineStyle: {
-          color: current.value.colors.onSurface,
+    yAxis: [
+      {
+        type: "value",
+        name: "日志数量",
+        min: 0,
+        position: "right",
+        axisLine: {
+          show: true,
         },
-      },
-      splitLine: {
-        lineStyle: {
-          color: current.value.dark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-        },
-      },
-    },
+      }
+    ],
     series: [
       {
         name: "日志数量",
@@ -184,10 +169,10 @@ onMounted(() => {
   }, 500);
 
   // 监听窗口大小变化
-  window.addEventListener('resize', handleResize);
+  window.addEventListener("resize", handleResize);
 
   onUnmounted(() => {
-    window.removeEventListener('resize', handleResize);
+    window.removeEventListener("resize", handleResize);
   });
 });
 
@@ -229,7 +214,10 @@ watch(
         class="h-full d-flex align-center justify-center"
         style="min-height: 300px"
       >
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+        <v-progress-circular
+          indeterminate
+          color="primary"
+        ></v-progress-circular>
       </div>
       <div v-else style="position: relative">
         <div
@@ -248,7 +236,14 @@ watch(
           <div style="font-size: 10px; color: #ff9800; font-weight: bold">
             正在处理
           </div>
-          <div style="font-size: 18px; color: #ff9800; font-weight: bold; text-align: center">
+          <div
+            style="
+              font-size: 18px;
+              color: #ff9800;
+              font-weight: bold;
+              text-align: center;
+            "
+          >
             {{ logData.executing }}
           </div>
         </div>
@@ -259,4 +254,3 @@ watch(
 </template>
 
 <style lang="scss" scoped></style>
-
