@@ -8,7 +8,7 @@ import SettingsRoutes from "./settings.routes";
 export const routes = [
   {
     path: "/",
-    redirect: parseInt(window.localStorage.getItem("role") ?? "0") < 2 ? "/dashboard" : "/process",
+    redirect: "/process",
     meta: {},
   } as any,
   {
