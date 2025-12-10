@@ -47,8 +47,9 @@ func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 }
 
 func (p *pushLogic) getReplaceMessage(placeholders map[string]string, message string) string {
+	kvs := []string{}
 	for k, v := range placeholders {
-		message = strings.ReplaceAll(message, k, v)
+		kvs = append(kvs, k, v)
 	}
-	return message
+	return strings.NewReplacer(kvs...).Replace(message)
 }
