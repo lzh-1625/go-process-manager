@@ -58,6 +58,7 @@ func EventLogger() gin.HandlerFunc {
 			ctx.Request.Method, eum.EventApiRequest,
 			"uri", ctx.Request.URL.Path,
 			"method", ctx.Request.Method,
+			"user", user,
 			"status", strconv.Itoa(ctx.Writer.Status()),
 		)
 	}
