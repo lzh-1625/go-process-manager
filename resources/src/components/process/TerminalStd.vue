@@ -32,8 +32,8 @@ watch(dialog, (newValue) => {
 });
 
 const initWebSocketStd = () => {
-  const baseUrl = `ws://${window.location.hostname}:8797/api/ws`;
-  // const baseUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
+  // const baseUrl = `ws://${window.location.hostname}:8797/api/ws`;
+  const baseUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
   const url = `${baseUrl}?uuid=${props.data.uuid}&token=${localStorage.getItem(
     "token"
   )}`;

@@ -39,7 +39,7 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://xcon.top:8797",
+        target: "http://localhost:8797",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/sdApi/, ""),
       },

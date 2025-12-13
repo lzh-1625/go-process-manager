@@ -275,7 +275,11 @@ const copyToken = () => {
             </v-icon>
           </template>
         </v-tooltip>
-        {{ props.data.name }}
+        <span class="process-name">{{ props.data.name }}</span>
+        <span v-if="props.data.user" class="user-info">
+          <v-icon size="small" class="mr-1">mdi-account</v-icon>
+          {{ props.data.user }}
+        </span>
       </div>
       <div class="top-right" v-permission="1">
         <v-menu bottom left>
@@ -493,6 +497,24 @@ const copyToken = () => {
   padding: 5px 5px;
   font-weight: bold;
   height: 30px; /* 顶部固定高度 */
+}
+
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.process-name {
+  font-weight: bold;
+}
+
+.user-info {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85em;
+  opacity: 0.7;
+  font-weight: normal;
 }
 
 /* 中间图表自适应 */

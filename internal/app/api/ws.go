@@ -96,8 +96,6 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 		return nil
 	})
 	select {
-	case <-proc.StopChan:
-		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
 	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
 		log.Logger.Infow("ws连接断开", "操作类型", "连接时间超过最大时长限制")
 	case <-wsCtx.Done():
