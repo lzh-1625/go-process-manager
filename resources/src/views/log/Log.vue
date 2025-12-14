@@ -307,10 +307,7 @@ const buildQuery = (): GetLogReq => {
   // 添加排序
   if (searchForm.value.sort) {
     query.sort = searchForm.value.sort;
-  } else {
-    query.sort = "desc"; // 默认按时间倒序
   }
-
   // 添加匹配条件
   const match: any = {};
   if (searchForm.value.name) {
