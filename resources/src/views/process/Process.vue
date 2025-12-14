@@ -13,7 +13,7 @@
 
     <!-- 空状态界面 -->
     <v-card
-      v-else
+      v-else-if="initFirst"
       class="pa-12 rounded-2xl elevation-2 text-center"
       style="min-height: 400px"
     >
@@ -212,10 +212,12 @@ const killingAll = ref(false);
 const startAllDialog = ref(false);
 const killAllDialog = ref(false);
 const fab = ref(false);
+const initFirst = ref(false);
 
 const initProcessData = () => {
   getProcessList().then((e) => {
     processData.value = e.data!.sort((a, b) => a.name.localeCompare(b.name));
+    initFirst.value = true;
     getProcessListWait();
   });
 };
