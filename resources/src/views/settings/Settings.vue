@@ -58,7 +58,7 @@
           <v-icon color="success" class="mr-2">mdi-tune</v-icon>
           系统配置
         </div>
-        <v-btn color="primary" variant="tonal" @click="handleEsReload" :loading="esLoading">
+        <v-btn color="primary" variant="tonal" @click="handleStorageReload" :loading="configLoading">
           <v-icon start>mdi-reload</v-icon>
           刷新存储引擎
         </v-btn>
@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { getConfig, setConfig, esReload } from "~/src/api/config";
+import { getConfig, setConfig, configReload } from "~/src/api/config";
 import { editUser } from "~/src/api/user";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 
@@ -148,7 +148,6 @@ const passwordLoading = ref(false);
 
 // 配置相关
 const configLoading = ref(false);
-const esLoading = ref(false);
 const configList = ref<Array<{
   key: string;
   value: any;
@@ -244,18 +243,18 @@ const handleSetConfig = async () => {
 };
 
 // 重载 ES
-const handleEsReload = async () => {
-  esLoading.value = true;
+const handleStorageReload = async () => {
+  configLoading.value = true;
   try {
-    const resp = await esReload();
+    const resp = await configReload();
     if (resp.code === 0) {
-      snackbarStore.showSuccessMessage("已连接上 ES");
+      snackbarStore.showSuccessMessage("已连接上存储引擎");
     }
   } catch (error) {
-    console.error("重载ES错误:", error);
-    snackbarStore.showErrorMessage("重载 ES 失败");
+    console.error("重载存储引擎错误:", error);
+    snackbarStore.showErrorMessage("重载存储引擎失败");
   } finally {
-    esLoading.value = false;
+    configLoading.value = false;
   }
 };
 

@@ -8,6 +8,6 @@ export function setConfig(data) {
   return api.put("/config", data).then((res) => res);
 }
 
-export function esReload() {
+export function configReload() {
   return api.put("/config/reload").then((res) => res);
 }
