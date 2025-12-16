@@ -227,12 +227,32 @@ const handleResize = () => {
   getMemInstance()?.resize();
 };
 
+// 监听图表容器大小变化
+let cpuResizeObserver: ResizeObserver | null = null;
+let memResizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
   setTimeout(async () => {
     loading.value = false;
     await nextTick();
     // 等待 DOM 渲染后再加载数据
     await loadData();
+
+    // 数据加载完成后，监听图表容器大小变化
+    await nextTick();
+    if (cpuChartEl.value) {
+      cpuResizeObserver = new ResizeObserver(() => {
+        getCpuInstance()?.resize();
+      });
+      cpuResizeObserver.observe(cpuChartEl.value);
+    }
+
+    if (memChartEl.value) {
+      memResizeObserver = new ResizeObserver(() => {
+        getMemInstance()?.resize();
+      });
+      memResizeObserver.observe(memChartEl.value);
+    }
 
     // 每30秒刷新一次数据
     const interval = setInterval(loadData, 30000);
@@ -247,6 +267,12 @@ onMounted(() => {
 
   onUnmounted(() => {
     window.removeEventListener("resize", handleResize);
+    if (cpuResizeObserver) {
+      cpuResizeObserver.disconnect();
+    }
+    if (memResizeObserver) {
+      memResizeObserver.disconnect();
+    }
   });
 });
 

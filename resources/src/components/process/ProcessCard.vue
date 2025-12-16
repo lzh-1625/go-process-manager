@@ -161,15 +161,35 @@ const handleStop = () => {
 };
 
 const handleResize = () => {
-  chartInstance.resize();
+  chartInstance?.resize();
 };
+
+// 监听图表容器大小变化
+let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   initEChart();
+
+  // 监听窗口大小变化
   window.addEventListener("resize", handleResize);
+
+  // 监听图表容器大小变化
+  const chartEl = document.getElementById("echarts" + props.data.uuid);
+  if (chartEl) {
+    resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(chartEl);
+  }
 });
+
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+  // 销毁图表实例
+  chartInstance?.dispose();
 });
 
 const props = defineProps<{

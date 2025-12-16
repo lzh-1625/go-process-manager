@@ -160,12 +160,24 @@ const handleResize = () => {
   getInstance()?.resize();
 };
 
+// 监听图表容器大小变化
+let resizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
   setTimeout(async () => {
     loading.value = false;
     await nextTick();
     // 等待 DOM 渲染后再加载数据
     await loadData();
+
+    // 数据加载完成后，监听图表容器大小变化
+    await nextTick();
+    if (chartEl.value) {
+      resizeObserver = new ResizeObserver(() => {
+        handleResize();
+      });
+      resizeObserver.observe(chartEl.value);
+    }
   }, 500);
 
   // 监听窗口大小变化
@@ -173,6 +185,9 @@ onMounted(() => {
 
   onUnmounted(() => {
     window.removeEventListener("resize", handleResize);
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+    }
   });
 });
 
