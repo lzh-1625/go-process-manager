@@ -11,6 +11,9 @@ const configForm = ref<Partial<ProcessConfig>>({});
 const pushItems = ref<{ value: any; label: string }[]>([]);
 const pushSelectedValues = ref([]);
 
+// 环境变量键值对列表
+const envVars = ref<{ key: string; value: string }[]>([]);
+
 watch(
   pushSelectedValues,
   (newValues) => {
@@ -41,11 +44,34 @@ const initPushItem = () => {
   });
 };
 
+// 添加环境变量
+const addEnvVar = () => {
+  envVars.value.push({ key: "", value: "" });
+};
+
+// 删除环境变量
+const removeEnvVar = (index: number) => {
+  envVars.value.splice(index, 1);
+};
+
+// 将环境变量数组转换为分号分隔的字符串
+const getEnvString = () => {
+  return envVars.value
+    .filter((env) => env.key.trim() !== "")
+    .map((env) => `${env.key}=${env.value}`)
+    .join(";");
+};
+
 const create = () => {
+  // 将环境变量转换为字符串格式
+  configForm.value.env = getEnvString();
+
   postProcessConfig(configForm.value).then((e) => {
     if (e.code === 0) {
       snackbarStore.showSuccessMessage("sucess");
       dialog.value = false;
+      // 清空表单
+      envVars.value = [];
     }
   });
 };
@@ -96,6 +122,62 @@ const create = () => {
                 variant="outlined"
                 density="compact"
               ></v-textarea>
+            </v-col>
+          </v-row>
+
+          <v-divider class="my-4"></v-divider>
+
+          <!-- 环境变量配置 -->
+          <v-row>
+            <v-col cols="12">
+              <div class="d-flex align-center mb-2">
+                <span class="text-subtitle-2">环境变量</span>
+                <v-btn
+                  size="small"
+                  icon="mdi-plus"
+                  variant="text"
+                  color="primary"
+                  @click="addEnvVar"
+                  class="ml-2"
+                ></v-btn>
+              </div>
+            </v-col>
+          </v-row>
+
+          <v-row
+            v-for="(env, index) in envVars"
+            :key="index"
+            align="center"
+            class="mb-2"
+          >
+            <v-col cols="12" sm="5">
+              <v-text-field
+                label="变量名"
+                v-model="env.key"
+                variant="outlined"
+                density="compact"
+                placeholder="例如: PATH"
+                hide-details
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                label="变量值"
+                v-model="env.value"
+                variant="outlined"
+                density="compact"
+                placeholder="例如: /usr/bin"
+                hide-details
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" sm="1">
+              <v-btn
+                size="small"
+                icon="mdi-delete"
+                variant="text"
+                color="error"
+                @click="removeEnvVar(index)"
+              ></v-btn>
             </v-col>
           </v-row>
 

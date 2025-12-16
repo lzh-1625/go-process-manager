@@ -46,4 +46,5 @@ export interface ProcessConfig {
   cgroupEnable: boolean;
   memoryLimit: null;
   cpuLimit: null;
+  env: string;
 }
