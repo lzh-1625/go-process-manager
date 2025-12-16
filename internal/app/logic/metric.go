@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"runtime"
 	"time"
 
 	"github.com/duke-git/lancet/v2/datetime"
@@ -24,7 +25,7 @@ func (m *metricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 		}
 		items = append(items, model.PerformceUsageItem{
 			Name: v.Name,
-			CPU:  v.Usage.Cpu[len(v.Usage.Cpu)-1],
+			CPU:  v.Usage.Cpu[len(v.Usage.Cpu)-1] * 100.0 / float64(runtime.NumCPU()),
 			Mem:  v.Usage.Mem[len(v.Usage.Mem)-1],
 		})
 	}
@@ -39,7 +40,7 @@ func (m *metricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 	if err != nil {
 		return nil, err
 	}
-	memFree := vmStat.Free >> 10
+	memFree := vmStat.Available >> 10
 	return &model.PerformceUsage{
 		CPUFree: cpuIdle,
 		MemFree: float64(memFree),
