@@ -15,6 +15,7 @@ type Process struct {
 	CgroupEnable      bool             `gorm:"column:cgroup_enable" json:"cgroupEnable"`
 	MemoryLimit       *float32         `gorm:"column:memory_limit" json:"memoryLimit"`
 	CpuLimit          *float32         `gorm:"column:cpu_limit" json:"cpuLimit"`
+	Env               string           `gorm:"column:env" json:"env"`
 }
 
 func (*Process) TableName() string {

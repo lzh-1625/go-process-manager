@@ -39,6 +39,7 @@ type ProcessBase struct {
 	Pid          int
 	StartCommand []string
 	WorkDir      string
+	Env          []string
 	Lock         sync.Mutex
 	StopChan     chan struct{}
 	Control      struct {

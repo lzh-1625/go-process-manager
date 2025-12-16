@@ -50,6 +50,7 @@ func (p *ProcessPty) Start() (err error) {
 		return err
 	}
 	pty.SetCWD(p.WorkDir)
+	pty.SetENV(p.Env)
 	err = pty.Start(p.StartCommand)
 	if err != nil {
 		log.Logger.Errorw("进程启动失败", "err", err)

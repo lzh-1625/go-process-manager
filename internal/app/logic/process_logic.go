@@ -4,6 +4,7 @@ import (
 	"errors"
 	"runtime"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/google/shlex"
@@ -122,6 +123,7 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []model.Process) 
 		pi.CgroupEnable = process.Config.cgroupEnable
 		pi.CpuLimit = process.Config.cpuLimit
 		pi.MemoryLimit = process.Config.memoryLimit
+		pi.Env = process.Env
 		processInfoList = append(processInfoList, pi)
 	}
 	return processInfoList
@@ -195,6 +197,7 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	result.StartCommand = utils.UnwarpIgnore(shlex.Split(config.Cmd))
 	result.WorkDir = config.Cwd
 	result.Name = config.Name
+	result.Env = strings.Split(config.Env, ";")
 	return nil
 }
 

@@ -47,6 +47,7 @@ func (p *ProcessPty) Start() (err error) {
 	}
 	cmd := exec.Command(p.StartCommand[0], p.StartCommand[1:]...)
 	cmd.Dir = p.WorkDir
+	cmd.Env = append(cmd.Env, p.Env...)
 	pf, err := pty.Start(cmd)
 	if err != nil || cmd.Process == nil {
 		log.Logger.Errorw("进程启动失败", "err", err)
@@ -146,6 +147,7 @@ func NewProcessPty(pconfig model.Process) *ProcessBase {
 		Name:         pconfig.Name,
 		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
 		WorkDir:      pconfig.Cwd,
+		Env:          strings.Split(pconfig.Env, ";"),
 	}
 	p.Process = &ProcessPty{ProcessBase: &p}
 	p.setProcessConfig(pconfig)

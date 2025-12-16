@@ -13,6 +13,7 @@ type ProcessInfo struct {
 	CgroupEnable bool             `json:"cgroupEnable"`
 	MemoryLimit  *float32         `json:"memoryLimit"`
 	CpuLimit     *float32         `json:"cpuLimit"`
+	Env          []string         `json:"env"`
 }
 
 type Usage struct {

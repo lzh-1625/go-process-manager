@@ -54,7 +54,7 @@ func (p *ProcessStd) Start() (err error) {
 	}
 	cmd := exec.Command(p.StartCommand[0], p.StartCommand[1:]...)
 	cmd.Dir = p.WorkDir
-
+	cmd.Env = append(cmd.Env, p.Env...)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Logger.Errorw("启动失败，输出管道获取失败", "err", err)
