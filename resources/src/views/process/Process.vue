@@ -196,16 +196,6 @@ type CreateHandle = {
 const processCreateComponent = ref<CreateHandle | null>(null);
 const processData = ref<ProcessItem[]>();
 
-// 生成兼容的 UUID
-const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
-
-const uuid: string = crypto?.randomUUID?.() ?? generateUUID();
 const snackbarStore = useSnackbarStore();
 const startingAll = ref(false);
 const killingAll = ref(false);
@@ -213,6 +203,8 @@ const startAllDialog = ref(false);
 const killAllDialog = ref(false);
 const fab = ref(false);
 const initFirst = ref(false);
+
+const version = ref(0);
 
 const initProcessData = () => {
   getProcessList().then((e) => {
@@ -283,6 +275,13 @@ const executeKillAll = () => {
 };
 
 let cancelTokenSource: any;
+
+onBeforeUnmount(() => {
+  if (cancelTokenSource) {
+    cancelTokenSource.cancel("组件已销毁，取消请求");
+  }
+});
+
 const getProcessListWait = () => {
   cancelTokenSource = axios.CancelToken.source();
   axios
@@ -290,10 +289,11 @@ const getProcessListWait = () => {
       cancelToken: cancelTokenSource.token,
       headers: {
         Authorization: "bearer " + localStorage.getItem("token"),
-        Uuid: uuid,
+        Version: version.value,
       },
     })
     .then((response) => {
+      version.value = parseInt(response.headers?.version || "0");
       processData.value = response.data.data.sort((a, b) =>
         a.name.localeCompare(b.name)
       );

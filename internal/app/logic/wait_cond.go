@@ -35,8 +35,8 @@ func newWaitCond() *WaitCond {
 }
 
 func (p *WaitCond) Trigger() {
-	p.TriggerChan <- struct{}{}
 	p.Version.Add(1)
+	p.TriggerChan <- struct{}{}
 }
 
 func (p *WaitCond) timing() { // 添加定时信号清理阻塞协程

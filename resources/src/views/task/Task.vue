@@ -18,12 +18,7 @@
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-format-list-checks</v-icon>
           <span class="flex-fill">任务</span>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="refreshTasks"
-          >
+          <v-btn icon variant="text" size="small" @click="refreshTasks">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
           <v-btn
@@ -41,7 +36,11 @@
         <v-table class="pa-3">
           <thead>
             <tr>
-              <th class="text-left" v-for="header in headers" :key="header.title">
+              <th
+                class="text-left"
+                v-for="header in headers"
+                :key="header.title"
+              >
                 {{ header.title }}
               </th>
             </tr>
@@ -75,7 +74,13 @@
                     fill="#000000"
                   />
                 </svg>
-                <svg v-else width="20" height="20" viewBox="0 0 48 48" fill="#000000">
+                <svg
+                  v-else
+                  width="20"
+                  height="20"
+                  viewBox="0 0 48 48"
+                  fill="#000000"
+                >
                   <path
                     d="M42.02 12.71l-1.38-1.42a1 1 0 00-1.41 0L18.01 32.5l-9.9-9.89a1 1 0 00-1.41 0l-1.41 1.41a1 1 0 000 1.41l10.6 10.61 1.42 1.41a1 1 0 001.41 0l1.41-1.41 21.92-21.92a1 1 0 00-.03-1.41z"
                     fill="#000000"
@@ -103,10 +108,20 @@
                 ></v-switch>
               </td>
               <td>
-                <v-icon class="mr-2" v-if="!item.running" @click="startTask(item)" size="small">
+                <v-icon
+                  class="mr-2"
+                  v-if="!item.running"
+                  @click="startTask(item)"
+                  size="small"
+                >
                   mdi-play
                 </v-icon>
-                <v-icon class="mr-2" v-else @click="stopTask(item)" size="small">
+                <v-icon
+                  class="mr-2"
+                  v-else
+                  @click="stopTask(item)"
+                  size="small"
+                >
                   mdi-stop
                 </v-icon>
                 <v-icon class="mr-2" @click="editTaskBefore(item)" size="small">
@@ -325,6 +340,8 @@ import {
   stopTaskById,
 } from "~/src/api/task";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
+import axios from "axios";
+import { onBeforeUnmount } from "vue";
 import { TaskItem } from "~/src/types/tassk/task";
 
 const snackbarStore = useSnackbarStore();
@@ -362,6 +379,7 @@ const eventMap = {
 
 const urlBase = ref(`${window.location.origin}/api/task/api-key/`);
 
+const version = ref(0);
 // 表头
 const headers = [
   { title: "任务ID", key: "id" },
@@ -425,6 +443,8 @@ const refreshTasks = () => {
 
 onMounted(() => {
   initTask();
+
+  getTaskListWait();
 });
 
 // 打开添加任务弹窗
@@ -471,6 +491,35 @@ const copyToClipboard = () => {
       console.error("复制失败:", err);
     });
 };
+let cancelTokenSource: any;
+
+onBeforeUnmount(() => {
+  if (cancelTokenSource) {
+    cancelTokenSource.cancel("组件已销毁，取消请求");
+  }
+});
+
+const getTaskListWait = () => {
+  cancelTokenSource = axios.CancelToken.source();
+  axios
+    .get("api/task/all/wait", {
+      cancelToken: cancelTokenSource.token,
+      headers: {
+        Authorization: "bearer " + localStorage.getItem("token"),
+        Version: version.value,
+      },
+    })
+    .then((response) => {
+      version.value = parseInt(response.headers?.version || "0");
+      taskData.value = response.data.data.sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      getTaskListWait();
+    })
+    .catch((error) => {
+      console.error("请求错误:", error);
+    });
+};
 
 // 初始化任务 & 下拉框选项
 const initTask = () => {
@@ -490,7 +539,6 @@ const initTask = () => {
     .finally(() => {
       loading.value = false;
     });
-
   // 操作/事件/条件
   operationSelect.value = Object.entries(operationMap).map(([value, name]) => ({
     name,

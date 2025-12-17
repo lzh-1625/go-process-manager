@@ -28,6 +28,7 @@ func (p *WaitCondMiddle) WaitGetMiddel(c *gin.Context) {
 		return
 	}
 	if version < p.wc.Version.Load() {
+		c.Header("Version", strconv.FormatInt(p.wc.Version.Load(), 10))
 		c.Next()
 		return
 	}
