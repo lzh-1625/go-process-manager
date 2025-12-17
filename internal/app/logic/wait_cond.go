@@ -2,15 +2,15 @@ package logic
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
 )
 
 type WaitCond struct {
-	Cond        sync.Cond
-	Ts          int64
-	TimeMap     sync.Map
+	Cond        *sync.Cond
+	Version     *atomic.Int64
 	TriggerChan chan struct{}
 }
 
@@ -26,9 +26,8 @@ func InitWaitCond() {
 
 func newWaitCond() *WaitCond {
 	wc := &WaitCond{
-		Cond:        *sync.NewCond(&sync.Mutex{}),
-		Ts:          time.Now().UnixNano(),
-		TimeMap:     sync.Map{},
+		Cond:        sync.NewCond(&sync.Mutex{}),
+		Version:     &atomic.Int64{},
 		TriggerChan: make(chan struct{}),
 	}
 	go wc.timing()
@@ -37,7 +36,7 @@ func newWaitCond() *WaitCond {
 
 func (p *WaitCond) Trigger() {
 	p.TriggerChan <- struct{}{}
-	p.Ts = time.Now().UnixMicro()
+	p.Version.Add(1)
 }
 
 func (p *WaitCond) timing() { // 添加定时信号清理阻塞协程

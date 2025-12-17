@@ -1,6 +1,8 @@
 package middle
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 )
@@ -20,15 +22,19 @@ func (p *WaitCondMiddle) Trigger() {
 }
 
 func (p *WaitCondMiddle) WaitGetMiddel(c *gin.Context) {
-	reqUser := c.GetHeader("Uuid")
-	defer p.wc.TimeMap.Store(reqUser, p.wc.Ts)
-	if ts, ok := p.wc.TimeMap.Load(reqUser); !ok || ts.(int64) > p.wc.Ts {
+	version, err := strconv.ParseInt(c.GetHeader("Version"), 10, 64)
+	if err != nil {
+		rErr(c, -1, "version is invalid", err)
+		return
+	}
+	if version < p.wc.Version.Load() {
 		c.Next()
 		return
 	}
 	p.wc.Cond.L.Lock()
 	defer p.wc.Cond.L.Unlock()
 	p.wc.Cond.Wait()
+	c.Header("Version", strconv.FormatInt(p.wc.Version.Load(), 10))
 	c.Next()
 }
 
