@@ -1,46 +1,51 @@
 <template>
-  <v-container fluid class="py-6 px-8">
-    <!-- 页面标题 -->
+  <v-container fluid class="settings-container pa-4 pa-sm-6 pa-md-8">
     <!-- 修改密码卡片 -->
-    <v-card class="mb-6 rounded-2xl elevation-2">
-      <v-card-title class="d-flex align-center">
+    <v-card class="mb-4 mb-sm-6 rounded-xl elevation-2">
+      <v-card-title class="d-flex align-center py-3 py-sm-4">
         <v-icon color="warning" class="mr-2">mdi-lock-reset</v-icon>
-        修改密码
+        <span class="text-h6 text-sm-h5">修改密码</span>
       </v-card-title>
       <v-divider></v-divider>
-      <v-card-text class="pa-6">
-        <v-text-field
-          v-model="newPasswd1"
-          label="输入新密码"
-          :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="show1 ? 'text' : 'password'"
-          @click:append-inner="show1 = !show1"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-          hint="密码长度不能小于4位"
-          :rules="[rules.required, rules.min]"
-        ></v-text-field>
-        <v-text-field
-          v-model="newPasswd2"
-          label="确认新密码"
-          :append-inner-icon="show2 ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="show2 ? 'text' : 'password'"
-          @click:append-inner="show2 = !show2"
-          variant="outlined"
-          density="comfortable"
-          :rules="[rules.required, rules.min, rules.match]"
-        ></v-text-field>
-      </v-card-text>
+  <v-card-text class="pa-3 pa-sm-4 pa-md-6 d-flex flex-column align-center">
+    <div class="password-input-wrapper">
+      <v-text-field
+        v-model="newPasswd1"
+        label="输入新密码"
+        :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+        :type="show1 ? 'text' : 'password'"
+        @click:append-inner="show1 = !show1"
+        variant="outlined"
+        density="comfortable"
+        class="password-input mb-2"
+        hint="密码长度不能小于4位"
+        :rules="[rules.required, rules.min]"
+        persistent-hint
+      ></v-text-field>
+      <v-text-field
+        v-model="newPasswd2"
+        label="确认新密码"
+        :append-inner-icon="show2 ? 'mdi-eye' : 'mdi-eye-off'"
+        :type="show2 ? 'text' : 'password'"
+        @click:append-inner="show2 = !show2"
+        variant="outlined"
+        density="comfortable"
+        class="password-input"
+        :rules="[rules.required, rules.min, rules.match]"
+        persistent-hint
+      ></v-text-field>
+    </div>
+  </v-card-text>
       <v-divider></v-divider>
-      <v-card-actions class="pa-4">
+      <v-card-actions class="pa-3 pa-sm-4">
         <v-btn
           color="primary"
           variant="flat"
           @click="changePasswd"
           :loading="passwordLoading"
+          class="text-none"
+          prepend-icon="mdi-check"
         >
-          <v-icon start>mdi-check</v-icon>
           修改密码
         </v-btn>
         <v-spacer></v-spacer>
@@ -50,43 +55,61 @@
     <!-- 系统配置卡片 - 仅管理员可见 -->
     <v-card
       v-if="isAdmin"
-      class="rounded-2xl elevation-2"
+      class="rounded-xl elevation-2"
       :loading="configLoading"
     >
-      <v-card-title class="d-flex align-center justify-space-between">
+      <v-card-title class="d-flex align-center justify-space-between py-3 py-sm-4 flex-wrap gap-2">
         <div class="d-flex align-center">
           <v-icon color="success" class="mr-2">mdi-tune</v-icon>
-          系统配置
+          <span class="text-h6 text-sm-h5">系统配置</span>
         </div>
-        <v-btn color="primary" variant="tonal" @click="handleStorageReload" :loading="configLoading">
-          <v-icon start>mdi-reload</v-icon>
+        <v-btn
+          color="primary"
+          variant="tonal"
+          @click="handleStorageReload"
+          :loading="configLoading"
+          class="text-none"
+          prepend-icon="mdi-reload"
+          size="small"
+        >
           刷新存储引擎
         </v-btn>
       </v-card-title>
       <v-divider></v-divider>
-      <v-card-text class="pa-4">
-        <v-alert type="warning" variant="tonal" class="mb-4" density="compact">
-          <v-icon start>mdi-alert</v-icon>
+      <v-card-text class="pa-3 pa-sm-4 pa-md-6">
+        <v-alert
+          type="warning"
+          variant="tonal"
+          class="mb-4"
+          density="compact"
+          icon="mdi-alert"
+        >
           部分配置需要重启后才能生效，错误的配置可能会导致崩溃
         </v-alert>
 
         <v-row dense>
-            <v-col
-              v-for="(item, index) in configList"
-              :key="index"
-              cols="6"
+          <v-col
+            v-for="(item, index) in configList"
+            :key="index"
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
+          >
+            <v-card
+              variant="outlined"
+              class="pa-3 config-item fill-height"
             >
-            <v-card variant="outlined" class="pa-3 mb-2 config-item">
-              <div class="d-flex align-center justify-space-between">
-                <div>
-                  <div class="text-subtitle-2 font-weight-medium">
+              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <div style="flex: 1; min-width: 120px;">
+                  <div class="text-subtitle-2 font-weight-medium text-break">
                     {{ item.describe }}
                   </div>
-                  <div class="text-caption text-grey">
+                  <div class="text-caption text-grey mt-1 text-break">
                     {{ item.key }}
                   </div>
                 </div>
-                <div class="config-input">
+                <div class="config-input" style="flex: 0 0 auto;">
                   <v-switch
                     v-if="typeof item.value === 'boolean'"
                     v-model="configForm[item.key]"
@@ -94,6 +117,7 @@
                     density="compact"
                     hide-details
                     inset
+                    class="ma-0"
                   ></v-switch>
                   <v-text-field
                     v-else
@@ -101,28 +125,43 @@
                     variant="outlined"
                     density="compact"
                     hide-details
-                    style="max-width: 200px"
+                    style="min-width: 180px; max-width: 260px;"
                     :placeholder="'默认: ' + item.default"
+                    class="config-text-field"
                   ></v-text-field>
                 </div>
               </div>
             </v-card>
           </v-col>
         </v-row>
+
+        <!-- 空状态提示 -->
+        <v-row v-if="configList.length === 0" class="mt-4">
+          <v-col cols="12" class="text-center text-grey">
+            <v-icon size="48" class="mb-2">mdi-database-off</v-icon>
+            <div>暂无配置项</div>
+          </v-col>
+        </v-row>
       </v-card-text>
       <v-divider></v-divider>
-      <v-card-actions class="pa-4">
+      <v-card-actions class="pa-3 pa-sm-4 flex-wrap gap-2">
         <v-btn
           color="primary"
           variant="flat"
           @click="handleSetConfig"
           :loading="configLoading"
+          class="text-none"
+          prepend-icon="mdi-content-save"
         >
-          <v-icon start>mdi-content-save</v-icon>
           保存配置
         </v-btn>
-        <v-btn color="grey" variant="tonal" @click="handleGetConfig">
-          <v-icon start>mdi-refresh</v-icon>
+        <v-btn
+          color="grey"
+          variant="tonal"
+          @click="handleGetConfig"
+          class="text-none"
+          prepend-icon="mdi-refresh"
+        >
           刷新配置
         </v-btn>
         <v-spacer></v-spacer>
@@ -267,17 +306,103 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.settings-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
 .config-item {
   transition: all 0.2s ease;
+  height: 100%;
+  min-height: 80px;
 }
 
 .config-item:hover {
   border-color: rgb(var(--v-theme-primary));
   background-color: rgba(var(--v-theme-primary), 0.02);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.config-input {
-  min-width: 220px;
+/* 响应式调整 */
+@media (max-width: 600px) {
+  .config-item {
+    min-height: 70px;
+  }
+
+  .config-text-field {
+    min-width: 120px !important;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 960px) {
+  .gap-2 {
+    gap: 8px !important;
+  }
+
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
+}
+
+/* 确保文本在小屏幕上不会溢出 */
+.text-break {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 调整输入框样式 */
+:deep(.v-input__details) {
+  font-size: 12px;
+}
+
+/* 优化卡片内边距响应式 */
+@media (max-width: 600px) {
+  :deep(.v-card-title) {
+    font-size: 1rem !important;
+  }
+
+  :deep(.v-card-text) {
+    padding: 12px !important;
+  }
+
+  :deep(.v-card-actions) {
+    padding: 12px !important;
+  }
+}
+
+/* 优化按钮在小屏幕上的显示 */
+:deep(.v-btn) {
+  letter-spacing: 0;
+}
+
+/* 确保警告框提示文字清晰可见 */
+:deep(.v-alert) {
+  font-size: 0.85rem;
+}
+
+/* 密码输入框样式 */
+.password-input-wrapper {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.password-input {
+  width: 100%;
+}
+
+/* 优化网格列在小屏幕上的间距 */
+.v-row.dense {
+  --v-grid-gutter: 8px;
+}
+
+@media (max-width: 600px) {
+  .v-row.dense {
+    --v-grid-gutter: 4px;
+  }
 }
 </style>
-

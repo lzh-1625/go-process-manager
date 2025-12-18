@@ -52,6 +52,8 @@
                   density="compact"
                   v-model="searchForm.name"
                   :items="processList"
+                  multiple
+                  chips
                   clearable
                   hide-details
                 />
@@ -260,12 +262,12 @@ const showFilter = ref(false);
 
 // 搜索表单
 const searchForm = ref({
-  name: "",
+  name: [] as string[],
   log: "",
   using: "",
   startTime: "",
   endTime: "",
-  sort: "",
+  sort: "desc",
 });
 
 // 计算总页数
@@ -310,8 +312,9 @@ const buildQuery = (): GetLogReq => {
   }
   // 添加匹配条件
   const match: any = {};
-  if (searchForm.value.name) {
-    match.name = searchForm.value.name;
+  if (searchForm.value.name && searchForm.value.name.length > 0) {
+    // 支持多选，将进程名数组传递给后端
+    query.filterName = searchForm.value.name;
   }
   if (searchForm.value.log) {
     match.log = searchForm.value.log;
@@ -367,7 +370,7 @@ const searchLogs = () => {
 // 重置搜索
 const resetSearch = () => {
   searchForm.value = {
-    name: "",
+    name: [],
     log: "",
     using: "",
     startTime: "",

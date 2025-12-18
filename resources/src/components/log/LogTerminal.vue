@@ -126,7 +126,7 @@ const snackbarStore = useSnackbarStore();
 
 interface Props {
   searchForm?: {
-    name?: string;
+    name?: string[];
     log?: string;
     using?: string;
   };
@@ -310,13 +310,8 @@ const buildQuery = (beforeTime?: number, afterTime?: number): GetLogReq => {
 
   // 使用选中的进程名（多选）
   if (selectedProcesses.value && selectedProcesses.value.length > 0) {
-    // 如果只选了一个进程，使用单个值
-    if (selectedProcesses.value.length === 1) {
-      match.name = selectedProcesses.value[0];
-    } else {
-      // 多个进程，使用数组（需要后端支持）
-      match.name = selectedProcesses.value;
-    }
+    // 将进程名数组传递给后端
+    query.filterName = selectedProcesses.value;
   }
 
   if (props.searchForm?.log) {
@@ -360,11 +355,11 @@ const loadInitialLogs = async () => {
 
   loading.value = true;
   try {
-    // 上下文模式：加载指定时间点前后各100条日志
-    if (contextTime.value) {
-      await loadContextLogs();
-      return;
-    }
+  // 上下文模式：加载指定时间点前后各日志
+  if (contextTime.value) {
+    await loadContextLogs();
+    return;
+  }
 
     const query = buildQuery();
     const response = await getLog(query);
@@ -420,7 +415,7 @@ const loadContextLogs = async () => {
     };
 
     if (contextProcessName.value) {
-      beforeQuery.match = { name: contextProcessName.value };
+      beforeQuery.filterName = [contextProcessName.value];
     }
 
     const beforeResponse = await getLog(beforeQuery);
@@ -435,7 +430,7 @@ const loadContextLogs = async () => {
     };
 
     if (contextProcessName.value) {
-      afterQuery.match = { name: contextProcessName.value };
+      afterQuery.filterName = [contextProcessName.value];
     }
 
     const afterResponse = await getLog(afterQuery);

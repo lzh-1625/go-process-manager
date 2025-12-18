@@ -28,4 +28,3 @@ export interface LogResp {
   total: number;
   data: ProcessLog[];
 }
-
