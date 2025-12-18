@@ -511,9 +511,7 @@ const getTaskListWait = () => {
     })
     .then((response) => {
       version.value = parseInt(response.headers?.version || "0");
-      taskData.value = response.data.data.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
+      taskData.value = response.data.data;
       getTaskListWait();
     })
     .catch((error) => {
