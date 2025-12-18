@@ -474,7 +474,6 @@ const deleteTask = (row: TaskItem) => {
   deleteTaskById(row.id).then((res) => {
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("操作成功");
-      initTask();
     }
   });
 };
@@ -573,7 +572,6 @@ const edit = (item: TaskItem) => {
   editTask(item).then((res) => {
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("修改成功");
-      initTask();
     }
   });
 };
@@ -581,7 +579,6 @@ const edit = (item: TaskItem) => {
 // 切换启用状态
 const changeEnable = (item: TaskItem) => {
   editTaskEnable({ id: item.id, enable: item.enable }).then((res) => {
-    initTask();
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("修改成功");
     }
@@ -590,7 +587,6 @@ const changeEnable = (item: TaskItem) => {
 
 const startTask = (item: TaskItem) => {
   startTaskById(item.id).then((res) => {
-    initTask();
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("修改成功");
     }
@@ -598,7 +594,6 @@ const startTask = (item: TaskItem) => {
 };
 const stopTask = (item: TaskItem) => {
   stopTaskById(item.id).then((res) => {
-    initTask();
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("修改成功");
     }
@@ -625,7 +620,6 @@ const submit = () => {
       if (res.code === 0) {
         taskDialog.value = false;
         snackbarStore.showSuccessMessage("添加成功");
-        initTask();
       }
     });
   } else {
@@ -633,7 +627,6 @@ const submit = () => {
       if (res.code === 0) {
         taskDialog.value = false;
         snackbarStore.showSuccessMessage("修改成功");
-        initTask();
       }
     });
   }
