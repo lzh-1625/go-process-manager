@@ -37,3 +37,7 @@ func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv .
 func (e *eventLogic) Get(req model.EventListReq) ([]*model.Event, int64, error) {
 	return repository.EventRepository.GetList(req)
 }
+
+func (e *eventLogic) Clean(t time.Duration) error {
+	return repository.EventRepository.Clean(t)
+}

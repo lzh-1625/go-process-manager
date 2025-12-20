@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
@@ -15,6 +16,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/termui"
 	logger "github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
+	"github.com/robfig/cron/v3"
 )
 
 func init() {
@@ -30,6 +32,7 @@ func init() {
 	initJwtSecret()
 	initTui()
 	InitTask()
+	InitEventCleanCronJob()
 	initListenKillSignal()
 }
 
@@ -145,4 +148,16 @@ func initLogHandle() {
 
 func initWaitCond() {
 	logic.InitWaitCond()
+}
+
+func InitEventCleanCronJob() {
+	if config.CF.EventStorageTime <= 0 {
+		return
+	}
+	c := cron.New()
+	c.AddFunc("* * * * *", func() {
+		logger.Logger.Infow("事件清理执行")
+		logic.EventLogic.Clean(time.Duration(config.CF.EventStorageTime) * time.Hour * 24)
+	})
+	c.Start()
 }

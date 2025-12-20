@@ -32,5 +32,6 @@ type configuration struct {
 	CgroupPeriod              int64   `default:"100000" describe:"CgroupPeriod"`
 	CgroupSwapLimit           bool    `default:"false" describe:"cgroup swap限制"`
 	CondWaitTime              int     `default:"30" describe:"长轮询等待时间（秒）"`
+	EventStorageTime          int     `default:"1" describe:"事件存储时间（天）"`
 	Tui                       bool    `default:"-"`
 }

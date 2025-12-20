@@ -33,3 +33,8 @@ func (e *eventRepository) GetList(req model.EventListReq) ([]*model.Event, int64
 	}
 	return tx.Order(query.Event.CreatedTime.Desc()).FindByPage((req.Page-1)*req.Size, req.Size)
 }
+
+func (e *eventRepository) Clean(t time.Duration) error {
+	_, err := query.Event.Where(query.Event.CreatedTime.Lt(time.Now().Add(-t))).Delete()
+	return err
+}
