@@ -48,9 +48,8 @@ const resetErrors = () => {
 <template>
   <v-card color="white" class="pa-3 ma-3" elevation="3">
     <v-card-title class="my-4 text-h4">
-      <span class="flex-fill"> Xcon </span>
+      <span class="flex-fill"> GPM </span>
     </v-card-title>
-    <v-card-subtitle>请使用你的游戏账号登入</v-card-subtitle>
     <!-- sign in form -->
 
     <v-card-text>

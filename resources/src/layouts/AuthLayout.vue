@@ -5,11 +5,9 @@
     >
       <div class="mt-3 mt-md-10 pa-2">
         <div class="text-primary text-h4 font-weight-bold">
-          Lux Vuetify3 Admin
+          Go Process Manager
         </div>
-        <div class="title my-2">
-          Welcome! Let's build amazing things together.
-        </div>
+        <div class="title my-2">Welcome! Start by adding a process to GPM.</div>
       </div>
     </v-sheet>
     <v-card
@@ -19,7 +17,6 @@
       <div class="layout-content ma-auto w-full">
         <slot></slot>
       </div>
-      <div class="pa-5">Vue 3.2 & Vuetify 3.1.13 & Vite 4.2</div>
     </v-card>
   </div>
 </template>
