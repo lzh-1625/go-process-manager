@@ -208,7 +208,7 @@ func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessBase, e
 	case eum.TerminalPty:
 		proc = NewProcessPty(config)
 	default:
-		err = errors.New("终端类型错误")
+		proc = NewProcessPty(config)
 	}
 	return
 }
