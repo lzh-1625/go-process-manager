@@ -37,7 +37,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in paginatedShares" :key="item.ID">
+            <tr v-for="item in paginatedShares" :key="item.id">
               <td class="font-weight-bold">{{ item.id }}</td>
               <td>
                 <v-chip
@@ -231,7 +231,7 @@ const copyShareLink = (token) => {
 // 删除分享
 const deleteItem = (item) => {
   dialogDelete.value = true;
-  deleteId.value = item.ID;
+  deleteId.value = item.id;
 };
 
 const deleteItemConfirm = () => {

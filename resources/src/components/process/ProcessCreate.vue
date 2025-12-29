@@ -7,7 +7,9 @@ import { ProcessConfig } from "~/src/types/process/process";
 
 const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
-const configForm = ref<Partial<ProcessConfig>>({});
+const configForm = ref<Partial<ProcessConfig>>({
+  termType: "pty",
+});
 const pushItems = ref<{ value: any; label: string }[]>([]);
 const pushSelectedValues = ref([]);
 
