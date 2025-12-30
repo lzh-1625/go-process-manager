@@ -42,7 +42,7 @@ func staticInit(r *gin.Engine) {
 	r.StaticFS("/fonts", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/fonts"))))
 	r.StaticFS("/assets", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/assets"))))
 	r.GET("/favicon.png", func(ctx *gin.Context) {
-		ctx.Data(200, "image/x-icon", utils.UnwarpIgnore(resources.Templates.ReadFile("dist/favicon.png")))
+		ctx.Data(200, "image/x-icon", utils.UnwarpIgnore(resources.Templates.ReadFile("dist/favicon.ico")))
 	})
 
 }
