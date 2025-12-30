@@ -155,7 +155,7 @@ func InitEventCleanCronJob() {
 		return
 	}
 	c := cron.New()
-	c.AddFunc("* * * * *", func() {
+	c.AddFunc("0 3 * * *", func() {
 		logger.Logger.Infow("事件清理执行")
 		logic.EventLogic.Clean(time.Duration(config.CF.EventStorageTime) * time.Hour * 24)
 	})
