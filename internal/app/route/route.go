@@ -1,8 +1,9 @@
 package route
 
 import (
-	"io/fs"
+	"mime"
 	"net/http"
+	"path/filepath"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
@@ -33,18 +34,13 @@ func Route() {
 
 func staticInit(r *gin.Engine) {
 	r.NoRoute(func(c *gin.Context) {
-		b, _ := resources.Templates.ReadFile("dist/index.html")
-		c.Data(http.StatusOK, "text/html; charset=utf-8", b)
+		path := "dist" + c.Request.URL.Path
+		if data, err := resources.Templates.ReadFile(path); err == nil {
+			c.Data(http.StatusOK, mime.TypeByExtension(filepath.Ext(path)), data)
+		} else {
+			c.Data(http.StatusOK, "text/html; charset=utf-8", utils.UnwarpIgnore(resources.Templates.ReadFile("dist/index.html")))
+		}
 	})
-	r.StaticFS("/js", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/js"))))
-	r.StaticFS("/css", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/css"))))
-	r.StaticFS("/media", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/media"))))
-	r.StaticFS("/fonts", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/fonts"))))
-	r.StaticFS("/assets", http.FS(utils.UnwarpIgnore(fs.Sub(resources.Templates, "dist/assets"))))
-	r.GET("/favicon.png", func(ctx *gin.Context) {
-		ctx.Data(200, "image/x-icon", utils.UnwarpIgnore(resources.Templates.ReadFile("dist/favicon.ico")))
-	})
-
 }
 
 func pprofInit(r *gin.Engine) {

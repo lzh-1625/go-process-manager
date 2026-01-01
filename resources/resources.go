@@ -2,5 +2,5 @@ package resources
 
 import "embed"
 
-//go:embed dist
+//go:embed dist/*
 var Templates embed.FS

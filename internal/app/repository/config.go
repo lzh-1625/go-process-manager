@@ -5,6 +5,7 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
+	"gorm.io/gorm/clause"
 )
 
 type configRepository struct{}
@@ -25,11 +26,9 @@ func (c *configRepository) GetAllConfig() ([]*model.Config, error) {
 }
 
 func (c *configRepository) SetConfigValue(key, value string) error {
-	config := model.Config{Key: key}
-	updateData := model.Config{Value: &value}
-	err := db.Model(&config).Where(&config).Assign(updateData).FirstOrCreate(&config).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	config := model.Config{Key: key, Value: &value}
+	return query.Config.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: query.Config.Key.ColumnName().String()}},
+		DoUpdates: clause.AssignmentColumns([]string{query.Config.Value.ColumnName().String()}),
+	}).Create(&config)
 }

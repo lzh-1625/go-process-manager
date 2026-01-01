@@ -7,6 +7,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
+	logger "github.com/lzh-1625/go_process_manager/log"
 )
 
 func init() {
@@ -34,12 +35,14 @@ func (l *sqliteSearch) Search(req model.GetLogReq, filterProcessName ...string) 
 }
 
 func (l *sqliteSearch) Insert(log string, processName string, using string, ts int64) {
-	repository.LogRepository.InsertLog(model.ProcessLog{
+	if err := repository.LogRepository.InsertLog(model.ProcessLog{
 		Log:   log,
 		Name:  processName,
 		Using: using,
 		Time:  ts,
-	})
+	}); err != nil {
+		logger.Logger.Errorw("日志插入失败", "err", err)
+	}
 }
 
 func (l *sqliteSearch) Init() error {

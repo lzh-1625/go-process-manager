@@ -68,7 +68,7 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 		if err != nil {
 			return err
 		}
-		proc, err := logic.ProcessCtlLogic.RunNewProcess(proConfig)
+		proc, err := logic.ProcessCtlLogic.RunNewProcess(*proConfig)
 		if err != nil {
 			return err
 		}

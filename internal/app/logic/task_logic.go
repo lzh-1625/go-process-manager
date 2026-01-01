@@ -85,7 +85,7 @@ func (t *taskLogic) DeleteTask(id int) (err error) {
 }
 
 func (t *taskLogic) CreateTask(data model.Task) error {
-	tj, err := NewTaskJob(data)
+	tj, err := NewTaskJob(&data)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (t *taskLogic) EditTask(data model.Task) error {
 
 	tj.TaskConfig = &data
 	t.EditTaskEnable(data.Id, tj.TaskConfig.Enable)
-	return repository.TaskRepository.EditTask(data)
+	return repository.TaskRepository.EditTask(&data)
 }
 
 func (t *taskLogic) EditTaskEnable(id int, status bool) error {

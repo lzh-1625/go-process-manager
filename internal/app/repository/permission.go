@@ -59,8 +59,8 @@ func (p *permissionRepository) EditPermssion(data model.Permission) error {
 	return err
 }
 
-func (p *permissionRepository) GetPermission(user string, pid int) (result model.Permission) {
-	db.Model(&model.Permission{}).Where(&model.Permission{Account: user, Pid: int32(pid)}).First(&result)
+func (p *permissionRepository) GetPermission(user string, pid int) (result *model.Permission) {
+	result, _ = query.Permission.Where(query.Permission.Account.Eq(user), query.Permission.Pid.Eq(int32(pid))).First()
 	return
 }
 

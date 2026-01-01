@@ -22,9 +22,9 @@ type TaskJob struct {
 	EndTime    time.Time          `json:"endTime"`
 }
 
-func NewTaskJob(data model.Task) (*TaskJob, error) {
+func NewTaskJob(data *model.Task) (*TaskJob, error) {
 	tj := &TaskJob{
-		TaskConfig: &data,
+		TaskConfig: data,
 		StartTime:  time.Now(),
 	}
 	if data.Enable && data.CronExpression != "" {

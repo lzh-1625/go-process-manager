@@ -10,18 +10,13 @@ type processRepository struct{}
 
 var ProcessRepository = new(processRepository)
 
-func (p *processRepository) GetAllProcessConfig() []model.Process {
-	result := []model.Process{}
-	tx := db.Find(&result)
-	if tx.Error != nil {
-		log.Logger.Error(tx.Error)
-		return nil
-	}
-	return result
+func (p *processRepository) GetAllProcessConfig() []*model.Process {
+	processes, _ := query.Process.Find()
+	return processes
 }
 
-func (p *processRepository) GetProcessConfigByUser(username string) []model.Process {
-	result := []model.Process{}
+func (p *processRepository) GetProcessConfigByUser(username string) []*model.Process {
+	result := []*model.Process{}
 	err := query.Process.LeftJoin(query.Permission, query.Process.Uuid.EqCol(query.Permission.Pid)).
 		Where(query.Permission.Owned.Is(true)).
 		Where(query.Permission.Account.Eq(username)).
@@ -34,11 +29,11 @@ func (p *processRepository) GetProcessConfigByUser(username string) []model.Proc
 }
 
 func (p *processRepository) UpdateProcessConfig(process model.Process) error {
-	return db.Save(&process).Error
+	return query.Process.Save(&process)
 }
 
 func (p *processRepository) AddProcessConfig(process model.Process) (id int, err error) {
-	err = db.Create(&process).Error
+	err = query.Process.Create(&process)
 	id = process.Uuid
 	return
 }
@@ -48,7 +43,7 @@ func (p *processRepository) DeleteProcessConfig(uuid int) error {
 	return err
 }
 
-func (p *processRepository) GetProcessConfigById(uuid int) (data model.Process, err error) {
-	err = db.Model(&model.Process{}).Where(&model.Process{Uuid: uuid}).First(&data).Error
+func (p *processRepository) GetProcessConfigById(uuid int) (data *model.Process, err error) {
+	data, err = query.Process.Where(query.Process.Uuid.Eq(uuid)).First()
 	return
 }

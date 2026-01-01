@@ -15,7 +15,7 @@ func (p *wsShare) GetWsShareDataByToken(token string) (data *model.WsShare, err 
 }
 
 func (p *wsShare) AddShareData(data model.WsShare) error {
-	return db.Save(&data).Error
+	return query.WsShare.Save(&data)
 }
 
 func (p *wsShare) GetWsShareList() (data []*model.WsShare) {

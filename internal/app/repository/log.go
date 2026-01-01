@@ -6,17 +6,14 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
-	"github.com/lzh-1625/go_process_manager/log"
 )
 
 type logRepository struct{}
 
 var LogRepository = new(logRepository)
 
-func (l *logRepository) InsertLog(data model.ProcessLog) {
-	if err := db.Create(&data).Error; err != nil {
-		log.Logger.Errorw("日志插入失败", "err", err)
-	}
+func (l *logRepository) InsertLog(data model.ProcessLog) error {
+	return query.ProcessLog.Create(&data)
 }
 
 func (l *logRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) (result []*model.ProcessLog, total int64) {

@@ -10,18 +10,18 @@ type taskRepository struct{}
 
 var TaskRepository = new(taskRepository)
 
-func (t *taskRepository) GetAllTask() (result []model.Task) {
-	db.Find(&result)
+func (t *taskRepository) GetAllTask() (result []*model.Task) {
+	result, _ = query.Task.Find()
 	return
 }
 
-func (t *taskRepository) GetTaskById(id int) (result model.Task, err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: int(id)}).First(&result).Error
+func (t *taskRepository) GetTaskById(id int) (result *model.Task, err error) {
+	result, err = query.Task.Where(query.Task.Id.Eq(id)).First()
 	return
 }
 
-func (t *taskRepository) GetTaskByKey(key string) (result model.Task, err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Key: &key, ApiEnable: true}).First(&result).Error
+func (t *taskRepository) GetTaskByKey(key string) (result *model.Task, err error) {
+	result, err = query.Task.Where(query.Task.Key.Eq(key), query.Task.ApiEnable.Is(true)).First()
 	return
 }
 
@@ -32,12 +32,12 @@ func (t *taskRepository) AddTask(data model.Task) (taskId int, err error) {
 }
 
 func (t *taskRepository) DeleteTask(id int) (err error) {
-	err = db.Delete(&model.Task{Id: id}).Error
+	_, err = query.Task.Where(query.Task.Id.Eq(id)).Delete()
 	return
 }
 
-func (t *taskRepository) EditTask(data model.Task) (err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: data.Id}).Save(data).Error
+func (t *taskRepository) EditTask(data *model.Task) (err error) {
+	err = query.Task.Save(data)
 	return
 }
 
@@ -70,6 +70,6 @@ func (t *taskRepository) GetTriggerTask(processName string, event eum.ProcessSta
 		LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Task.TriggerTarget)).
 		Where(query.Process.Name.Eq(processName)).
 		Where(query.Task.TriggerEvent.Eq(int32(event))).
-		Scan(result)
+		Scan(&result)
 	return result
 }

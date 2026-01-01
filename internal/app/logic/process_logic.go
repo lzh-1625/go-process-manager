@@ -99,7 +99,7 @@ func (p *processCtlLogic) GetProcessListByUser(username string) []model.ProcessI
 	return p.getProcessInfoList(processConfiglist)
 }
 
-func (p *processCtlLogic) getProcessInfoList(processConfiglist []model.Process) []model.ProcessInfo {
+func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process) []model.ProcessInfo {
 	processInfoList := []model.ProcessInfo{}
 	for _, v := range processConfiglist {
 		pi := model.ProcessInfo{
@@ -143,7 +143,7 @@ func (p *processCtlLogic) ProcessStartAll() {
 func (p *processCtlLogic) ProcessInit() {
 	config := repository.ProcessRepository.GetAllProcessConfig()
 	for _, v := range config {
-		proc, err := p.NewProcess(v)
+		proc, err := p.NewProcess(*v)
 		if err != nil {
 			log.Logger.Warnw("初始化启动进程失败", v.Name, "name", "err", err)
 			continue

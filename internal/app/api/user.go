@@ -20,7 +20,7 @@ const DEFAULT_ROOT_PASSWORD = "root"
 
 func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any {
 	if !u.checkLoginInfo(req.Account, req.Password) {
-		return errors.New("incorrect username or password")
+		return NewResponse().SetCode(401).SetMessage("incorrect username or password")
 	}
 	token, err := utils.GenerateToken(req.Account)
 	if err != nil {
