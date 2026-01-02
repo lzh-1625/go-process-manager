@@ -1,7 +1,7 @@
 package model
 
 type Config struct {
-	Id    int     `gorm:"column:id;primary_key"`
+	ID    int     `gorm:"column:id;primary_key"`
 	Key   string  `gorm:"column:key;uniqueIndex"`
 	Value *string `gorm:"column:value"`
 }

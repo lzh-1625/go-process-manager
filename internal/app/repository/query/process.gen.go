@@ -27,7 +27,7 @@ func newProcess(db *gorm.DB, opts ...gen.DOOption) process {
 
 	tableName := _process.processDo.TableName()
 	_process.ALL = field.NewAsterisk(tableName)
-	_process.Uuid = field.NewInt(tableName, "uuid")
+	_process.UUID = field.NewInt(tableName, "uuid")
 	_process.Name = field.NewString(tableName, "name")
 	_process.Cmd = field.NewString(tableName, "args")
 	_process.Cwd = field.NewString(tableName, "cwd")
@@ -49,7 +49,7 @@ type process struct {
 	processDo
 
 	ALL               field.Asterisk
-	Uuid              field.Int
+	UUID              field.Int
 	Name              field.String
 	Cmd               field.String
 	Cwd               field.String
@@ -77,7 +77,7 @@ func (p process) As(alias string) *process {
 
 func (p *process) updateTableName(table string) *process {
 	p.ALL = field.NewAsterisk(table)
-	p.Uuid = field.NewInt(table, "uuid")
+	p.UUID = field.NewInt(table, "uuid")
 	p.Name = field.NewString(table, "name")
 	p.Cmd = field.NewString(table, "args")
 	p.Cwd = field.NewString(table, "cwd")
@@ -106,7 +106,7 @@ func (p *process) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 
 func (p *process) fillFieldMap() {
 	p.fieldMap = make(map[string]field.Expr, 12)
-	p.fieldMap["uuid"] = p.Uuid
+	p.fieldMap["uuid"] = p.UUID
 	p.fieldMap["name"] = p.Name
 	p.fieldMap["args"] = p.Cmd
 	p.fieldMap["cwd"] = p.Cwd

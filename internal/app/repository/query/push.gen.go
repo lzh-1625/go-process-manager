@@ -27,7 +27,7 @@ func newPush(db *gorm.DB, opts ...gen.DOOption) push {
 
 	tableName := _push.pushDo.TableName()
 	_push.ALL = field.NewAsterisk(tableName)
-	_push.Id = field.NewInt64(tableName, "id")
+	_push.ID = field.NewInt64(tableName, "id")
 	_push.Method = field.NewString(tableName, "method")
 	_push.Url = field.NewString(tableName, "url")
 	_push.Body = field.NewString(tableName, "body")
@@ -43,7 +43,7 @@ type push struct {
 	pushDo
 
 	ALL    field.Asterisk
-	Id     field.Int64
+	ID     field.Int64
 	Method field.String
 	Url    field.String
 	Body   field.String
@@ -65,7 +65,7 @@ func (p push) As(alias string) *push {
 
 func (p *push) updateTableName(table string) *push {
 	p.ALL = field.NewAsterisk(table)
-	p.Id = field.NewInt64(table, "id")
+	p.ID = field.NewInt64(table, "id")
 	p.Method = field.NewString(table, "method")
 	p.Url = field.NewString(table, "url")
 	p.Body = field.NewString(table, "body")
@@ -88,7 +88,7 @@ func (p *push) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 
 func (p *push) fillFieldMap() {
 	p.fieldMap = make(map[string]field.Expr, 6)
-	p.fieldMap["id"] = p.Id
+	p.fieldMap["id"] = p.ID
 	p.fieldMap["method"] = p.Method
 	p.fieldMap["url"] = p.Url
 	p.fieldMap["body"] = p.Body

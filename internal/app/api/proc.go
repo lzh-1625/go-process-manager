@@ -23,32 +23,32 @@ func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) any {
 	if err != nil {
 		return err
 	}
-	req.Uuid = index
+	req.UUID = index
 	proc, err := logic.ProcessCtlLogic.NewProcess(req)
 	if err != nil {
 		return err
 	}
-	logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
+	logic.ProcessCtlLogic.AddProcess(req.UUID, proc)
 	return gin.H{
-		"id": req.Uuid,
+		"id": req.UUID,
 	}
 }
 
 func (p *procApi) DeleteNewProcess(ctx *gin.Context, req struct {
-	Uuid int `form:"uuid" binding:"required"`
+	UUID int `form:"uuid" binding:"required"`
 }) (err error) {
-	logic.ProcessCtlLogic.KillProcess(req.Uuid)
-	logic.ProcessCtlLogic.DeleteProcess(req.Uuid)
-	return repository.ProcessRepository.DeleteProcessConfig(req.Uuid)
+	logic.ProcessCtlLogic.KillProcess(req.UUID)
+	logic.ProcessCtlLogic.DeleteProcess(req.UUID)
+	return repository.ProcessRepository.DeleteProcessConfig(req.UUID)
 }
 
 func (p *procApi) KillProcess(ctx *gin.Context, req struct {
-	Uuid int `form:"uuid" binding:"required"`
+	UUID int `form:"uuid" binding:"required"`
 }) (err error) {
-	if !hasOprPermission(ctx, req.Uuid, eum.OperationStop) {
+	if !hasOprPermission(ctx, req.UUID, eum.OperationStop) {
 		return errors.New("not permission")
 	}
-	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -57,14 +57,14 @@ func (p *procApi) KillProcess(ctx *gin.Context, req struct {
 }
 
 func (p *procApi) StartProcess(ctx *gin.Context, req struct {
-	Uuid int `json:"uuid" binding:"required"`
+	UUID int `json:"uuid" binding:"required"`
 }) (err error) {
-	if !hasOprPermission(ctx, req.Uuid, eum.OperationStart) {
+	if !hasOprPermission(ctx, req.UUID, eum.OperationStart) {
 		return errors.New("not permission")
 	}
-	prod, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	prod, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
 	if err != nil { // 进程不存在则创建
-		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
+		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.UUID)
 		if err != nil {
 			return err
 		}
@@ -73,10 +73,10 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 			return err
 		}
 		proc.SetOpertor(getUserName(ctx))
-		logic.ProcessCtlLogic.AddProcess(req.Uuid, proc)
+		logic.ProcessCtlLogic.AddProcess(req.UUID, proc)
 		return nil
 	}
-	if prod.State.State == eum.ProcessStateStart || prod.State.State == eum.ProcessStateRunning {
+	if prod.GetState() == eum.ProcessStateStart || prod.GetState() == eum.ProcessStateRunning {
 		return errors.New("process is currently running")
 	}
 	prod.ResetRestartTimes()
@@ -118,9 +118,9 @@ func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err 
 }
 
 func (p *procApi) GetProcessConfig(ctx *gin.Context, req struct {
-	Uuid int `form:"uuid" binding:"required"`
+	UUID int `form:"uuid" binding:"required"`
 }) any {
-	data, err := repository.ProcessRepository.GetProcessConfigById(req.Uuid)
+	data, err := repository.ProcessRepository.GetProcessConfigById(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -128,10 +128,10 @@ func (p *procApi) GetProcessConfig(ctx *gin.Context, req struct {
 }
 
 func (p *procApi) ProcessControl(ctx *gin.Context, req struct {
-	Uuid int `form:"uuid" binding:"required"`
+	UUID int `form:"uuid" binding:"required"`
 }) (err error) {
 	user := getUserName(ctx)
-	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}

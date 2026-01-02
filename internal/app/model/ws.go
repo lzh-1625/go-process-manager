@@ -20,7 +20,7 @@ func (WsShare) TableName() string {
 }
 
 type WebsocketHandleReq struct {
-	Uuid  int    `form:"uuid"`
+	UUID  int    `form:"uuid"`
 	Cols  int    `form:"cols"`
 	Rows  int    `form:"rows"`
 	Token string `form:"token"`

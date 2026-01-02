@@ -27,7 +27,7 @@ func newEvent(db *gorm.DB, opts ...gen.DOOption) event {
 
 	tableName := _event.eventDo.TableName()
 	_event.ALL = field.NewAsterisk(tableName)
-	_event.Id = field.NewUint64(tableName, "id")
+	_event.ID = field.NewUint64(tableName, "id")
 	_event.Name = field.NewString(tableName, "name")
 	_event.Type = field.NewString(tableName, "type")
 	_event.Additional = field.NewString(tableName, "additional")
@@ -42,7 +42,7 @@ type event struct {
 	eventDo
 
 	ALL         field.Asterisk
-	Id          field.Uint64
+	ID          field.Uint64
 	Name        field.String
 	Type        field.String
 	Additional  field.String
@@ -63,7 +63,7 @@ func (e event) As(alias string) *event {
 
 func (e *event) updateTableName(table string) *event {
 	e.ALL = field.NewAsterisk(table)
-	e.Id = field.NewUint64(table, "id")
+	e.ID = field.NewUint64(table, "id")
 	e.Name = field.NewString(table, "name")
 	e.Type = field.NewString(table, "type")
 	e.Additional = field.NewString(table, "additional")
@@ -85,7 +85,7 @@ func (e *event) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 
 func (e *event) fillFieldMap() {
 	e.fieldMap = make(map[string]field.Expr, 5)
-	e.fieldMap["id"] = e.Id
+	e.fieldMap["id"] = e.ID
 	e.fieldMap["name"] = e.Name
 	e.fieldMap["type"] = e.Type
 	e.fieldMap["additional"] = e.Additional

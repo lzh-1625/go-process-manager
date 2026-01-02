@@ -16,9 +16,9 @@ func (p *pushApi) GetPushList(ctx *gin.Context, __ any) any {
 }
 
 func (p *pushApi) GetPushById(ctx *gin.Context, req struct {
-	Id int `form:"id" binding:"required"`
+	ID int `form:"id" binding:"required"`
 }) any {
-	return repository.PushRepository.GetPushConfigById(req.Id)
+	return repository.PushRepository.GetPushConfigById(req.ID)
 }
 
 func (p *pushApi) AddPushConfig(ctx *gin.Context, req model.Push) (err error) {
@@ -30,7 +30,7 @@ func (p *pushApi) UpdatePushConfig(ctx *gin.Context, req model.Push) (err error)
 }
 
 func (p *pushApi) DeletePushConfig(ctx *gin.Context, req struct {
-	Id int `form:"id" binding:"required"`
+	ID int `form:"id" binding:"required"`
 }) (err error) {
-	return repository.PushRepository.DeletePushConfig(req.Id)
+	return repository.PushRepository.DeletePushConfig(req.ID)
 }

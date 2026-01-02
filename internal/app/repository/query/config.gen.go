@@ -27,7 +27,7 @@ func newConfig(db *gorm.DB, opts ...gen.DOOption) config {
 
 	tableName := _config.configDo.TableName()
 	_config.ALL = field.NewAsterisk(tableName)
-	_config.Id = field.NewInt(tableName, "id")
+	_config.ID = field.NewInt(tableName, "id")
 	_config.Key = field.NewString(tableName, "key")
 	_config.Value = field.NewString(tableName, "value")
 
@@ -40,7 +40,7 @@ type config struct {
 	configDo
 
 	ALL   field.Asterisk
-	Id    field.Int
+	ID    field.Int
 	Key   field.String
 	Value field.String
 
@@ -59,7 +59,7 @@ func (c config) As(alias string) *config {
 
 func (c *config) updateTableName(table string) *config {
 	c.ALL = field.NewAsterisk(table)
-	c.Id = field.NewInt(table, "id")
+	c.ID = field.NewInt(table, "id")
 	c.Key = field.NewString(table, "key")
 	c.Value = field.NewString(table, "value")
 
@@ -79,7 +79,7 @@ func (c *config) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 
 func (c *config) fillFieldMap() {
 	c.fieldMap = make(map[string]field.Expr, 3)
-	c.fieldMap["id"] = c.Id
+	c.fieldMap["id"] = c.ID
 	c.fieldMap["key"] = c.Key
 	c.fieldMap["value"] = c.Value
 }

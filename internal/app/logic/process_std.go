@@ -3,8 +3,11 @@ package logic
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"os/exec"
+	"strings"
+	"time"
 
 	"github.com/google/shlex"
 
@@ -83,10 +86,6 @@ func (p *ProcessStd) Start() (err error) {
 	return nil
 }
 
-func (p *ProcessStd) doOnInit() {
-	p.cacheLine = make([]string, config.CF.ProcessMsgCacheLinesLimit)
-}
-
 func (p *ProcessStd) ReadCache(ws ConnectInstance) error {
 	if len(p.cacheLine) == 0 {
 		return errors.New("cache is null")
@@ -95,10 +94,6 @@ func (p *ProcessStd) ReadCache(ws ConnectInstance) error {
 		ws.WriteString(line)
 	}
 	return nil
-}
-
-func (p *ProcessStd) doOnKilled() {
-	// 不执行如何操作
 }
 
 func (p *ProcessStd) SetTerminalSize(cols, rows int) {
@@ -141,13 +136,71 @@ func (p *ProcessStd) Read() string {
 	return ""
 }
 
-func NewProcessStd(pconfig model.Process) *ProcessBase {
-	p := ProcessBase{
-		Name:         pconfig.Name,
-		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
-		WorkDir:      pconfig.Cwd,
+func (p *ProcessStd) watchDog() {
+	state, _ := p.op.Wait()
+	if p.cgroup.enable && p.cgroup.delete != nil {
+		err := p.cgroup.delete()
+		if err != nil {
+			log.Logger.Errorw("cgroup删除失败", "err", err, "进程名称", p.Name)
+		}
 	}
-	p.Process = &ProcessStd{ProcessBase: &p}
+	close(p.StopChan)
+	p.stdin.Close()
+	p.cacheLine = make([]string, config.CF.ProcessMsgCacheLinesLimit)
+	p.SetState(eum.ProcessStateStop)
+	if state.ExitCode() != 0 {
+		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode(), "进程类型", p.Type())
+		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
+	} else {
+		log.Logger.Infow("进程正常退出", "进程名称", p.Name)
+		p.push("进程正常退出")
+	}
+	if !p.Config.AutoRestart || p.State.manualStopFlag { // 不重启或手动关闭
+		return
+	}
+	if p.Config.compulsoryRestart { // 强制重启
+		p.Start()
+		return
+	}
+	if state.ExitCode() == 0 { // 正常退出
+		return
+	}
+	if p.State.restartTimes < config.CF.ProcessRestartsLimit { // 重启次数未达限制
+		p.Start()
+		p.State.restartTimes++
+		return
+	}
+	log.Logger.Warnw("重启次数达到上限", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
+	p.SetState(eum.ProcessStateWarnning)
+	p.State.Info = "重启次数异常"
+	p.push("进程重启次数达到上限")
+}
+
+func (p *ProcessStd) pInit() {
+	log.Logger.Infow("创建进程成功")
+	p.StopChan = make(chan struct{})
+	p.State.manualStopFlag = false
+	p.State.startTime = time.Now()
+	p.ws = make(map[string]ConnectInstance)
+	p.cacheLine = make([]string, config.CF.ProcessMsgCacheLinesLimit)
+	p.Pid = p.op.Pid
+	p.InitPerformanceStatus()
+	p.initPsutil()
+	p.initCgroup()
+	go p.watchDog()
+	go p.readInit()
+	go p.monitorHandler()
+}
+
+func NewProcessStd(pconfig model.Process) *ProcessStd {
+	p := &ProcessStd{
+		ProcessBase: &ProcessBase{
+			Name:         pconfig.Name,
+			StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
+			WorkDir:      pconfig.Cwd,
+			Env:          strings.Split(pconfig.Env, ";"),
+		},
+	}
 	p.setProcessConfig(pconfig)
-	return &p
+	return p
 }

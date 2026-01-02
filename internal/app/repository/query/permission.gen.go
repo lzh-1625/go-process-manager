@@ -27,7 +27,7 @@ func newPermission(db *gorm.DB, opts ...gen.DOOption) permission {
 
 	tableName := _permission.permissionDo.TableName()
 	_permission.ALL = field.NewAsterisk(tableName)
-	_permission.Id = field.NewInt64(tableName, "id")
+	_permission.ID = field.NewInt64(tableName, "id")
 	_permission.Account = field.NewString(tableName, "account")
 	_permission.Pid = field.NewInt32(tableName, "pid")
 	_permission.Owned = field.NewBool(tableName, "owned")
@@ -46,7 +46,7 @@ type permission struct {
 	permissionDo
 
 	ALL      field.Asterisk
-	Id       field.Int64
+	ID       field.Int64
 	Account  field.String
 	Pid      field.Int32
 	Owned    field.Bool
@@ -71,7 +71,7 @@ func (p permission) As(alias string) *permission {
 
 func (p *permission) updateTableName(table string) *permission {
 	p.ALL = field.NewAsterisk(table)
-	p.Id = field.NewInt64(table, "id")
+	p.ID = field.NewInt64(table, "id")
 	p.Account = field.NewString(table, "account")
 	p.Pid = field.NewInt32(table, "pid")
 	p.Owned = field.NewBool(table, "owned")
@@ -97,7 +97,7 @@ func (p *permission) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 
 func (p *permission) fillFieldMap() {
 	p.fieldMap = make(map[string]field.Expr, 9)
-	p.fieldMap["id"] = p.Id
+	p.fieldMap["id"] = p.ID
 	p.fieldMap["account"] = p.Account
 	p.fieldMap["pid"] = p.Pid
 	p.fieldMap["owned"] = p.Owned

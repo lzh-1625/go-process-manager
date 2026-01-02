@@ -34,7 +34,7 @@ func (t *taskLogic) InitTaskJob() {
 			log.Logger.Warnw("任务初始化失败", "err", err)
 			continue
 		}
-		t.taskJobMap.Store(v.Id, tj)
+		t.taskJobMap.Store(v.ID, tj)
 	}
 }
 
@@ -61,11 +61,11 @@ func (t *taskLogic) StartTaskJob(id int) error {
 func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 	result := repository.TaskRepository.GetAllTaskWithProcessName()
 	for i, v := range result {
-		task, err := t.getTaskJob(v.Id)
+		task, err := t.getTaskJob(v.ID)
 		if err != nil {
 			continue
 		}
-		result[i].Id = task.TaskConfig.Id
+		result[i].ID = task.TaskConfig.ID
 		result[i].Running = task.Running
 		result[i].Enable = task.TaskConfig.Enable
 		result[i].StartTime = task.StartTime.Format(time.DateTime)
@@ -93,13 +93,13 @@ func (t *taskLogic) CreateTask(data model.Task) error {
 	if err != nil {
 		return err
 	}
-	tj.TaskConfig.Id = taskId
+	tj.TaskConfig.ID = taskId
 	t.taskJobMap.Store(taskId, tj)
 	return nil
 }
 
 func (t *taskLogic) EditTask(data model.Task) error {
-	tj, err := t.getTaskJob(data.Id)
+	tj, err := t.getTaskJob(data.ID)
 	if err != nil {
 		return errors.New("task id not exist")
 	}
@@ -114,7 +114,7 @@ func (t *taskLogic) EditTask(data model.Task) error {
 	}
 
 	tj.TaskConfig = &data
-	t.EditTaskEnable(data.Id, tj.TaskConfig.Enable)
+	t.EditTaskEnable(data.ID, tj.TaskConfig.Enable)
 	return repository.TaskRepository.EditTask(&data)
 }
 
@@ -151,7 +151,7 @@ func (t *taskLogic) RunTaskByKey(key string) error {
 	if err != nil {
 		return errors.New("don't exist key")
 	}
-	go t.RunTaskById(data.Id)
+	go t.RunTaskById(data.ID)
 	return nil
 }
 
@@ -162,8 +162,8 @@ func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessS
 	}
 	log.Logger.Infow("获取触发任务", "count", len(taskList), "prcess", processName, "触发事件", event)
 	for _, v := range taskList {
-		log.Logger.Infow("执行触发任务", "taskId", v.Id)
-		t.RunTaskById(v.Id)
+		log.Logger.Infow("执行触发任务", "taskId", v.ID)
+		t.RunTaskById(v.ID)
 	}
 }
 

@@ -17,7 +17,7 @@ func (p *processRepository) GetAllProcessConfig() []*model.Process {
 
 func (p *processRepository) GetProcessConfigByUser(username string) []*model.Process {
 	result := []*model.Process{}
-	err := query.Process.LeftJoin(query.Permission, query.Process.Uuid.EqCol(query.Permission.Pid)).
+	err := query.Process.LeftJoin(query.Permission, query.Process.UUID.EqCol(query.Permission.Pid)).
 		Where(query.Permission.Owned.Is(true)).
 		Where(query.Permission.Account.Eq(username)).
 		Scan(&result)
@@ -34,16 +34,16 @@ func (p *processRepository) UpdateProcessConfig(process model.Process) error {
 
 func (p *processRepository) AddProcessConfig(process model.Process) (id int, err error) {
 	err = query.Process.Create(&process)
-	id = process.Uuid
+	id = process.UUID
 	return
 }
 
 func (p *processRepository) DeleteProcessConfig(uuid int) error {
-	_, err := query.Process.Where(query.Process.Uuid.Eq(uuid)).Delete()
+	_, err := query.Process.Where(query.Process.UUID.Eq(uuid)).Delete()
 	return err
 }
 
 func (p *processRepository) GetProcessConfigById(uuid int) (data *model.Process, err error) {
-	data, err = query.Process.Where(query.Process.Uuid.Eq(uuid)).First()
+	data, err = query.Process.Where(query.Process.UUID.Eq(uuid)).First()
 	return
 }

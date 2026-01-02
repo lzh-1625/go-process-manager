@@ -6,9 +6,11 @@ package logic
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
@@ -24,10 +26,6 @@ type ProcessPty struct {
 	*ProcessBase
 	cacheBytesBuf *bytes.Buffer
 	pty           *os.File
-}
-
-func (p *ProcessPty) doOnKilled() {
-	p.pty.Close()
 }
 
 func (p *ProcessPty) Type() eum.TerminalType {
@@ -73,6 +71,22 @@ func (p *ProcessPty) Start() (err error) {
 	return nil
 }
 
+func (p *ProcessPty) pInit() {
+	log.Logger.Infow("创建进程成功")
+	p.StopChan = make(chan struct{})
+	p.State.manualStopFlag = false
+	p.State.startTime = time.Now()
+	p.ws = make(map[string]ConnectInstance)
+	p.Pid = p.op.Pid
+	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
+	p.InitPerformanceStatus()
+	p.initPsutil()
+	p.initCgroup()
+	go p.watchDog()
+	go p.readInit()
+	go p.monitorHandler()
+}
+
 func (p *ProcessPty) SetTerminalSize(cols, rows int) {
 	if cols == 0 || rows == 0 || len(p.ws) != 0 {
 		return
@@ -108,8 +122,12 @@ func (p *ProcessPty) readInit() {
 			}
 		default:
 			{
-				n, _ := p.pty.Read(buf)
-				p.bufHanle(buf[:n])
+				n, err := p.pty.Read(buf)
+				if err != nil {
+					log.Logger.Errorw("stdout读取失败", "err", err)
+					return
+				}
+				p.bufHandle(buf[:n])
 				if len(p.ws) == 0 {
 					continue
 				}
@@ -131,7 +149,7 @@ func (p *ProcessPty) ReadCache(ws ConnectInstance) error {
 	return nil
 }
 
-func (p *ProcessPty) bufHanle(b []byte) {
+func (p *ProcessPty) bufHandle(b []byte) {
 	log := strings.TrimSpace(string(b))
 	if utils.RemoveANSI(log) != "" {
 		p.logReportHandler(log)
@@ -140,19 +158,55 @@ func (p *ProcessPty) bufHanle(b []byte) {
 	p.cacheBytesBuf.Next(len(b))
 }
 
-func (p *ProcessPty) doOnInit() {
-	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
-
+func (p *ProcessPty) watchDog() {
+	state, _ := p.op.Wait()
+	if p.cgroup.enable && p.cgroup.delete != nil {
+		err := p.cgroup.delete()
+		if err != nil {
+			log.Logger.Errorw("cgroup删除失败", "err", err, "进程名称", p.Name)
+		}
+	}
+	close(p.StopChan)
+	p.pty.Close()
+	p.SetState(eum.ProcessStateStop)
+	if state.ExitCode() != 0 {
+		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode(), "进程类型", p.Type())
+		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
+	} else {
+		log.Logger.Infow("进程正常退出", "进程名称", p.Name)
+		p.push("进程正常退出")
+	}
+	if !p.Config.AutoRestart || p.State.manualStopFlag { // 不重启或手动关闭
+		return
+	}
+	if p.Config.compulsoryRestart { // 强制重启
+		p.Start()
+		return
+	}
+	if state.ExitCode() == 0 { // 正常退出
+		return
+	}
+	if p.State.restartTimes < config.CF.ProcessRestartsLimit { // 重启次数未达限制
+		p.Start()
+		p.State.restartTimes++
+		return
+	}
+	log.Logger.Warnw("重启次数达到上限", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
+	p.SetState(eum.ProcessStateWarnning)
+	p.State.Info = "重启次数异常"
+	p.push("进程重启次数达到上限")
 }
 
-func NewProcessPty(pconfig model.Process) *ProcessBase {
-	p := ProcessBase{
-		Name:         pconfig.Name,
-		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
-		WorkDir:      pconfig.Cwd,
-		Env:          strings.Split(pconfig.Env, ";"),
+func NewProcessPty(pconfig model.Process) *ProcessPty {
+	p := &ProcessPty{
+		ProcessBase: &ProcessBase{
+			Name:         pconfig.Name,
+			StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
+			WorkDir:      pconfig.Cwd,
+			Env:          strings.Split(pconfig.Env, ";"),
+		},
 	}
-	p.Process = &ProcessPty{ProcessBase: &p}
+
 	p.setProcessConfig(pconfig)
-	return &p
+	return p
 }

@@ -27,7 +27,7 @@ func newTask(db *gorm.DB, opts ...gen.DOOption) task {
 
 	tableName := _task.taskDo.TableName()
 	_task.ALL = field.NewAsterisk(tableName)
-	_task.Id = field.NewInt(tableName, "id")
+	_task.ID = field.NewInt(tableName, "id")
 	_task.Name = field.NewString(tableName, "name")
 	_task.ProcessId = field.NewInt(tableName, "process_id")
 	_task.Condition = field.NewInt(tableName, "condition")
@@ -50,7 +50,7 @@ type task struct {
 	taskDo
 
 	ALL             field.Asterisk
-	Id              field.Int
+	ID              field.Int
 	Name            field.String
 	ProcessId       field.Int
 	Condition       field.Int
@@ -79,7 +79,7 @@ func (t task) As(alias string) *task {
 
 func (t *task) updateTableName(table string) *task {
 	t.ALL = field.NewAsterisk(table)
-	t.Id = field.NewInt(table, "id")
+	t.ID = field.NewInt(table, "id")
 	t.Name = field.NewString(table, "name")
 	t.ProcessId = field.NewInt(table, "process_id")
 	t.Condition = field.NewInt(table, "condition")
@@ -109,7 +109,7 @@ func (t *task) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 
 func (t *task) fillFieldMap() {
 	t.fieldMap = make(map[string]field.Expr, 13)
-	t.fieldMap["id"] = t.Id
+	t.fieldMap["id"] = t.ID
 	t.fieldMap["name"] = t.Name
 	t.fieldMap["process_id"] = t.ProcessId
 	t.fieldMap["condition"] = t.Condition

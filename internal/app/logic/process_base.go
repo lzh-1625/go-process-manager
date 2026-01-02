@@ -2,7 +2,6 @@ package logic
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -20,20 +19,71 @@ import (
 	pu "github.com/shirou/gopsutil/process"
 )
 
+// ProcessInfo 进程信息快照 - 用于安全地读取进程状态数据
+type ProcessInfo struct {
+	Name         string
+	Pid          int
+	Env          []string
+	StartCommand []string
+	WorkDir      string
+
+	// 状态信息
+	State        eum.ProcessState
+	StateInfo    string
+	StartTime    string
+	RestartTimes int
+
+	// 连接信息
+	Users      []string
+	Controller string
+
+	// 性能数据
+	CPU        []float64
+	Mem        []float64
+	RecordTime []string
+
+	// 配置
+	AutoRestart       bool
+	CompulsoryRestart bool
+	CgroupEnable      bool
+	CPULimit          *float32
+	MemoryLimit       *float32
+	LogReport         bool
+	PushIds           []int64
+}
+
 type Process interface {
 	ReadCache(ConnectInstance) error
 	Write(string) error
 	WriteBytes([]byte) error
-	readInit()
-	doOnInit()
-	doOnKilled()
 	Start() error
 	Type() eum.TerminalType
 	SetTerminalSize(int, int)
+	SetOpertor(operator string)
+	GetOpertor() string
+	SetState(state eum.ProcessState, fn ...func() bool) bool
+	GetUserString() string
+	GetUserList() []string
+	HasWsConn(userName string) bool
+	AddConn(user string, c ConnectInstance)
+	DeleteConn(user string)
+	GetStartTimeFormat() string
+	ProcessControl(name string)
+	VerifyControl() bool
+	ResetRestartTimes()
+	InitPerformanceStatus()
+	AddCpuUsage(usage float64)
+	AddMemUsage(usage float64)
+	AddRecordTime()
+	Kill() error
+	Info() ProcessInfo
+	GetState() eum.ProcessState
+	GetName() string
+	StopSignal() <-chan struct{}
+	IsRunning() bool
 }
 
 type ProcessBase struct {
-	Process
 	op           *os.Process
 	Name         string
 	Pid          int
@@ -47,7 +97,7 @@ type ProcessBase struct {
 		changControlTime time.Time
 	}
 	ws     map[string]ConnectInstance
-	wsLock sync.Mutex
+	wsLock sync.RWMutex
 	Config struct {
 		AutoRestart       bool
 		compulsoryRestart bool
@@ -103,61 +153,6 @@ func (p *ProcessBase) GetOpertor() string {
 	return *s
 }
 
-func (p *ProcessBase) watchDog() {
-	state, _ := p.op.Wait()
-	if p.cgroup.enable && p.cgroup.delete != nil {
-		err := p.cgroup.delete()
-		if err != nil {
-			log.Logger.Errorw("cgroup删除失败", "err", err, "进程名称", p.Name)
-		}
-	}
-	close(p.StopChan)
-	p.doOnKilled()
-	p.SetState(eum.ProcessStateStop)
-	if state.ExitCode() != 0 {
-		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode(), "进程类型", p.Type())
-		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
-	} else {
-		log.Logger.Infow("进程正常退出", "进程名称", p.Name)
-		p.push("进程正常退出")
-	}
-	if !p.Config.AutoRestart || p.State.manualStopFlag { // 不重启或手动关闭
-		return
-	}
-	if p.Config.compulsoryRestart { // 强制重启
-		p.Start()
-		return
-	}
-	if state.ExitCode() == 0 { // 正常退出
-		return
-	}
-	if p.State.restartTimes < config.CF.ProcessRestartsLimit { // 重启次数未达限制
-		p.Start()
-		p.State.restartTimes++
-		return
-	}
-	log.Logger.Warnw("重启次数达到上限", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(eum.ProcessStateWarnning)
-	p.State.Info = "重启次数异常"
-	p.push("进程重启次数达到上限")
-}
-
-func (p *ProcessBase) pInit() {
-	log.Logger.Infow("创建进程成功")
-	p.StopChan = make(chan struct{})
-	p.State.manualStopFlag = false
-	p.State.startTime = time.Now()
-	p.ws = make(map[string]ConnectInstance)
-	p.Pid = p.op.Pid
-	p.doOnInit()
-	p.InitPerformanceStatus()
-	p.initPsutil()
-	p.initCgroup()
-	go p.watchDog()
-	go p.readInit()
-	go p.monitorHanler()
-}
-
 // fn 函数执行成功的情况下对state赋值
 func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
@@ -200,6 +195,8 @@ func (p *ProcessBase) GetUserString() string {
 
 func (p *ProcessBase) GetUserList() []string {
 	userList := make([]string, 0, len(p.ws))
+	p.wsLock.RLock()
+	defer p.wsLock.RUnlock()
 	for i := range p.ws {
 		userList = append(userList, i)
 	}
@@ -207,16 +204,20 @@ func (p *ProcessBase) GetUserList() []string {
 }
 
 func (p *ProcessBase) HasWsConn(userName string) bool {
+	p.wsLock.RLock()
+	defer p.wsLock.RUnlock()
 	return p.ws[userName] != nil
 }
 
 func (p *ProcessBase) AddConn(user string, c ConnectInstance) {
+	p.wsLock.Lock()
+	defer p.wsLock.Unlock()
+
 	if p.ws[user] != nil {
 		log.Logger.Error("已存在连接")
 		return
 	}
-	p.wsLock.Lock()
-	defer p.wsLock.Unlock()
+
 	p.ws[user] = c
 	ProcessWaitCond.Trigger()
 }
@@ -300,7 +301,7 @@ func (p *ProcessBase) AddRecordTime() {
 	p.performanceStatus.time = append(p.performanceStatus.time[1:], time.Now().Format(time.DateTime))
 }
 
-func (p *ProcessBase) monitorHanler() {
+func (p *ProcessBase) monitorHandler() {
 	if !p.monitor.enable {
 		return
 	}
@@ -350,8 +351,15 @@ func (p *ProcessBase) Kill() error {
 	if p.State.State != eum.ProcessStateRunning {
 		return errors.New("can't kill not running process")
 	}
+	p.State.stateLock.Lock()
 	p.State.manualStopFlag = true
-	p.op.Signal(syscall.SIGINT)
+	p.State.stateLock.Unlock()
+
+	if err := p.op.Signal(syscall.SIGINT); err != nil {
+		log.Logger.Errorw("发送SIGINT信号失败", "err", err)
+		return p.op.Kill()
+	}
+
 	select {
 	case <-p.StopChan:
 		{
@@ -363,4 +371,53 @@ func (p *ProcessBase) Kill() error {
 			return p.op.Kill()
 		}
 	}
+}
+
+func (p *ProcessBase) Info() ProcessInfo {
+	p.State.stateLock.Lock()
+	state := p.State.State
+	stateInfo := p.State.Info
+	startTime := p.State.startTime
+	restartTimes := p.State.restartTimes
+	p.State.stateLock.Unlock()
+
+	return ProcessInfo{
+		Name:              p.Name,
+		Pid:               p.Pid,
+		Env:               append([]string{}, p.Env...),
+		StartCommand:      append([]string{}, p.StartCommand...),
+		WorkDir:           p.WorkDir,
+		State:             state,
+		StateInfo:         stateInfo,
+		StartTime:         startTime.Format(time.DateTime),
+		RestartTimes:      restartTimes,
+		Users:             p.GetUserList(),
+		Controller:        p.Control.Controller,
+		CPU:               append([]float64{}, p.performanceStatus.cpu...),
+		Mem:               append([]float64{}, p.performanceStatus.mem...),
+		RecordTime:        append([]string{}, p.performanceStatus.time...),
+		AutoRestart:       p.Config.AutoRestart,
+		CompulsoryRestart: p.Config.compulsoryRestart,
+		CgroupEnable:      p.Config.cgroupEnable,
+		CPULimit:          p.Config.cpuLimit,
+		MemoryLimit:       p.Config.memoryLimit,
+		LogReport:         p.Config.logReport,
+		PushIds:           append([]int64{}, p.Config.PushIds...),
+	}
+}
+
+func (p *ProcessBase) GetName() string {
+	return p.Name
+}
+
+func (p *ProcessBase) StopSignal() <-chan struct{} {
+	return p.StopChan
+}
+
+func (p *ProcessBase) IsRunning() bool {
+	return p.State.State == eum.ProcessStateRunning
+}
+
+func (p *ProcessBase) GetState() eum.ProcessState {
+	return p.State.State
 }

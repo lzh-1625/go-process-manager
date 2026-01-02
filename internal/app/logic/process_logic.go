@@ -24,7 +24,7 @@ var (
 	ProcessCtlLogic = new(processCtlLogic)
 )
 
-func (p *processCtlLogic) AddProcess(uuid int, process *ProcessBase) {
+func (p *processCtlLogic) AddProcess(uuid int, process Process) {
 	p.processMap.Store(uuid, process)
 }
 
@@ -33,19 +33,19 @@ func (p *processCtlLogic) KillProcess(uuid int) error {
 	if !ok {
 		return errors.New("进程不存在")
 	}
-	result, ok := value.(*ProcessBase)
+	result, ok := value.(Process)
 	if !ok {
 		return errors.New("进程类型错误")
 	}
 	return result.Kill()
 }
 
-func (p *processCtlLogic) GetProcess(uuid int) (*ProcessBase, error) {
+func (p *processCtlLogic) GetProcess(uuid int) (Process, error) {
 	process, ok := p.processMap.Load(uuid)
 	if !ok {
 		return nil, errors.New("process not exist")
 	}
-	result, ok := process.(*ProcessBase)
+	result, ok := process.(Process)
 	if !ok {
 		return nil, errors.New("process type error")
 
@@ -104,26 +104,29 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 	for _, v := range processConfiglist {
 		pi := model.ProcessInfo{
 			Name: v.Name,
-			Uuid: v.Uuid,
+			UUID: v.UUID,
 		}
-		process, err := p.GetProcess(v.Uuid)
+		process, err := p.GetProcess(v.UUID)
 		if err != nil {
 			continue
 		}
-		pi.State.Info = process.State.Info
-		pi.State.State = process.State.State
-		pi.StartTime = process.GetStartTimeFormat()
+
+		// 使用 Info() 方法获取进程信息快照
+		info := process.Info()
+		pi.State.Info = info.StateInfo
+		pi.State.State = info.State
+		pi.StartTime = info.StartTime
 		pi.User = process.GetUserString()
-		pi.Usage.Cpu = process.performanceStatus.cpu
-		pi.Usage.Mem = process.performanceStatus.mem
+		pi.Usage.Cpu = info.CPU
+		pi.Usage.Mem = info.Mem
 		pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
 		pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
-		pi.Usage.Time = process.performanceStatus.time
+		pi.Usage.Time = info.RecordTime
 		pi.TermType = process.Type()
-		pi.CgroupEnable = process.Config.cgroupEnable
-		pi.CpuLimit = process.Config.cpuLimit
-		pi.MemoryLimit = process.Config.memoryLimit
-		pi.Env = process.Env
+		pi.CgroupEnable = info.CgroupEnable
+		pi.CpuLimit = info.CPULimit
+		pi.MemoryLimit = info.MemoryLimit
+		pi.Env = info.Env
 		processInfoList = append(processInfoList, pi)
 	}
 	return processInfoList
@@ -131,10 +134,10 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 
 func (p *processCtlLogic) ProcessStartAll() {
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessBase)
+		process := value.(Process)
 		err := process.Start()
 		if err != nil {
-			log.Logger.Errorw("进程启动失败", "name", process.Name)
+			log.Logger.Errorw("进程启动失败", "name", process.GetName())
 		}
 		return true
 	})
@@ -155,27 +158,27 @@ func (p *processCtlLogic) ProcessInit() {
 				continue
 			}
 		}
-		p.AddProcess(v.Uuid, proc)
+		p.AddProcess(v.UUID, proc)
 	}
 }
 
 func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
 	startPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessBase)
-		if !slices.Contains(startPermissionProcess, process.Name) {
+		process := value.(Process)
+		if !slices.Contains(startPermissionProcess, process.GetName()) {
 			return true
 		}
 		err := process.Start()
 		if err != nil {
-			log.Logger.Errorw("进程启动失败", "name", process.Name)
+			log.Logger.Errorw("进程启动失败", "name", process.GetName())
 		}
 		return true
 	})
 }
 
 func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
-	process, ok := p.processMap.Load(config.Uuid)
+	process, ok := p.processMap.Load(config.UUID)
 	if !ok {
 		return errors.New("进程获取失败")
 	}
@@ -201,7 +204,7 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	return nil
 }
 
-func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessBase, err error) {
+func (p *processCtlLogic) NewProcess(config model.Process) (proc Process, err error) {
 	switch config.TermType {
 	case eum.TerminalStd:
 		proc = NewProcessStd(config)
@@ -213,7 +216,7 @@ func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessBase, e
 	return
 }
 
-func (p *processCtlLogic) RunNewProcess(config model.Process) (proc *ProcessBase, err error) {
+func (p *processCtlLogic) RunNewProcess(config model.Process) (proc Process, err error) {
 	proc, err = p.NewProcess(config)
 	if err != nil {
 		return

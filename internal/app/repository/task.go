@@ -16,7 +16,7 @@ func (t *taskRepository) GetAllTask() (result []*model.Task) {
 }
 
 func (t *taskRepository) GetTaskById(id int) (result *model.Task, err error) {
-	result, err = query.Task.Where(query.Task.Id.Eq(id)).First()
+	result, err = query.Task.Where(query.Task.ID.Eq(id)).First()
 	return
 }
 
@@ -27,12 +27,12 @@ func (t *taskRepository) GetTaskByKey(key string) (result *model.Task, err error
 
 func (t *taskRepository) AddTask(data model.Task) (taskId int, err error) {
 	err = query.Task.Create(&data)
-	taskId = data.Id
+	taskId = data.ID
 	return
 }
 
 func (t *taskRepository) DeleteTask(id int) (err error) {
-	_, err = query.Task.Where(query.Task.Id.Eq(id)).Delete()
+	_, err = query.Task.Where(query.Task.ID.Eq(id)).Delete()
 	return
 }
 
@@ -42,7 +42,7 @@ func (t *taskRepository) EditTask(data *model.Task) (err error) {
 }
 
 func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
-	_, err = query.Task.Where(query.Task.Id.Eq(id)).Update(query.Task.Enable, enable)
+	_, err = query.Task.Where(query.Task.ID.Eq(id)).Update(query.Task.Enable, enable)
 	return
 }
 
@@ -57,9 +57,9 @@ func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 		p2.Name.As("target_name"),
 		p3.Name.As("trigger_name"),
 	).
-		LeftJoin(p, p.Uuid.EqCol(task.ProcessId)).
-		LeftJoin(p2, p2.Uuid.EqCol(task.OperationTarget)).
-		LeftJoin(p3, p3.Uuid.EqCol(task.TriggerTarget)).
+		LeftJoin(p, p.UUID.EqCol(task.ProcessId)).
+		LeftJoin(p2, p2.UUID.EqCol(task.OperationTarget)).
+		LeftJoin(p3, p3.UUID.EqCol(task.TriggerTarget)).
 		Scan(&result)
 	return
 }
@@ -67,7 +67,7 @@ func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 func (t *taskRepository) GetTriggerTask(processName string, event eum.ProcessState) []model.Task {
 	result := []model.Task{}
 	query.Task.Select(query.Task.ALL).
-		LeftJoin(query.Process, query.Process.Uuid.EqCol(query.Task.TriggerTarget)).
+		LeftJoin(query.Process, query.Process.UUID.EqCol(query.Task.TriggerTarget)).
 		Where(query.Process.Name.Eq(processName)).
 		Where(query.Task.TriggerEvent.Eq(int32(event))).
 		Scan(&result)

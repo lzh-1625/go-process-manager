@@ -4,7 +4,7 @@ import "github.com/lzh-1625/go_process_manager/internal/app/eum"
 
 type ProcessInfo struct {
 	Name         string           `json:"name"`
-	Uuid         int              `json:"uuid"`
+	UUID         int              `json:"uuid"`
 	StartTime    string           `json:"startTime"`
 	User         string           `json:"user"`
 	Usage        Usage            `json:"usage"`

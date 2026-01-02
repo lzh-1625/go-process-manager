@@ -30,7 +30,7 @@ func NewTaskJob(data *model.Task) (*TaskJob, error) {
 	if data.Enable && data.CronExpression != "" {
 		err := tj.InitCronHandle()
 		if err != nil {
-			log.Logger.Warnw("定时任务启动失败", "err", err, "task", data.Id)
+			log.Logger.Warnw("定时任务启动失败", "err", err, "task", data.ID)
 		}
 	}
 	return tj, nil

@@ -52,7 +52,7 @@ func (t *tui) drawProcessList() {
 			if v.State.State != 1 || v.TermType != eum.TerminalPty {
 				return
 			}
-			t.teminal(v.Uuid)
+			t.teminal(v.UUID)
 			t.app.Stop()
 			t.drawProcessList()
 		})
@@ -82,7 +82,7 @@ func (t *tui) teminal(uuid int) {
 	go t.startConnect(p, ctx, cancel)
 	log.Logger.Info("tui wait")
 	select {
-	case <-p.StopChan:
+	case <-p.StopSignal():
 	case <-time.After(time.Minute * 10):
 	case <-ctx.Done():
 	}

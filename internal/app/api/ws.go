@@ -53,18 +53,19 @@ var upgrader = websocket.Upgrader{
 }
 
 func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
-	if !hasOprPermission(ctx, req.Uuid, eum.OperationTerminal) {
+	if !hasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
 		return errors.New("not permission")
 	}
 	reqUser := getUserName(ctx)
-	proc, err := logic.ProcessCtlLogic.GetProcess(req.Uuid)
+	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}
 	if proc.HasWsConn(reqUser) {
 		return errors.New("connection already exists")
 	}
-	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
+	info := proc.Info()
+	if info.Controller != reqUser && !proc.VerifyControl() {
 		return errors.New("insufficient permissions")
 	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
@@ -83,10 +84,10 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	if proc.State.State == eum.ProcessStateRunning {
+	if proc.IsRunning() {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		write := hasOprPermission(ctx, req.Uuid, eum.OperationTerminalWrite)
-		logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
+		write := hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
+		logic.EventLogic.Create(info.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
@@ -120,7 +121,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if proc.HasWsConn(guestName) {
 		return errors.New("connection already exists")
 	}
-	if proc.State.State != eum.ProcessStateRunning {
+	if !proc.IsRunning() {
 		return errors.New("process not is running")
 	}
 	if !proc.VerifyControl() {
@@ -145,7 +146,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
+	logic.EventLogic.Create(proc.GetName(), eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddConn(guestName, wci)
 	defer proc.DeleteConn(guestName)
@@ -154,7 +155,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 		return nil
 	})
 	select {
-	case <-proc.StopChan:
+	case <-proc.StopSignal():
 		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
 	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
 		log.Logger.Infow("ws连接断开", "操作类型", "连接时间超过最大时长限制")

@@ -5,7 +5,7 @@ import (
 )
 
 type Task struct {
-	Id              int               `gorm:"column:id;NOT NULL;primaryKey;autoIncrement;" json:"id" `
+	ID              int               `gorm:"column:id;NOT NULL;primaryKey;autoIncrement;" json:"id" `
 	Name            string            `gorm:"column:name" json:"name" `
 	ProcessId       int               `gorm:"column:process_id;NOT NULL" json:"processId" `
 	Condition       eum.Condition     `gorm:"column:condition;NOT NULL" json:"condition" `

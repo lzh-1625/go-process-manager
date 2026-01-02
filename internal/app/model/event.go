@@ -7,7 +7,7 @@ import (
 )
 
 type Event struct {
-	Id          uint64        `gorm:"primaryKey;autoIncrement;column:id" json:"id"`
+	ID          uint64        `gorm:"primaryKey;autoIncrement;column:id" json:"id"`
 	Name        string        `gorm:"column:name" json:"name"`
 	Type        eum.EventType `gorm:"column:type" json:"type"`
 	Additional  string        `gorm:"column:additional" json:"additional"`

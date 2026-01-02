@@ -37,7 +37,7 @@ func TestCgroup(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	control.AddProc(uint64(p.Pid))
+	control.AddProc(uint64(p.Info().Pid))
 	time.Sleep(time.Second * 20)
 	p.Kill()
 	control.Delete()
