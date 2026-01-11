@@ -3,17 +3,16 @@ package model
 import "github.com/lzh-1625/go_process_manager/internal/app/eum"
 
 type ProcessInfo struct {
-	Name         string           `json:"name"`
-	UUID         int              `json:"uuid"`
-	StartTime    string           `json:"startTime"`
-	User         string           `json:"user"`
-	Usage        Usage            `json:"usage"`
-	State        State            `json:"state"`
-	TermType     eum.TerminalType `json:"termType"`
-	CgroupEnable bool             `json:"cgroupEnable"`
-	MemoryLimit  *float32         `json:"memoryLimit"`
-	CpuLimit     *float32         `json:"cpuLimit"`
-	Env          []string         `json:"env"`
+	Name         string   `json:"name"`
+	UUID         int      `json:"uuid"`
+	StartTime    string   `json:"startTime"`
+	User         string   `json:"user"`
+	Usage        Usage    `json:"usage"`
+	State        State    `json:"state"`
+	CgroupEnable bool     `json:"cgroupEnable"`
+	MemoryLimit  *float32 `json:"memoryLimit"`
+	CpuLimit     *float32 `json:"cpuLimit"`
+	Env          []string `json:"env"`
 }
 
 type Usage struct {

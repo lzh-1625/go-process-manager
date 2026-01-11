@@ -49,7 +49,7 @@ func (t *tui) drawProcessList() {
 			i++
 		}
 		list.AddItem(v.Name, utils.NewKVStr().Add("user_name", v.User).Add("start_time", v.StartTime).Add("state", v.State.State).Build(), 'a'+rune(i), func() {
-			if v.State.State != 1 || v.TermType != eum.TerminalPty {
+			if v.State.State != eum.ProcessStateRunning {
 				return
 			}
 			t.teminal(v.UUID)
@@ -82,27 +82,14 @@ func (t *tui) teminal(uuid int) {
 	go t.startConnect(p, ctx, cancel)
 	log.Logger.Info("tui wait")
 	select {
-	case <-p.StopSignal():
+	case <-p.StopChan:
 	case <-time.After(time.Minute * 10):
 	case <-ctx.Done():
 	}
 	log.Logger.Info("tui quit")
 }
 
-func (t *tui) startConnect(p logic.Process, ctx context.Context, cancel context.CancelFunc) {
-	switch p.Type() {
-	case eum.TerminalPty:
-		{
-			t.ptyConnect(p, ctx, cancel)
-		}
-	case eum.TerminalStd:
-		{
-			t.stdConnect(p, ctx, cancel)
-		}
-	}
-}
-
-func (t *tui) ptyConnect(p logic.Process, ctx context.Context, cancel context.CancelFunc) {
+func (t *tui) startConnect(p *logic.ProcessPty, ctx context.Context, cancel context.CancelFunc) {
 	buf := make([]byte, 1024)
 	for {
 		select {
@@ -119,34 +106,6 @@ func (t *tui) ptyConnect(p logic.Process, ctx context.Context, cancel context.Ca
 					continue
 				}
 				p.WriteBytes(buf[:n])
-			}
-		}
-	}
-}
-
-func (t *tui) stdConnect(p logic.Process, ctx context.Context, cancel context.CancelFunc) {
-	buf := make([]byte, 1024)
-	var line string
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			{
-				n, err := os.Stdin.Read(buf)
-				if err != nil {
-					return
-				}
-				if buf[0] == 0x04 { // ctrl+d 信号
-					cancel()
-					continue
-				}
-				if buf[0] == 0x13 { // enter 信号
-					p.Write(line)
-					line = ""
-					continue
-				}
-				line += string(buf[:n])
 			}
 		}
 	}

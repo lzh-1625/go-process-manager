@@ -75,7 +75,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 
 	// 执行操作
 	log.Logger.Infow("任务开始执行")
-	if !OperationHandle[t.TaskConfig.Operation](t.TaskConfig, proc) {
+	if !GetOperationHandle()[t.TaskConfig.Operation](t.TaskConfig, proc) {
 		log.Logger.Warnw("任务执行失败")
 		return errors.New("task execute failed")
 	}

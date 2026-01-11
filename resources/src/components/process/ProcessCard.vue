@@ -2,7 +2,6 @@
 import { ProcessItem } from "~/src/types/process/process";
 import { init } from "echarts";
 import TerminalPty from "./TerminalPty.vue";
-import TerminalStd from "./TerminalStd.vue";
 import {
   deleteProcessConfig,
   getContorl,
@@ -318,9 +317,7 @@ const copyToken = () => {
           <v-list nav dense>
             <v-list-item @click="control"> 获取控制权 </v-list-item>
             <v-list-item @click="del"> 删除进程 </v-list-item>
-            <v-list-item v-if="data.termType == 'pty'" @click="openShareDialog">
-              创建分享链接
-            </v-list-item>
+            <v-list-item @click="openShareDialog"> 创建分享链接 </v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -374,21 +371,7 @@ const copyToken = () => {
       </div>
     </div>
 
-    <TerminalPty
-      v-if="props.data.termType == 'pty'"
-      :data="props.data"
-      ref="terminalComponent"
-    ></TerminalPty>
-    <TerminalStd
-      v-else-if="props.data.termType == 'std'"
-      :data="props.data"
-      ref="terminalComponent"
-    ></TerminalStd>
-    <TerminalPty
-      v-else
-      :data="props.data"
-      ref="terminalComponent"
-    ></TerminalPty>
+    <TerminalPty :data="props.data" ref="terminalComponent"></TerminalPty>
     <ProcessConfig
       :data="props.data"
       ref="processConfigComponent"

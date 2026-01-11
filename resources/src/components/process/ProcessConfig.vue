@@ -138,23 +138,13 @@ const initPushItem = () => {
               ></v-text-field>
             </v-col>
 
-            <v-col cols="12" md="6">
+            <v-col cols="12" md="12">
               <v-text-field
                 label="启动命令"
                 v-model="configForm.cmd"
                 variant="outlined"
                 density="compact"
               ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-select
-                label="终端类型"
-                disabled
-                v-model="configForm.termType"
-                :items="['pty', 'std']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
             </v-col>
           </v-row>
 

@@ -99,15 +99,6 @@ const create = () => {
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
-              <v-select
-                label="终端类型"
-                v-model="configForm.termType"
-                :items="['pty', 'std']"
-                variant="outlined"
-                density="compact"
-              ></v-select>
-            </v-col>
-            <v-col cols="12" md="12">
               <v-text-field
                 label="工作目录"
                 v-model="configForm.cwd"

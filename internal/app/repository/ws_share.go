@@ -26,12 +26,12 @@ func (p *wsShare) GetWsShareList() (data []*model.WsShare) {
 
 func (p *wsShare) Delete(id int) error {
 	ws := query.WsShare
-	_, err := ws.Where(ws.ID.Eq(uint(id))).Delete()
+	_, err := ws.Where(ws.ID.Eq(id)).Delete()
 	return err
 }
 
 func (p *wsShare) Edit(data *model.WsShare) error {
 	ws := query.WsShare
-	_, err := ws.Where(ws.ID.Eq(uint(data.ID))).Updates(data)
+	_, err := ws.Where(ws.ID.Eq(data.ID)).Updates(data)
 	return err
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	_ "github.com/lzh-1625/go_process_manager/boot"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 
@@ -29,15 +28,14 @@ func TestCgroup(t *testing.T) {
 	}
 	defer control.Delete()
 	p, err := logic.ProcessCtlLogic.RunNewProcess(model.Process{
-		Name:     "test",
-		Cmd:      "bash",
-		Cwd:      `/root`,
-		TermType: eum.TerminalPty,
+		Name: "test",
+		Cmd:  "bash",
+		Cwd:  `/root`,
 	})
 	if err != nil {
 		t.FailNow()
 	}
-	control.AddProc(uint64(p.Info().Pid))
+	control.AddProc(uint64(p.Pid))
 	time.Sleep(time.Second * 20)
 	p.Kill()
 	control.Delete()

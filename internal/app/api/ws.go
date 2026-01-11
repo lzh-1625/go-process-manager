@@ -64,8 +64,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	if proc.HasWsConn(reqUser) {
 		return errors.New("connection already exists")
 	}
-	info := proc.Info()
-	if info.Controller != reqUser && !proc.VerifyControl() {
+	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
 		return errors.New("insufficient permissions")
 	}
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
@@ -84,10 +83,10 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	if proc.IsRunning() {
+	if proc.State.State == eum.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
 		write := hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
-		logic.EventLogic.Create(info.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
+		logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
@@ -121,7 +120,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if proc.HasWsConn(guestName) {
 		return errors.New("connection already exists")
 	}
-	if !proc.IsRunning() {
+	if proc.State.State != eum.ProcessStateRunning {
 		return errors.New("process not is running")
 	}
 	if !proc.VerifyControl() {
@@ -146,7 +145,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	logic.EventLogic.Create(proc.GetName(), eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
+	logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddConn(guestName, wci)
 	defer proc.DeleteConn(guestName)
@@ -155,7 +154,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 		return nil
 	})
 	select {
-	case <-proc.StopSignal():
+	case <-proc.StopChan:
 		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
 	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
 		log.Logger.Infow("ws连接断开", "操作类型", "连接时间超过最大时长限制")
@@ -167,7 +166,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	return
 }
 
-func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc logic.Process, write bool) {
+func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *logic.ProcessPty, write bool) {
 	log.Logger.Debugw("ws读取线程已启动")
 	go func() {
 		for {

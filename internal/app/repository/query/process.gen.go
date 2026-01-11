@@ -35,10 +35,10 @@ func newProcess(db *gorm.DB, opts ...gen.DOOption) process {
 	_process.CompulsoryRestart = field.NewBool(tableName, "compulsory_restart")
 	_process.PushIds = field.NewString(tableName, "push_ids")
 	_process.LogReport = field.NewBool(tableName, "log_report")
-	_process.TermType = field.NewString(tableName, "term_type")
 	_process.CgroupEnable = field.NewBool(tableName, "cgroup_enable")
 	_process.MemoryLimit = field.NewFloat32(tableName, "memory_limit")
 	_process.CpuLimit = field.NewFloat32(tableName, "cpu_limit")
+	_process.Env = field.NewString(tableName, "env")
 
 	_process.fillFieldMap()
 
@@ -57,10 +57,10 @@ type process struct {
 	CompulsoryRestart field.Bool
 	PushIds           field.String
 	LogReport         field.Bool
-	TermType          field.String
 	CgroupEnable      field.Bool
 	MemoryLimit       field.Float32
 	CpuLimit          field.Float32
+	Env               field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -85,10 +85,10 @@ func (p *process) updateTableName(table string) *process {
 	p.CompulsoryRestart = field.NewBool(table, "compulsory_restart")
 	p.PushIds = field.NewString(table, "push_ids")
 	p.LogReport = field.NewBool(table, "log_report")
-	p.TermType = field.NewString(table, "term_type")
 	p.CgroupEnable = field.NewBool(table, "cgroup_enable")
 	p.MemoryLimit = field.NewFloat32(table, "memory_limit")
 	p.CpuLimit = field.NewFloat32(table, "cpu_limit")
+	p.Env = field.NewString(table, "env")
 
 	p.fillFieldMap()
 
@@ -114,10 +114,10 @@ func (p *process) fillFieldMap() {
 	p.fieldMap["compulsory_restart"] = p.CompulsoryRestart
 	p.fieldMap["push_ids"] = p.PushIds
 	p.fieldMap["log_report"] = p.LogReport
-	p.fieldMap["term_type"] = p.TermType
 	p.fieldMap["cgroup_enable"] = p.CgroupEnable
 	p.fieldMap["memory_limit"] = p.MemoryLimit
 	p.fieldMap["cpu_limit"] = p.CpuLimit
+	p.fieldMap["env"] = p.Env
 }
 
 func (p process) clone(db *gorm.DB) process {

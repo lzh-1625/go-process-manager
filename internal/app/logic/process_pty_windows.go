@@ -27,10 +27,6 @@ type ProcessPty struct {
 	pty           console.Console
 }
 
-func (p *ProcessPty) Type() eum.TerminalType {
-	return eum.TerminalPty
-}
-
 func (p *ProcessPty) Start() (err error) {
 	defer func() {
 		if err != nil {
@@ -174,7 +170,7 @@ func (p *ProcessPty) watchDog() {
 	p.pty.Close()
 	p.SetState(eum.ProcessStateStop)
 	if state.ExitCode() != 0 {
-		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode(), "进程类型", p.Type())
+		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode())
 		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
 	} else {
 		log.Logger.Infow("进程正常退出", "进程名称", p.Name)

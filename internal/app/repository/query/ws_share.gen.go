@@ -27,15 +27,14 @@ func newWsShare(db *gorm.DB, opts ...gen.DOOption) wsShare {
 
 	tableName := _wsShare.wsShareDo.TableName()
 	_wsShare.ALL = field.NewAsterisk(tableName)
-	_wsShare.ID = field.NewUint(tableName, "id")
-	_wsShare.CreatedAt = field.NewTime(tableName, "created_at")
-	_wsShare.UpdatedAt = field.NewTime(tableName, "updated_at")
-	_wsShare.DeletedAt = field.NewField(tableName, "deleted_at")
+	_wsShare.ID = field.NewInt(tableName, "id")
 	_wsShare.Pid = field.NewInt(tableName, "pid")
 	_wsShare.Write = field.NewBool(tableName, "write")
 	_wsShare.ExpireTime = field.NewTime(tableName, "expire_time")
 	_wsShare.CreateBy = field.NewString(tableName, "create_by")
 	_wsShare.Token = field.NewString(tableName, "token")
+	_wsShare.CreatedAt = field.NewTime(tableName, "created_at")
+	_wsShare.LastLink = field.NewTime(tableName, "last_link")
 
 	_wsShare.fillFieldMap()
 
@@ -46,15 +45,14 @@ type wsShare struct {
 	wsShareDo
 
 	ALL        field.Asterisk
-	ID         field.Uint
-	CreatedAt  field.Time
-	UpdatedAt  field.Time
-	DeletedAt  field.Field
+	ID         field.Int
 	Pid        field.Int
 	Write      field.Bool
 	ExpireTime field.Time
 	CreateBy   field.String
 	Token      field.String
+	CreatedAt  field.Time
+	LastLink   field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -71,15 +69,14 @@ func (w wsShare) As(alias string) *wsShare {
 
 func (w *wsShare) updateTableName(table string) *wsShare {
 	w.ALL = field.NewAsterisk(table)
-	w.ID = field.NewUint(table, "id")
-	w.CreatedAt = field.NewTime(table, "created_at")
-	w.UpdatedAt = field.NewTime(table, "updated_at")
-	w.DeletedAt = field.NewField(table, "deleted_at")
+	w.ID = field.NewInt(table, "id")
 	w.Pid = field.NewInt(table, "pid")
 	w.Write = field.NewBool(table, "write")
 	w.ExpireTime = field.NewTime(table, "expire_time")
 	w.CreateBy = field.NewString(table, "create_by")
 	w.Token = field.NewString(table, "token")
+	w.CreatedAt = field.NewTime(table, "created_at")
+	w.LastLink = field.NewTime(table, "last_link")
 
 	w.fillFieldMap()
 
@@ -96,16 +93,15 @@ func (w *wsShare) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *wsShare) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 9)
+	w.fieldMap = make(map[string]field.Expr, 8)
 	w.fieldMap["id"] = w.ID
-	w.fieldMap["created_at"] = w.CreatedAt
-	w.fieldMap["updated_at"] = w.UpdatedAt
-	w.fieldMap["deleted_at"] = w.DeletedAt
 	w.fieldMap["pid"] = w.Pid
 	w.fieldMap["write"] = w.Write
 	w.fieldMap["expire_time"] = w.ExpireTime
 	w.fieldMap["create_by"] = w.CreateBy
 	w.fieldMap["token"] = w.Token
+	w.fieldMap["created_at"] = w.CreatedAt
+	w.fieldMap["last_link"] = w.LastLink
 }
 
 func (w wsShare) clone(db *gorm.DB) wsShare {

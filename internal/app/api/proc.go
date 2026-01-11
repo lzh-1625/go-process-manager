@@ -76,7 +76,7 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 		logic.ProcessCtlLogic.AddProcess(req.UUID, proc)
 		return nil
 	}
-	if prod.GetState() == eum.ProcessStateStart || prod.GetState() == eum.ProcessStateRunning {
+	if prod.State.State == eum.ProcessStateStart || prod.State.State == eum.ProcessStateRunning {
 		return errors.New("process is currently running")
 	}
 	prod.ResetRestartTimes()

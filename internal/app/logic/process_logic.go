@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
@@ -24,7 +25,7 @@ var (
 	ProcessCtlLogic = new(processCtlLogic)
 )
 
-func (p *processCtlLogic) AddProcess(uuid int, process Process) {
+func (p *processCtlLogic) AddProcess(uuid int, process *ProcessPty) {
 	p.processMap.Store(uuid, process)
 }
 
@@ -33,19 +34,19 @@ func (p *processCtlLogic) KillProcess(uuid int) error {
 	if !ok {
 		return errors.New("进程不存在")
 	}
-	result, ok := value.(Process)
+	result, ok := value.(*ProcessPty)
 	if !ok {
 		return errors.New("进程类型错误")
 	}
 	return result.Kill()
 }
 
-func (p *processCtlLogic) GetProcess(uuid int) (Process, error) {
+func (p *processCtlLogic) GetProcess(uuid int) (*ProcessPty, error) {
 	process, ok := p.processMap.Load(uuid)
 	if !ok {
 		return nil, errors.New("process not exist")
 	}
-	result, ok := process.(Process)
+	result, ok := process.(*ProcessPty)
 	if !ok {
 		return nil, errors.New("process type error")
 
@@ -112,21 +113,19 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		}
 
 		// 使用 Info() 方法获取进程信息快照
-		info := process.Info()
-		pi.State.Info = info.StateInfo
-		pi.State.State = info.State
-		pi.StartTime = info.StartTime
+		pi.State.Info = process.State.Info
+		pi.State.State = process.State.State
+		pi.StartTime = process.State.startTime.Format(time.DateTime)
 		pi.User = process.GetUserString()
-		pi.Usage.Cpu = info.CPU
-		pi.Usage.Mem = info.Mem
+		pi.Usage.Cpu = process.performanceStatus.cpu
+		pi.Usage.Mem = process.performanceStatus.mem
 		pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
 		pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
-		pi.Usage.Time = info.RecordTime
-		pi.TermType = process.Type()
-		pi.CgroupEnable = info.CgroupEnable
-		pi.CpuLimit = info.CPULimit
-		pi.MemoryLimit = info.MemoryLimit
-		pi.Env = info.Env
+		pi.Usage.Time = process.performanceStatus.time
+		pi.CgroupEnable = process.Config.cgroupEnable
+		pi.CpuLimit = process.Config.cpuLimit
+		pi.MemoryLimit = process.Config.memoryLimit
+		pi.Env = process.Env
 		processInfoList = append(processInfoList, pi)
 	}
 	return processInfoList
@@ -134,10 +133,10 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 
 func (p *processCtlLogic) ProcessStartAll() {
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(Process)
+		process := value.(*ProcessPty)
 		err := process.Start()
 		if err != nil {
-			log.Logger.Errorw("进程启动失败", "name", process.GetName())
+			log.Logger.Errorw("进程启动失败", "name", process.Name)
 		}
 		return true
 	})
@@ -165,13 +164,13 @@ func (p *processCtlLogic) ProcessInit() {
 func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
 	startPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(Process)
-		if !slices.Contains(startPermissionProcess, process.GetName()) {
+		process := value.(*ProcessPty)
+		if !slices.Contains(startPermissionProcess, process.Name) {
 			return true
 		}
 		err := process.Start()
 		if err != nil {
-			log.Logger.Errorw("进程启动失败", "name", process.GetName())
+			log.Logger.Errorw("进程启动失败", "name", process.Name)
 		}
 		return true
 	})
@@ -204,19 +203,12 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	return nil
 }
 
-func (p *processCtlLogic) NewProcess(config model.Process) (proc Process, err error) {
-	switch config.TermType {
-	case eum.TerminalStd:
-		proc = NewProcessStd(config)
-	case eum.TerminalPty:
-		proc = NewProcessPty(config)
-	default:
-		proc = NewProcessPty(config)
-	}
+func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessPty, err error) {
+	proc = NewProcessPty(config)
 	return
 }
 
-func (p *processCtlLogic) RunNewProcess(config model.Process) (proc Process, err error) {
+func (p *processCtlLogic) RunNewProcess(config model.Process) (proc *ProcessPty, err error) {
 	proc, err = p.NewProcess(config)
 	if err != nil {
 		return
