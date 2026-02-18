@@ -1,6 +1,6 @@
 module github.com/lzh-1625/go_process_manager
 
-go 1.23.2
+go 1.26.0
 
 require (
 	github.com/containerd/cgroups/v3 v3.0.4
