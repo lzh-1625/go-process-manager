@@ -25,7 +25,7 @@ func (m *metricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 		}
 		items = append(items, model.PerformceUsageItem{
 			Name: v.Name,
-			CPU:  v.Usage.Cpu[len(v.Usage.Cpu)-1] * 100.0 / float64(runtime.NumCPU()),
+			CPU:  v.Usage.Cpu[len(v.Usage.Cpu)-1] / float64(runtime.NumCPU()),
 			Mem:  v.Usage.Mem[len(v.Usage.Mem)-1],
 		})
 	}
