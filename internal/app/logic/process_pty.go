@@ -162,9 +162,17 @@ func (p *ProcessPty) watchDog() {
 			log.Logger.Errorw("cgroup删除失败", "err", err, "进程名称", p.Name)
 		}
 	}
-	close(p.StopChan)
-	p.pty.Close()
-	p.SetState(eum.ProcessStateStop)
+	if !p.SetState(eum.ProcessStateStop, func() bool {
+		// 进程已是停止或警告状态，无需重复设置状态
+		if eum.ProcessStateStop == p.State.State || eum.ProcessStateWarnning == p.State.State {
+			return false
+		}
+		close(p.StopChan)
+		p.pty.Close()
+		return true
+	}) {
+		return
+	}
 	if state.ExitCode() != 0 {
 		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode())
 		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
