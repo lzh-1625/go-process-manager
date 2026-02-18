@@ -27,8 +27,9 @@
         <h3 class="text-h5 font-weight-medium text-grey-darken-1 mb-3">
           暂无进程
         </h3>
-        <p class="text-body-1 text-grey mb-8">先创建你的第一个进程</p>
-        <v-btn
+        <p v-permission="1" class="text-body-1 text-grey mb-8">先创建你的第一个进程</p>
+        <v-btn v-permission="1"
+
           size="large"
           color="primary"
           variant="elevated"

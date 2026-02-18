@@ -355,7 +355,7 @@ const loadLogs = async () => {
     }
   } catch (error) {
     console.error("加载日志错误:", error);
-    snackbarStore.showErrorMessage("加载日志出错");
+    snackbarStore.showWarningMessage("未获取到日志");
   } finally {
     loading.value = false;
   }

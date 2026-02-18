@@ -221,9 +221,7 @@ const changePasswd = async () => {
 
   passwordLoading.value = true;
   try {
-    const account = localStorage.getItem("name") || "";
     const resp = await editUser({
-      account,
       password: newPasswd1.value,
     });
     if (resp.code === 0) {
