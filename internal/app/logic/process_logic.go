@@ -57,7 +57,7 @@ func (p *processCtlLogic) GetProcess(uuid int) (*ProcessPty, error) {
 func (p *processCtlLogic) KillAllProcess() {
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessBase)
+		process := value.(*ProcessPty)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -72,7 +72,7 @@ func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
 	stopPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStop)
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessBase)
+		process := value.(*ProcessPty)
 		if !slices.Contains(stopPermissionProcess, process.Name) {
 			return true
 		}
@@ -181,7 +181,7 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	if !ok {
 		return errors.New("进程获取失败")
 	}
-	result, ok := process.(*ProcessBase)
+	result, ok := process.(*ProcessPty)
 	if !ok {
 		return errors.New("进程类型错误")
 	}
