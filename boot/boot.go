@@ -56,7 +56,7 @@ func initConfiguration() {
 		configKvMap[v.Key] = *v.Value
 	}
 
-	typeElem := reflect.TypeOf(config.CF).Elem()
+	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)

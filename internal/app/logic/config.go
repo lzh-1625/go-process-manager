@@ -17,7 +17,7 @@ var (
 
 func (c *configLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
 	result := []model.SystemConfigurationVo{}
-	typeElem := reflect.TypeOf(config.CF).Elem()
+	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)
@@ -50,7 +50,7 @@ func (c *configLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
 }
 
 func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
-	typeElem := reflect.TypeOf(config.CF).Elem()
+	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)
@@ -97,7 +97,7 @@ func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
 
 // reset system config to default
 func (c *configLogic) ResetSystemConfiguration() error {
-	typeElem := reflect.TypeOf(config.CF).Elem()
+	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)

@@ -19,7 +19,7 @@ var (
 )
 
 func InitLogHandle() {
-	Loghandler.antsPool, _ = ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i interface{}) {
+	Loghandler.antsPool, _ = ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i any) {
 		log.Logger.Warnw("日志储存失败", "err", i)
 	}))
 }

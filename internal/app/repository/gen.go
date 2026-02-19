@@ -1,5 +1,4 @@
 //go:build gen
-// +build gen
 
 package repository
 

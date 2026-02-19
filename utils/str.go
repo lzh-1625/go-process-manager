@@ -37,7 +37,7 @@ func RemoveANSI(input string) string {
 func RandString(n int) (ret string) {
 	allString := "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789"
 	ret = ""
-	for i := 0; i < n; i++ {
+	for range n {
 		r := rand.Intn(len(allString))
 		ret = ret + allString[r:r+1]
 	}

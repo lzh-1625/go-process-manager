@@ -1,9 +1,9 @@
 package config
 
-var CF = new(configuration)
+var CF = new(Configuration)
 
 // 只支持 float64、int、int64、bool、string类型
-type configuration struct {
+type Configuration struct {
 	LogLevel                  string  `default:"debug"  describe:"日志等级[debug,info]"`
 	Listen                    string  `default:":8797" describe:"监听端口"`
 	StorgeType                string  `default:"sqlite" describe:"存储引擎[sqlite、es、bleve]"`

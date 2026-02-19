@@ -23,16 +23,16 @@ type Source struct {
 	Using string `json:"using"`
 }
 type HitsItem struct {
-	Index  string      `json:"_index"`
-	ID     string      `json:"_id"`
-	Score  interface{} `json:"_score"`
-	Source Source      `json:"_source"`
-	Sort   []int64     `json:"sort"`
+	Index  string  `json:"_index"`
+	ID     string  `json:"_id"`
+	Score  any     `json:"_score"`
+	Source Source  `json:"_source"`
+	Sort   []int64 `json:"sort"`
 }
 type Hits struct {
-	Total    Total       `json:"total"`
-	MaxScore interface{} `json:"max_score"`
-	Hits     []HitsItem  `json:"hits"`
+	Total    Total      `json:"total"`
+	MaxScore any        `json:"max_score"`
+	Hits     []HitsItem `json:"hits"`
 }
 
 type GetLogReq struct {
@@ -106,6 +106,6 @@ type QueryBody struct {
 			Must               []any `json:"must,omitempty"`
 			Should             []any `json:"should,omitempty"`
 			MinimumShouldMatch int   `json:"minimum_should_match,omitempty"`
-		} `json:"bool,omitempty"`
-	} `json:"query,omitempty"`
+		} `json:"bool"`
+	} `json:"query"`
 }

@@ -58,11 +58,9 @@ func (p *processCtlLogic) KillAllProcess() {
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*ProcessPty)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			process.Kill()
-		}()
+		})
 		return true
 	})
 	wg.Wait()
@@ -76,11 +74,9 @@ func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
 		if !slices.Contains(stopPermissionProcess, process.Name) {
 			return true
 		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			process.Kill()
-		}()
+		})
 		return true
 	})
 	wg.Wait()
