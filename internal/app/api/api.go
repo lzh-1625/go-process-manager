@@ -1,8 +1,6 @@
 package api
 
 import (
-	"reflect"
-
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 
@@ -25,7 +23,26 @@ func isAdmin(ctx *gin.Context) bool {
 }
 
 func hasOprPermission(ctx *gin.Context, uuid int, op eum.OprPermission) bool {
-	return isAdmin(ctx) || reflect.ValueOf(repository.PermissionRepository.GetPermission(getUserName(ctx), uuid)).FieldByName(string(op)).Bool()
+	if isAdmin(ctx) {
+		return true
+	}
+	per := repository.PermissionRepository.GetPermission(getUserName(ctx), uuid)
+	if per == nil {
+		return false
+	}
+	switch op {
+	case eum.OperationLog:
+		return per.Log
+	case eum.OperationTerminal:
+		return per.Terminal
+	case eum.OperationStart:
+		return per.Start
+	case eum.OperationStop:
+		return per.Stop
+	case eum.OperationTerminalWrite:
+		return per.Write
+	}
+	return false
 }
 
 type Response struct {
