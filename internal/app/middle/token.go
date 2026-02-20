@@ -28,7 +28,7 @@ func rErr(ctx *gin.Context, code int, message string, err error) {
 	}
 	ctx.JSON(statusCode, map[string]any{
 		"code": code,
-		"msg":  message,
+		"message":  message,
 	})
 	ctx.Abort()
 }
