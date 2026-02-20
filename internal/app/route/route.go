@@ -201,9 +201,9 @@ func bind[T any, R any](fn func(*gin.Context, T) R, bindOption int) func(*gin.Co
 			}
 		case *api.Response:
 			ctx.JSON(v.StatusCode, gin.H{
-				"data": v.Data,
-				"msg":  v.Msg,
-				"code": v.Code,
+				"data":    v.Data,
+				"message": v.Msg,
+				"code":    v.Code,
 			})
 			return
 		default:

@@ -20,7 +20,7 @@ const DEFAULT_ROOT_PASSWORD = "root"
 
 func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any {
 	if !u.checkLoginInfo(req.Account, req.Password) {
-		return NewResponse().SetCode(401).SetMessage("incorrect username or password")
+		return NewResponse().SetStatusCode(401).SetMessage("incorrect username or password")
 	}
 	token, err := utils.GenerateToken(req.Account)
 	if err != nil {
@@ -81,6 +81,9 @@ func (u *userApi) GetUserList(ctx *gin.Context, _ any) any {
 
 func (u *userApi) checkLoginInfo(account, password string) bool {
 	user := repository.UserRepository.GetUserByName(account)
+	if user == nil {
+		return false
+	}
 	if account == "root" && user.Account == "" { // 如果root用户不存在，则创建一个root用户
 		repository.UserRepository.CreateUser(model.User{
 			Account:  "root",
