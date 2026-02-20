@@ -18,27 +18,24 @@ type procApi struct{}
 
 var ProcApi = new(procApi)
 
-func (p *procApi) CreateNewProcess(ctx *gin.Context, req model.Process) any {
+func (p *procApi) CreateProcess(ctx *gin.Context, req model.Process) any {
 	index, err := repository.ProcessRepository.AddProcessConfig(req)
 	if err != nil {
 		return err
 	}
+	logic.ProcessCtlLogic.NewProcess(req)
 	req.UUID = index
-	proc, err := logic.ProcessCtlLogic.NewProcess(req)
-	if err != nil {
-		return err
-	}
-	logic.ProcessCtlLogic.AddProcess(req.UUID, proc)
 	return gin.H{
 		"id": req.UUID,
 	}
 }
 
-func (p *procApi) DeleteNewProcess(ctx *gin.Context, req struct {
+func (p *procApi) DeleteProcess(ctx *gin.Context, req struct {
 	UUID int `form:"uuid" binding:"required"`
 }) (err error) {
-	logic.ProcessCtlLogic.KillProcess(req.UUID)
-	logic.ProcessCtlLogic.DeleteProcess(req.UUID)
+	if err = logic.ProcessCtlLogic.DeleteProcess(req.UUID); err != nil {
+		return err
+	}
 	return repository.ProcessRepository.DeleteProcessConfig(req.UUID)
 }
 
@@ -73,7 +70,6 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 			return err
 		}
 		proc.SetOpertor(getUserName(ctx))
-		logic.ProcessCtlLogic.AddProcess(req.UUID, proc)
 		return nil
 	}
 	if prod.State.State == eum.ProcessStateStart || prod.State.State == eum.ProcessStateRunning {

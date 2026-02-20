@@ -80,8 +80,8 @@ func routePathInit(r *gin.Engine) {
 
 			proConfigGroup := processGroup.Group("/config")
 			{
-				proConfigGroup.POST("", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.CreateNewProcess, Body))
-				proConfigGroup.DELETE("", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.DeleteNewProcess, Query))
+				proConfigGroup.POST("", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.CreateProcess, Body))
+				proConfigGroup.DELETE("", middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel, bind(api.ProcApi.DeleteProcess, Query))
 				proConfigGroup.PUT("", middle.RolePermission(eum.RoleRoot), bind(api.ProcApi.UpdateProcessConfig, Body))
 				proConfigGroup.GET("", middle.RolePermission(eum.RoleAdmin), bind(api.ProcApi.GetProcessConfig, Query))
 			}

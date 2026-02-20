@@ -82,8 +82,12 @@ func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
 	wg.Wait()
 }
 
-func (p *processCtlLogic) DeleteProcess(uuid int) {
+func (p *processCtlLogic) DeleteProcess(uuid int) error {
+	if err := p.KillProcess(uuid); err != nil {
+		return err
+	}
 	p.processMap.Delete(uuid)
+	return nil
 }
 
 func (p *processCtlLogic) GetProcessList() []model.ProcessInfo {
@@ -141,11 +145,7 @@ func (p *processCtlLogic) ProcessStartAll() {
 func (p *processCtlLogic) ProcessInit() {
 	config := repository.ProcessRepository.GetAllProcessConfig()
 	for _, v := range config {
-		proc, err := p.NewProcess(*v)
-		if err != nil {
-			log.Logger.Warnw("初始化启动进程失败", v.Name, "name", "err", err)
-			continue
-		}
+		proc := p.NewProcess(*v)
 		if v.AutoRestart {
 			err := proc.Start()
 			if err != nil {
@@ -199,16 +199,14 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	return nil
 }
 
-func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessPty, err error) {
+func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessPty) {
 	proc = NewProcessPty(config)
+	p.AddProcess(config.UUID, proc)
 	return
 }
 
 func (p *processCtlLogic) RunNewProcess(config model.Process) (proc *ProcessPty, err error) {
-	proc, err = p.NewProcess(config)
-	if err != nil {
-		return
-	}
+	proc = p.NewProcess(config)
 	err = proc.Start()
 	return
 }
