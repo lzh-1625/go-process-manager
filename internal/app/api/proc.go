@@ -23,10 +23,10 @@ func (p *procApi) CreateProcess(ctx *gin.Context, req model.Process) any {
 	if err != nil {
 		return err
 	}
-	logic.ProcessCtlLogic.NewProcess(req)
 	req.UUID = index
+	logic.ProcessCtlLogic.NewProcess(req)
 	return gin.H{
-		"id": req.UUID,
+		"id": index,
 	}
 }
 

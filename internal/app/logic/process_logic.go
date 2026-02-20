@@ -83,9 +83,7 @@ func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
 }
 
 func (p *processCtlLogic) DeleteProcess(uuid int) error {
-	if err := p.KillProcess(uuid); err != nil {
-		return err
-	}
+	p.KillProcess(uuid)
 	p.processMap.Delete(uuid)
 	return nil
 }
