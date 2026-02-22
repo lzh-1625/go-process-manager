@@ -156,7 +156,7 @@ onUnmounted(() => {
         style="height: 35px; flex-grow: 0"
       >
         <v-toolbar-title style="height: 100%"
-          >{{ props.data.name }} ({{ props.data.termType }})</v-toolbar-title
+          >{{ props.data.name }}</v-toolbar-title
         >
         <v-spacer></v-spacer>
         <v-toolbar-items style="height: 35px">
