@@ -199,7 +199,7 @@
         <div class="text-center pa-4">
           <v-pagination
             v-model="currentPage"
-            :length="totalPages"
+            :length="totalPages > 500 ? 500 : totalPages"
             :total-visible="7"
             density="compact"
             @update:model-value="handlePageChange"
@@ -413,7 +413,7 @@ const loadProcessList = async () => {
     if (response.code === 0 && response.data) {
       // 提取进程名，去重
       processList.value = Array.from(
-        new Set(response.data.map((item) => item.name))
+        new Set(response.data.map((item) => item.name)),
       ).sort();
     }
   } catch (error) {
@@ -465,7 +465,9 @@ onMounted(() => {
 
     tbody {
       tr {
-        transition: box-shadow 0.2s, transform 0.2s;
+        transition:
+          box-shadow 0.2s,
+          transform 0.2s;
 
         &:not(.v-data-table__selected):hover {
           box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
