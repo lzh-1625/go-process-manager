@@ -134,7 +134,6 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	}
 	hl := bleve.HighlightRequest{}
 	hl.AddField("log")
-	style := "ansi"
 	res, err := b.index.Search(&bleve.SearchRequest{
 		Query:  buildQuery,
 		Fields: []string{"log", "name", "using", "time"},
@@ -142,7 +141,7 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 		Size:   req.Page.Size,
 		Sort:   search.ParseSortOrderStrings(sortArgs),
 		Highlight: &bleve.HighlightRequest{
-			Style:  &style,
+			Style:  new("ansi"),
 			Fields: []string{"log"},
 		},
 	})
