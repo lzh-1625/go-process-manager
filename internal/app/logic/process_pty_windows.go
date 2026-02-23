@@ -109,7 +109,6 @@ func (p *ProcessPty) readInit() {
 					log.Logger.Errorw("stdout读取失败", "err", err)
 					return
 				}
-				log.Logger.Infow("stdout读取成功", "n", n)
 				p.bufHandle(buf[:n])
 				if len(p.ws) == 0 {
 					continue
