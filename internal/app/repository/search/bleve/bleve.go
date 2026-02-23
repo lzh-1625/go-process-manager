@@ -152,8 +152,14 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	}
 	data := []*model.ProcessLog{}
 	for _, v := range res.Hits {
+		var log string
+		if _, ok := v.Fragments["log"]; ok && len(v.Fragments["log"]) > 0 {
+			log = v.Fragments["log"][0]
+		} else {
+			log = v.Fields["log"].(string)
+		}
 		data = append(data, &model.ProcessLog{
-			Log:   v.Fragments["log"][0],
+			Log:   log,
 			Time:  int64(v.Fields["time"].(float64)),
 			Using: v.Fields["using"].(string),
 			Name:  v.Fields["name"].(string),
