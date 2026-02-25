@@ -107,14 +107,16 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 		buildQuery.AddMust(usingQuery)
 	}
 	if req.TimeRange.EndTime != 0 || req.TimeRange.StartTime != 0 {
-		st := float64(req.TimeRange.StartTime) - 1
-		et := float64(req.TimeRange.EndTime)
-		timeQuery := bleve.NewNumericRangeQuery(&st, &et)
-		buildQuery.AddMust(timeQuery)
-	} else {
-		st := float64(0)
-		et := float64(time.Now().UnixMilli())
-		timeQuery := bleve.NewNumericRangeQuery(&st, &et)
+		st := new(0.0)
+		ed := new(float64(time.Now().UnixMilli()))
+
+		if req.TimeRange.StartTime != 0 {
+			st = new(float64(req.TimeRange.StartTime))
+		}
+		if req.TimeRange.EndTime != 0 {
+			ed = new(float64(req.TimeRange.EndTime))
+		}
+		timeQuery := bleve.NewNumericRangeQuery(st, ed)
 		buildQuery.AddMust(timeQuery)
 	}
 	if len(filterProcessName) != 0 {

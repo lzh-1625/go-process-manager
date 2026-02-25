@@ -243,6 +243,19 @@ const sortOptions = [
   { label: "时间倒序", value: "desc" },
 ];
 
+const formatDatetimeLocal = (date: Date) => {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const getDefaultStartTime = () => {
+  const date = new Date();
+  date.setMonth(date.getMonth() - 1);
+  return formatDatetimeLocal(date);
+};
+
 // 表头定义 - 日志内容放在最左边
 const headers = [
   { title: "日志内容", key: "log", sortable: false },
@@ -258,14 +271,14 @@ const totalLogs = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(20);
 const loading = ref(false);
-const showFilter = ref(false);
+const showFilter = ref(true);
 
 // 搜索表单
 const searchForm = ref({
   name: [] as string[],
   log: "",
   using: "",
-  startTime: "",
+  startTime: getDefaultStartTime(),
   endTime: "",
   sort: "desc",
 });
