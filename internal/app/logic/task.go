@@ -132,10 +132,13 @@ func (t *TaskJob) InitCronHandle() error {
 }
 
 func (t *TaskJob) EditStatus(status bool) error {
-	if t.Cron != nil && !status {
+	if !status && t.Cron != nil { // 停止定时器
 		t.Cron.Stop()
-	} else if err := t.InitCronHandle(); err != nil {
-		return err
+	}
+	if status { // 启动定时器
+		if err := t.InitCronHandle(); err != nil {
+			return err
+		}
 	}
 	t.TaskConfig.Enable = status
 	return nil
