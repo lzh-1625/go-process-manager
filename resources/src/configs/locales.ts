@@ -2,7 +2,7 @@ import enMessages from "@/locales/en";
 import zhHansMessages from "@/locales/zhHans";
 
 const supported = ["en", "zhHans", "ja"];
-let locale = "en";
+let locale = "zhHans";
 
 try {
   const { 0: browserLang } = navigator.language.split("-");
