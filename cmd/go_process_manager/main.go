@@ -7,6 +7,7 @@ import (
 	"github.com/kardianos/service"
 	"github.com/lzh-1625/go_process_manager/boot"
 	"github.com/lzh-1625/go_process_manager/internal/app/route"
+	"github.com/lzh-1625/go_process_manager/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,9 +41,10 @@ var startTitle = `
 func main() {
 
 	svc, err := service.New(&Service{}, &service.Config{
-		Name:        "go_process_manager",
-		DisplayName: "Go Process Manager",
-		Description: "Go Process Manager service",
+		Name:             "go_process_manager",
+		DisplayName:      "Go Process Manager",
+		Description:      "Go Process Manager service",
+		WorkingDirectory: utils.UnwarpIgnore(os.Getwd()),
 	})
 	if err != nil {
 		log.Panic(err)
