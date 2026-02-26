@@ -19,7 +19,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func init() {
+func Boot() {
 	initDb()
 	initResetConfig()
 	initConfiguration()
