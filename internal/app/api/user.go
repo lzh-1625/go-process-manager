@@ -81,10 +81,7 @@ func (u *userApi) GetUserList(ctx *gin.Context, _ any) any {
 
 func (u *userApi) checkLoginInfo(account, password string) bool {
 	user := repository.UserRepository.GetUserByName(account)
-	if user == nil {
-		return false
-	}
-	if account == "root" && user.Account == "" { // 如果root用户不存在，则创建一个root用户
+	if user == nil && account == "root" { // 如果root用户不存在，则创建一个root用户
 		repository.UserRepository.CreateUser(model.User{
 			Account:  "root",
 			Password: DEFAULT_ROOT_PASSWORD,
@@ -92,5 +89,5 @@ func (u *userApi) checkLoginInfo(account, password string) bool {
 		})
 		return password == DEFAULT_ROOT_PASSWORD
 	}
-	return user.Password == utils.Md5(password)
+	return user != nil && user.Password == utils.Md5(password)
 }
