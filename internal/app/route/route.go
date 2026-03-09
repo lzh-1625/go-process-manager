@@ -14,6 +14,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/resources"
 	"github.com/lzh-1625/go_process_manager/utils"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +24,9 @@ func Route() {
 	r.Use(gin.Recovery())
 	if !config.CF.Tui {
 		r.Use(middle.Logger())
+	}
+	if config.CF.GZipEnable {
+		r.Use(gzip.Gzip(gzip.DefaultCompression))
 	}
 	r.Use(middle.EventLogger())
 	routePathInit(r)
