@@ -1,53 +1,49 @@
 package logic
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
-	"time"
-
-	"github.com/lzh-1625/go_process_manager/config"
 )
 
 type WaitCond struct {
-	Cond        *sync.Cond
-	Version     *atomic.Int64
-	TriggerChan chan struct{}
+	Ch      chan struct{}
+	Lock    sync.RWMutex
+	Version *atomic.Int64
 }
 
 var (
-	ProcessWaitCond *WaitCond
-	TaskWaitCond    *WaitCond
+	ProcessWaitCond *WaitCond = newWaitCond()
+	TaskWaitCond    *WaitCond = newWaitCond()
 )
-
-func InitWaitCond() {
-	ProcessWaitCond = newWaitCond()
-	TaskWaitCond = newWaitCond()
-}
 
 func newWaitCond() *WaitCond {
 	wc := &WaitCond{
-		Cond:        sync.NewCond(&sync.Mutex{}),
-		Version:     &atomic.Int64{},
-		TriggerChan: make(chan struct{}),
+		Ch:      make(chan struct{}),
+		Version: &atomic.Int64{},
 	}
-	go wc.timing()
 	return wc
 }
 
-func (p *WaitCond) Trigger() {
-	p.Version.Add(1)
-	p.TriggerChan <- struct{}{}
+func (w *WaitCond) Trigger() {
+	w.Version.Add(1)
+	w.Lock.Lock()
+	oldCh := w.Ch
+	w.Ch = make(chan struct{})
+	w.Lock.Unlock()
+	close(oldCh)
 }
 
-func (p *WaitCond) timing() { // 添加定时信号清理阻塞协程
-	ticker := time.NewTicker(time.Second * time.Duration(config.CF.CondWaitTime))
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-		case <-p.TriggerChan:
-		}
-		ticker.Reset(time.Second * time.Duration(config.CF.CondWaitTime))
-		p.Cond.Broadcast()
+func (w *WaitCond) Wait(ctx context.Context, version int64) {
+	if w.Version.Load() > version {
+		return
+	}
+	w.Lock.RLock()
+	ch := w.Ch
+	w.Lock.RUnlock()
+
+	select {
+	case <-ctx.Done():
+	case <-ch:
 	}
 }

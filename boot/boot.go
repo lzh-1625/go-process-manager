@@ -27,7 +27,6 @@ func Boot() {
 	initLogHandle()
 	initLog()
 	initLogHanler()
-	initWaitCond()
 	initProcess()
 	initJwtSecret()
 	initTui()
@@ -144,10 +143,6 @@ func initListenKillSignal() {
 
 func initLogHandle() {
 	logic.InitLogHandle()
-}
-
-func initWaitCond() {
-	logic.InitWaitCond()
 }
 
 func InitEventCleanCronJob() {
