@@ -42,7 +42,6 @@ echarts.use([
   PieChart,
   MapChart,
   RadarChart,
-
   PictorialBarChart,
   RadarComponent,
   ToolboxComponent,
@@ -52,6 +51,8 @@ echarts.use([
   CalendarComponent,
   GraphicComponent,
   ScatterChart,
+  CanvasRenderer,
+  SVGRenderer,
 ]);
 
 export default echarts;

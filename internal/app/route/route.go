@@ -37,10 +37,26 @@ func Route() {
 }
 
 func staticInit(r *gin.Engine) {
+
 	r.NoRoute(func(c *gin.Context) {
+		var staticAssetExts = map[string]struct{}{
+			".js":    {},
+			".css":   {},
+			".woff":  {},
+			".woff2": {},
+			".ttf":   {},
+			".eot":   {},
+			".png":   {},
+			".svg":   {},
+			".ico":   {},
+		}
 		path := "dist" + c.Request.URL.Path
 		if data, err := resources.Templates.ReadFile(path); err == nil {
-			c.Data(http.StatusOK, mime.TypeByExtension(filepath.Ext(path)), data)
+			ext := filepath.Ext(path)
+			if _, ok := staticAssetExts[ext]; ok {
+				c.Header("Cache-Control", "public, max-age=31536000, immutable")
+			}
+			c.Data(http.StatusOK, mime.TypeByExtension(ext), data)
 		} else {
 			c.Data(http.StatusOK, "text/html; charset=utf-8", utils.UnwarpIgnore(resources.Templates.ReadFile("dist/index.html")))
 		}

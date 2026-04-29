@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ProcessItem } from "~/src/types/process/process";
-import { init } from "echarts";
+import echarts from "@/plugins/echarts";
 import TerminalPty from "./TerminalPty.vue";
 import {
   deleteProcessConfig,
@@ -23,7 +23,7 @@ const initEChart = () => {
   );
   const cpu = props.data.usage.cpu[props.data.usage.cpu.length - 1] ?? "-";
   const mem = props.data.usage.mem[props.data.usage.mem.length - 1] ?? "-";
-  var myChart = init(document.getElementById("echarts" + props.data.uuid));
+  var myChart = echarts.init(document.getElementById("echarts" + props.data.uuid));
   var option = {
     tooltip: {
       trigger: "axis",
