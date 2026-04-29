@@ -37,19 +37,18 @@ func Route() {
 }
 
 func staticInit(r *gin.Engine) {
-
+	var staticAssetExts = map[string]struct{}{
+		".js":    {},
+		".css":   {},
+		".woff":  {},
+		".woff2": {},
+		".ttf":   {},
+		".eot":   {},
+		".png":   {},
+		".svg":   {},
+		".ico":   {},
+	}
 	r.NoRoute(func(c *gin.Context) {
-		var staticAssetExts = map[string]struct{}{
-			".js":    {},
-			".css":   {},
-			".woff":  {},
-			".woff2": {},
-			".ttf":   {},
-			".eot":   {},
-			".png":   {},
-			".svg":   {},
-			".ico":   {},
-		}
 		path := "dist" + c.Request.URL.Path
 		if data, err := resources.Templates.ReadFile(path); err == nil {
 			ext := filepath.Ext(path)
