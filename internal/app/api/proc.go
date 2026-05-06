@@ -5,43 +5,54 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
-
-	"github.com/gin-gonic/gin"
 )
 
 type procApi struct{}
 
 var ProcApi = new(procApi)
 
-func (p *procApi) CreateProcess(ctx *gin.Context, req model.Process) any {
+func (p *procApi) CreateProcess(ctx echo.Context) error {
+	var req model.Process
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	index, err := repository.ProcessRepository.AddProcessConfig(req)
 	if err != nil {
 		return err
 	}
 	req.UUID = index
 	logic.ProcessCtlLogic.NewProcess(req)
-	return gin.H{
+	return ctx.JSON(200, map[string]any{
 		"id": index,
-	}
+	})
 }
 
-func (p *procApi) DeleteProcess(ctx *gin.Context, req struct {
-	UUID int `form:"uuid" binding:"required"`
-}) (err error) {
-	if err = logic.ProcessCtlLogic.DeleteProcess(req.UUID); err != nil {
+func (p *procApi) DeleteProcess(ctx echo.Context) error {
+	var req struct {
+		UUID int `query:"uuid" binding:"required"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	if err := logic.ProcessCtlLogic.DeleteProcess(req.UUID); err != nil {
 		return err
 	}
 	return repository.ProcessRepository.DeleteProcessConfig(req.UUID)
 }
 
-func (p *procApi) KillProcess(ctx *gin.Context, req struct {
-	UUID int `form:"uuid" binding:"required"`
-}) (err error) {
+func (p *procApi) KillProcess(ctx echo.Context) error {
+	var req struct {
+		UUID int `query:"uuid" binding:"required"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if !hasOprPermission(ctx, req.UUID, eum.OperationStop) {
 		return errors.New("not permission")
 	}
@@ -53,14 +64,18 @@ func (p *procApi) KillProcess(ctx *gin.Context, req struct {
 	return proc.Kill()
 }
 
-func (p *procApi) StartProcess(ctx *gin.Context, req struct {
-	UUID int `json:"uuid" binding:"required"`
-}) (err error) {
+func (p *procApi) StartProcess(ctx echo.Context) error {
+	var req struct {
+		UUID int `json:"uuid" binding:"required"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if !hasOprPermission(ctx, req.UUID, eum.OperationStart) {
 		return errors.New("not permission")
 	}
 	prod, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
-	if err != nil { // 进程不存在则创建
+	if err != nil {
 		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.UUID)
 		if err != nil {
 			return err
@@ -77,65 +92,79 @@ func (p *procApi) StartProcess(ctx *gin.Context, req struct {
 	}
 	prod.ResetRestartTimes()
 	prod.SetOpertor(getUserName(ctx))
-	err = prod.Start()
-	return
+	return prod.Start()
 }
 
-func (p *procApi) StartAllProcess(ctx *gin.Context, _ any) (err error) {
+func (p *procApi) StartAllProcess(ctx echo.Context) error {
 	if isAdmin(ctx) {
 		logic.ProcessCtlLogic.ProcessStartAll()
 	} else {
 		logic.ProcessCtlLogic.ProcesStartAllByUsername(getUserName(ctx))
 	}
-	return
+	return nil
 }
 
-func (p *procApi) KillAllProcess(ctx *gin.Context, _ any) (err error) {
+func (p *procApi) KillAllProcess(ctx echo.Context) error {
 	if isAdmin(ctx) {
 		logic.ProcessCtlLogic.KillAllProcess()
 	} else {
 		logic.ProcessCtlLogic.KillAllProcessByUserName(getUserName(ctx))
 	}
-	return
+	return nil
 }
 
-func (p *procApi) GetProcessList(ctx *gin.Context, _ any) any {
+func (p *procApi) GetProcessList(ctx echo.Context) error {
 	if isAdmin(ctx) {
-		return logic.ProcessCtlLogic.GetProcessList()
+		return ctx.JSON(200, logic.ProcessCtlLogic.GetProcessList())
 	} else {
-		return logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx))
+		return ctx.JSON(200, logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)))
 	}
 }
 
-func (p *procApi) UpdateProcessConfig(ctx *gin.Context, req model.Process) (err error) {
+func (p *procApi) UpdateProcessConfig(ctx echo.Context) error {
+	var req model.Process
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	logic.ProcessCtlLogic.UpdateProcessConfig(req)
-	err = repository.ProcessRepository.UpdateProcessConfig(req)
-	return
+	return repository.ProcessRepository.UpdateProcessConfig(req)
 }
 
-func (p *procApi) GetProcessConfig(ctx *gin.Context, req struct {
-	UUID int `form:"uuid" binding:"required"`
-}) any {
+func (p *procApi) GetProcessConfig(ctx echo.Context) error {
+	var req struct {
+		UUID int `query:"uuid" binding:"required"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	data, err := repository.ProcessRepository.GetProcessConfigById(req.UUID)
 	if err != nil {
 		return err
 	}
-	return data
+	return ctx.JSON(200, data)
 }
 
-func (p *procApi) ProcessControl(ctx *gin.Context, req struct {
-	UUID int `form:"uuid" binding:"required"`
-}) (err error) {
+func (p *procApi) ProcessControl(ctx echo.Context) error {
+	var req struct {
+		UUID int `query:"uuid" binding:"required"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	user := getUserName(ctx)
 	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}
 	proc.ProcessControl(user)
-	return
+	return nil
 }
 
-func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) any {
+func (p *procApi) ProcessCreateShare(ctx echo.Context) error {
+	var req model.ProcessShare
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	token := utils.UnwarpIgnore(uuid.NewRandom()).String()
 	if err := repository.WsShare.AddShareData(model.WsShare{
 		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
@@ -146,7 +175,7 @@ func (p *procApi) ProcessCreateShare(ctx *gin.Context, req model.ProcessShare) a
 	}); err != nil {
 		return err
 	}
-	return gin.H{
+	return ctx.JSON(200, map[string]any{
 		"token": token,
-	}
+	})
 }

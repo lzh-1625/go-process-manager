@@ -8,8 +8,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/boot"
 	"github.com/lzh-1625/go_process_manager/internal/app/route"
 	"github.com/lzh-1625/go_process_manager/utils"
-
-	"github.com/gin-gonic/gin"
 )
 
 var startTitle = `
@@ -78,7 +76,6 @@ func (s *Service) Start(_ service.Service) error {
 func (s *Service) run() {
 	boot.Boot()
 	print(startTitle)
-	gin.SetMode(gin.ReleaseMode)
 	route.Route()
 }
 

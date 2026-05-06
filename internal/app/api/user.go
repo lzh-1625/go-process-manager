@@ -3,13 +3,12 @@ package api
 import (
 	"errors"
 
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
-
-	"github.com/gin-gonic/gin"
 )
 
 type userApi struct{}
@@ -18,22 +17,37 @@ var UserApi = new(userApi)
 
 const DEFAULT_ROOT_PASSWORD = "root"
 
-func (u *userApi) LoginHandler(ctx *gin.Context, req model.LoginHandlerReq) any {
+func (u *userApi) LoginHandler(ctx echo.Context) error {
+	var req model.LoginHandlerReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if !u.checkLoginInfo(req.Account, req.Password) {
-		return NewResponse().SetStatusCode(401).SetMessage("incorrect username or password")
+		return ctx.JSON(401, model.Response[struct{}]{
+			Message: "incorrect username or password",
+			Code:    -1,
+		})
 	}
 	token, err := utils.GenerateToken(req.Account)
 	if err != nil {
 		return err
 	}
-	return gin.H{
-		"token":    token,
-		"username": req.Account,
-		"role":     repository.UserRepository.GetUserByName(req.Account).Role,
-	}
+	return ctx.JSON(200, model.Response[map[string]any]{
+		Message: "login success",
+		Code:    0,
+		Data: map[string]any{
+			"token":    token,
+			"username": req.Account,
+			"role":     repository.UserRepository.GetUserByName(req.Account).Role,
+		},
+	})
 }
 
-func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
+func (u *userApi) CreateUser(ctx echo.Context) (err error) {
+	var req model.User
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if req.Role == eum.RoleRoot {
 		return errors.New("creation of root accounts is forbidden")
 	}
@@ -47,7 +61,11 @@ func (u *userApi) CreateUser(ctx *gin.Context, req model.User) (err error) {
 	return
 }
 
-func (u *userApi) EditUser(ctx *gin.Context, req model.User) (err error) {
+func (u *userApi) EditUser(ctx echo.Context) (err error) {
+	var req model.User
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	reqUser := getUserName(ctx)
 	if req.Account == "root" {
 		return errors.New("can not edit root user")
@@ -65,9 +83,13 @@ func (u *userApi) EditUser(ctx *gin.Context, req model.User) (err error) {
 	return
 }
 
-func (u *userApi) DeleteUser(ctx *gin.Context, req struct {
-	Account string `form:"account"`
-}) (err error) {
+func (u *userApi) DeleteUser(ctx echo.Context) (err error) {
+	var req struct {
+		Account string `form:"account"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if req.Account == "root" {
 		return errors.New("deletion of root accounts is forbidden")
 	}
@@ -75,8 +97,8 @@ func (u *userApi) DeleteUser(ctx *gin.Context, req struct {
 	return
 }
 
-func (u *userApi) GetUserList(ctx *gin.Context, _ any) any {
-	return repository.UserRepository.GetUserList()
+func (u *userApi) GetUserList(ctx echo.Context) error {
+	return ctx.JSON(200, repository.UserRepository.GetUserList())
 }
 
 func (u *userApi) checkLoginInfo(account, password string) bool {

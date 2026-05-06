@@ -1,35 +1,41 @@
 package api
 
 import (
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-
-	"github.com/gin-gonic/gin"
 )
 
 type file struct{}
 
 var FileApi = new(file)
 
-func (f *file) FilePathHandler(ctx *gin.Context, req model.FilePathHandlerReq) []model.FileStruct {
-	return logic.FileLogic.GetFileAndDirByPath(req.Path)
+func (f *file) FilePathHandler(ctx echo.Context) error {
+	var req model.FilePathHandlerReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return ctx.JSON(200, logic.FileLogic.GetFileAndDirByPath(req.Path))
 }
 
-func (f *file) FileWriteHandler(ctx *gin.Context, _ any) (err error) {
-	path := ctx.PostForm("filePath")
+func (f *file) FileWriteHandler(ctx echo.Context) error {
+	path := ctx.FormValue("filePath")
 	fi, err := ctx.FormFile("data")
 	if err != nil {
 		return err
 	}
 	fiReader, _ := fi.Open()
-	err = logic.FileLogic.UpdateFileData(path, fiReader, fi.Size)
-	return
+	return logic.FileLogic.UpdateFileData(path, fiReader, fi.Size)
 }
 
-func (f *file) FileReadHandler(ctx *gin.Context, req model.FileReadHandlerReq) any {
+func (f *file) FileReadHandler(ctx echo.Context) error {
+	var req model.FileReadHandlerReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	bytes, err := logic.FileLogic.ReadFileFromPath(req.FilePath)
 	if err != nil {
 		return err
 	}
-	return string(bytes)
+	return ctx.JSON(200, string(bytes))
 }

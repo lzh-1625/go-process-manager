@@ -2,11 +2,13 @@ package middle
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
 type WaitCondMiddle struct {
@@ -23,22 +25,28 @@ func (p *WaitCondMiddle) Trigger() {
 	p.wc.Trigger()
 }
 
-func (p *WaitCondMiddle) WaitGetMiddel(c *gin.Context) {
-	version, err := strconv.ParseInt(c.GetHeader("Version"), 10, 64)
-	if err != nil {
-		rErr(c, -1, "version is invalid", err)
-		return
+func (p *WaitCondMiddle) WaitGetMiddel(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		version, err := strconv.ParseInt(c.Request().Header.Get("Version"), 10, 64)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, model.Response[struct{}]{
+				Code:    -1,
+				Message: "version is invalid",
+			})
+		}
+		ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*30)
+		defer cancel()
+
+		p.wc.Wait(ctx, version)
+
+		c.Response().Header().Set("Version", strconv.FormatInt(p.wc.Version.Load(), 10))
+		return next(c)
 	}
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second*30)
-	defer cancel()
-
-	p.wc.Wait(ctx, version)
-
-	c.Header("Version", strconv.FormatInt(p.wc.Version.Load(), 10))
-	c.Next()
 }
 
-func (p *WaitCondMiddle) WaitTriggerMiddel(c *gin.Context) {
-	defer p.Trigger()
-	c.Next()
+func (p *WaitCondMiddle) WaitTriggerMiddel(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		defer p.Trigger()
+		return next(c)
+	}
 }

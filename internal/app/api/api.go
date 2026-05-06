@@ -1,35 +1,46 @@
 package api
 
 import (
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-
-	"github.com/gin-gonic/gin"
 )
 
-func getRole(ctx *gin.Context) eum.Role {
-	if v, ok := ctx.Get(eum.CtxRole); ok {
-		return v.(eum.Role)
+func getRole(c echo.Context) eum.Role {
+	if v := c.Get(eum.CtxRole); v != nil {
+		if role, ok := v.(eum.Role); ok {
+			return role
+		}
 	}
 	return eum.RoleGuest
 }
 
-func getUserName(ctx *gin.Context) string {
-	return ctx.GetString(eum.CtxUserName)
+func getUserName(c echo.Context) string {
+	if v := c.Get(eum.CtxUserName); v != nil {
+		if name, ok := v.(string); ok {
+			return name
+		}
+	}
+	return ""
 }
 
-func isAdmin(ctx *gin.Context) bool {
-	return getRole(ctx) <= eum.RoleAdmin
+func isAdmin(c echo.Context) bool {
+	return getRole(c) <= eum.RoleAdmin
 }
 
-func hasOprPermission(ctx *gin.Context, uuid int, op eum.OprPermission) bool {
-	if isAdmin(ctx) {
+func hasOprPermission(c echo.Context, uuid int, op eum.OprPermission) bool {
+	if isAdmin(c) {
 		return true
 	}
-	per := repository.PermissionRepository.GetPermission(getUserName(ctx), uuid)
+
+	per := repository.PermissionRepository.GetPermission(
+		getUserName(c),
+		uuid,
+	)
 	if per == nil {
 		return false
 	}
+
 	switch op {
 	case eum.OperationLog:
 		return per.Log
@@ -43,39 +54,4 @@ func hasOprPermission(ctx *gin.Context, uuid int, op eum.OprPermission) bool {
 		return per.Write
 	}
 	return false
-}
-
-type Response struct {
-	StatusCode int
-	Code       int
-	Data       any
-	Msg        string
-}
-
-func NewResponse() *Response {
-	return &Response{StatusCode: 200}
-}
-
-func (r *Response) SetStatusCode(code int) *Response {
-	r.StatusCode = code
-	return r
-}
-
-func (r *Response) SetDate(data any) *Response {
-	r.Data = data
-	return r
-}
-
-func (r *Response) SetCode(code int) *Response {
-	r.Code = code
-	return r
-}
-
-func (r *Response) SetMessage(msg any) *Response {
-	if str, ok := msg.(string); ok {
-		r.Msg = str
-	} else if err, ok := msg.(error); ok {
-		r.Msg = err.Error()
-	}
-	return r
 }

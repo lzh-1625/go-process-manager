@@ -4,21 +4,24 @@ import (
 	"errors"
 	"slices"
 
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-
-	"github.com/gin-gonic/gin"
 )
 
 type logApi struct{}
 
 var LogApi = new(logApi)
 
-func (a *logApi) GetLog(ctx *gin.Context, req model.GetLogReq) any {
+func (a *logApi) GetLog(ctx echo.Context) error {
+	var req model.GetLogReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if isAdmin(ctx) {
-		return logic.LogLogicImpl.Search(req, req.FilterName...)
+		return ctx.JSON(200, logic.LogLogicImpl.Search(req, req.FilterName...))
 	} else {
 		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
 		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
@@ -30,10 +33,10 @@ func (a *logApi) GetLog(ctx *gin.Context, req model.GetLogReq) any {
 		if len(filterName) == 0 {
 			return errors.New("no information found")
 		}
-		return logic.LogLogicImpl.Search(req, filterName...)
+		return ctx.JSON(200, logic.LogLogicImpl.Search(req, filterName...))
 	}
 }
 
-func (a *logApi) GetRunningLog(ctx *gin.Context, _ any) int {
-	return logic.Loghandler.GetRunning()
+func (a *logApi) GetRunningLog(ctx echo.Context) error {
+	return ctx.JSON(200, logic.Loghandler.GetRunning())
 }

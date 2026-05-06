@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
@@ -15,7 +16,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
@@ -52,7 +52,11 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
+func (w *wsApi) WebsocketHandle(ctx echo.Context) (err error) {
+	var req model.WebsocketHandleReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if !hasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
 		return errors.New("not permission")
 	}
@@ -67,7 +71,7 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
 		return errors.New("insufficient permissions")
 	}
-	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
 		return err
 	}
@@ -104,7 +108,11 @@ func (w *wsApi) WebsocketHandle(ctx *gin.Context, req model.WebsocketHandleReq) 
 	return
 }
 
-func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandleReq) (err error) {
+func (w *wsApi) WebsocketShareHandle(ctx echo.Context) (err error) {
+	var req model.WebsocketHandleReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	data, err := repository.WsShare.GetWsShareDataByToken(req.Token)
 	if err != nil {
 		return err
@@ -126,7 +134,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *gin.Context, req model.WebsocketHandle
 	if !proc.VerifyControl() {
 		return errors.New("insufficient permissions")
 	}
-	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
 		return err
 	}
@@ -207,12 +215,16 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 
 }
 
-func GetWsShareList(ctx *gin.Context, _ any) any {
-	return logic.WsSahreLogic.GetWsShareList()
+func GetWsShareList(ctx echo.Context) error {
+	return ctx.JSON(200, logic.WsSahreLogic.GetWsShareList())
 }
 
-func DeleteWsShareById(ctx *gin.Context, req struct {
-	ID int `form:"id"`
-}) any {
-	return logic.WsSahreLogic.DeleteById(req.ID)
+func DeleteWsShareById(ctx echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return ctx.JSON(200, logic.WsSahreLogic.DeleteById(req.ID))
 }
