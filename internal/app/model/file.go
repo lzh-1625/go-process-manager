@@ -6,9 +6,9 @@ type FileStruct struct {
 }
 
 type FilePathHandlerReq struct {
-	Path string `form:"path" binding:"required"`
+	Path string `query:"path" binding:"required"`
 }
 
 type FileReadHandlerReq struct {
-	FilePath string `form:"filePath" binding:"required"`
+	FilePath string `query:"filePath" binding:"required"`
 }

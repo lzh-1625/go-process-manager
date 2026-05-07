@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -11,7 +11,7 @@ type taskApi struct{}
 
 var TaskApi = new(taskApi)
 
-func (t *taskApi) CreateTask(ctx echo.Context) error {
+func (t *taskApi) CreateTask(ctx *echo.Context) error {
 	var req model.Task
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -19,7 +19,7 @@ func (t *taskApi) CreateTask(ctx echo.Context) error {
 	return logic.TaskLogic.CreateTask(req)
 }
 
-func (t *taskApi) GetTaskById(ctx echo.Context) error {
+func (t *taskApi) GetTaskById(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}
@@ -37,7 +37,7 @@ func (t *taskApi) GetTaskById(ctx echo.Context) error {
 	})
 }
 
-func (t *taskApi) GetTaskList(ctx echo.Context) error {
+func (t *taskApi) GetTaskList(ctx *echo.Context) error {
 	return ctx.JSON(200, model.Response[[]model.TaskVo]{
 		Data:    logic.TaskLogic.GetAllTaskJob(),
 		Message: "success",
@@ -45,7 +45,7 @@ func (t *taskApi) GetTaskList(ctx echo.Context) error {
 	})
 }
 
-func (t *taskApi) DeleteTaskById(ctx echo.Context) error {
+func (t *taskApi) DeleteTaskById(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}
@@ -55,7 +55,7 @@ func (t *taskApi) DeleteTaskById(ctx echo.Context) error {
 	return logic.TaskLogic.DeleteTask(req.ID)
 }
 
-func (t *taskApi) StartTask(ctx echo.Context) error {
+func (t *taskApi) StartTask(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}
@@ -66,7 +66,7 @@ func (t *taskApi) StartTask(ctx echo.Context) error {
 	return nil
 }
 
-func (t *taskApi) StopTask(ctx echo.Context) error {
+func (t *taskApi) StopTask(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}
@@ -76,7 +76,7 @@ func (t *taskApi) StopTask(ctx echo.Context) error {
 	return logic.TaskLogic.StopTaskJob(req.ID)
 }
 
-func (t *taskApi) EditTask(ctx echo.Context) error {
+func (t *taskApi) EditTask(ctx *echo.Context) error {
 	var req model.Task
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -84,7 +84,7 @@ func (t *taskApi) EditTask(ctx echo.Context) error {
 	return logic.TaskLogic.EditTask(req)
 }
 
-func (t *taskApi) EditTaskEnable(ctx echo.Context) error {
+func (t *taskApi) EditTaskEnable(ctx *echo.Context) error {
 	var req model.Task
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -92,11 +92,11 @@ func (t *taskApi) EditTaskEnable(ctx echo.Context) error {
 	return logic.TaskLogic.EditTaskEnable(req.ID, req.Enable)
 }
 
-func (t *taskApi) RunTaskByKey(ctx echo.Context) error {
+func (t *taskApi) RunTaskByKey(ctx *echo.Context) error {
 	return logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
 }
 
-func (t *taskApi) CreateTaskApiKey(ctx echo.Context) error {
+func (t *taskApi) CreateTaskApiKey(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}

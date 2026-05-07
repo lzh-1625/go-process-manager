@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 )
 
-func getRole(c echo.Context) eum.Role {
+func getRole(c *echo.Context) eum.Role {
 	if v := c.Get(eum.CtxRole); v != nil {
 		if role, ok := v.(eum.Role); ok {
 			return role
@@ -15,7 +15,7 @@ func getRole(c echo.Context) eum.Role {
 	return eum.RoleGuest
 }
 
-func getUserName(c echo.Context) string {
+func getUserName(c *echo.Context) string {
 	if v := c.Get(eum.CtxUserName); v != nil {
 		if name, ok := v.(string); ok {
 			return name
@@ -24,11 +24,11 @@ func getUserName(c echo.Context) string {
 	return ""
 }
 
-func isAdmin(c echo.Context) bool {
+func isAdmin(c *echo.Context) bool {
 	return getRole(c) <= eum.RoleAdmin
 }
 
-func hasOprPermission(c echo.Context, uuid int, op eum.OprPermission) bool {
+func hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
 	if isAdmin(c) {
 		return true
 	}

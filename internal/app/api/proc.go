@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -17,7 +17,7 @@ type procApi struct{}
 
 var ProcApi = new(procApi)
 
-func (p *procApi) CreateProcess(ctx echo.Context) error {
+func (p *procApi) CreateProcess(ctx *echo.Context) error {
 	var req model.Process
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -37,7 +37,7 @@ func (p *procApi) CreateProcess(ctx echo.Context) error {
 	})
 }
 
-func (p *procApi) DeleteProcess(ctx echo.Context) error {
+func (p *procApi) DeleteProcess(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid" binding:"required"`
 	}
@@ -50,7 +50,7 @@ func (p *procApi) DeleteProcess(ctx echo.Context) error {
 	return repository.ProcessRepository.DeleteProcessConfig(req.UUID)
 }
 
-func (p *procApi) KillProcess(ctx echo.Context) error {
+func (p *procApi) KillProcess(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid" binding:"required"`
 	}
@@ -68,7 +68,7 @@ func (p *procApi) KillProcess(ctx echo.Context) error {
 	return proc.Kill()
 }
 
-func (p *procApi) StartProcess(ctx echo.Context) error {
+func (p *procApi) StartProcess(ctx *echo.Context) error {
 	var req struct {
 		UUID int `json:"uuid" binding:"required"`
 	}
@@ -99,7 +99,7 @@ func (p *procApi) StartProcess(ctx echo.Context) error {
 	return prod.Start()
 }
 
-func (p *procApi) StartAllProcess(ctx echo.Context) error {
+func (p *procApi) StartAllProcess(ctx *echo.Context) error {
 	if isAdmin(ctx) {
 		logic.ProcessCtlLogic.ProcessStartAll()
 	} else {
@@ -108,7 +108,7 @@ func (p *procApi) StartAllProcess(ctx echo.Context) error {
 	return nil
 }
 
-func (p *procApi) KillAllProcess(ctx echo.Context) error {
+func (p *procApi) KillAllProcess(ctx *echo.Context) error {
 	if isAdmin(ctx) {
 		logic.ProcessCtlLogic.KillAllProcess()
 	} else {
@@ -117,7 +117,7 @@ func (p *procApi) KillAllProcess(ctx echo.Context) error {
 	return nil
 }
 
-func (p *procApi) GetProcessList(ctx echo.Context) error {
+func (p *procApi) GetProcessList(ctx *echo.Context) error {
 	if isAdmin(ctx) {
 		return ctx.JSON(200, model.Response[[]model.ProcessInfo]{
 			Data:    logic.ProcessCtlLogic.GetProcessList(),
@@ -133,7 +133,7 @@ func (p *procApi) GetProcessList(ctx echo.Context) error {
 	}
 }
 
-func (p *procApi) UpdateProcessConfig(ctx echo.Context) error {
+func (p *procApi) UpdateProcessConfig(ctx *echo.Context) error {
 	var req model.Process
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -142,7 +142,7 @@ func (p *procApi) UpdateProcessConfig(ctx echo.Context) error {
 	return repository.ProcessRepository.UpdateProcessConfig(req)
 }
 
-func (p *procApi) GetProcessConfig(ctx echo.Context) error {
+func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid" binding:"required"`
 	}
@@ -160,7 +160,7 @@ func (p *procApi) GetProcessConfig(ctx echo.Context) error {
 	})
 }
 
-func (p *procApi) ProcessControl(ctx echo.Context) error {
+func (p *procApi) ProcessControl(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid" binding:"required"`
 	}
@@ -176,7 +176,7 @@ func (p *procApi) ProcessControl(ctx echo.Context) error {
 	return nil
 }
 
-func (p *procApi) ProcessCreateShare(ctx echo.Context) error {
+func (p *procApi) ProcessCreateShare(ctx *echo.Context) error {
 	var req model.ProcessShare
 	if err := ctx.Bind(&req); err != nil {
 		return err

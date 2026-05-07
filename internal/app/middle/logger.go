@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
 func Logger(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		start := time.Now()
 		path := c.Request().URL.Path
 
@@ -26,10 +26,11 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// 执行 handler
 		err := next(c)
+		_, code := echo.ResolveResponseStatus(c.Response(), err)
 
 		logKv := []any{}
 		logKv = append(logKv, "Method", c.Request().Method)
-		logKv = append(logKv, "Status", c.Response().Status)
+		logKv = append(logKv, "Status", code)
 		logKv = append(logKv, "Path", path)
 		logKv = append(logKv, "耗时", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
 
@@ -38,9 +39,9 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		switch {
-		case c.Response().Status >= 200 && c.Response().Status < 300:
+		case code >= 200 && code < 300:
 			log.Logger.Infow("\033[102mHTTP\033[0m", logKv...)
-		case c.Response().Status >= 500:
+		case code >= 500:
 			log.Logger.Infow("\033[101mHTTP\033[0m", logKv...)
 		default:
 			log.Logger.Infow("\033[103mHTTP\033[0m", logKv...)
@@ -51,7 +52,7 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func EventLogger(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		err := next(c)
 
 		if !slices.Contains([]string{
@@ -73,7 +74,7 @@ func EventLogger(next echo.HandlerFunc) echo.HandlerFunc {
 			"uri", c.Request().URL.Path,
 			"method", c.Request().Method,
 			"user", user,
-			"status", strconv.Itoa(c.Response().Status),
+			"status", strconv.Itoa(func() int { _, s := echo.ResolveResponseStatus(c.Response(), err); return s }()),
 		)
 		return err
 	}

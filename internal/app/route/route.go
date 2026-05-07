@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"path/filepath"
+	"strings"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
@@ -23,13 +24,23 @@ func Route() {
 	r := echo.New()
 	r.Use(middleware.Recover())
 	r.Use(middle.Logger)
-	r.HTTPErrorHandler = func(err error, c echo.Context) {
+	r.HTTPErrorHandler = func(c *echo.Context, err error) {
 		log.Logger.Errorw("HTTPErrorHandler", "err", err)
 		c.JSON(http.StatusInternalServerError, model.Response[struct{}]{
 			Code:    -1,
 			Message: "error: " + err.Error(),
 		})
 	}
+	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		HTML5:      true,
+		Root:       "dist", // because files are located in `assets` directory in `webAssets` fs
+		Index:      "index.html",
+		Filesystem: resources.Templates,
+		Skipper: func(c *echo.Context) bool {
+			return strings.HasPrefix(c.Request().URL.Path, "/api")
+		},
+		Browse: true,
+	}))
 	if config.CF.PprofEnable {
 		pprofInit(r)
 	}
@@ -39,7 +50,6 @@ func Route() {
 	}
 	r.Use(middle.EventLogger)
 	routePathInit(r)
-	staticInit(r)
 	// pprofInit(r)
 	// err := r.Start(config.CF.Listen)
 	err := r.Start(":8081")
@@ -47,7 +57,7 @@ func Route() {
 }
 
 func staticInit(r *echo.Echo) {
-	r.Any("/*", func(c echo.Context) error {
+	r.Any("/*", func(c *echo.Context) error {
 		path := "dist" + c.Request().URL.Path
 		if data, err := resources.Templates.ReadFile(path); err == nil {
 			return c.Blob(http.StatusOK, mime.TypeByExtension(filepath.Ext(path)), data)

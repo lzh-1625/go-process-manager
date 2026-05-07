@@ -19,12 +19,12 @@ func (*Event) TableName() string {
 }
 
 type EventListReq struct {
-	Page      int           `form:"page"`
-	Size      int           `form:"size"`
-	StartTime int64         `form:"startTime"`
-	EndTime   int64         `form:"endTime"`
-	Type      eum.EventType `form:"type"`
-	Name      string        `form:"name"`
+	Page      int           `query:"page"`
+	Size      int           `query:"size"`
+	StartTime int64         `query:"startTime"`
+	EndTime   int64         `query:"endTime"`
+	Type      eum.EventType `query:"type"`
+	Name      string        `query:"name"`
 }
 
 type EventListResp struct {

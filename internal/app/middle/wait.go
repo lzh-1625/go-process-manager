@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
@@ -26,7 +26,7 @@ func (p *WaitCondMiddle) Trigger() {
 }
 
 func (p *WaitCondMiddle) WaitGetMiddel(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		version, err := strconv.ParseInt(c.Request().Header.Get("Version"), 10, 64)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, model.Response[struct{}]{
@@ -45,7 +45,7 @@ func (p *WaitCondMiddle) WaitGetMiddel(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func (p *WaitCondMiddle) WaitTriggerMiddel(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		defer p.Trigger()
 		return next(c)
 	}

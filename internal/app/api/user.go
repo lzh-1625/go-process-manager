@@ -3,7 +3,7 @@ package api
 import (
 	"errors"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -17,7 +17,7 @@ var UserApi = new(userApi)
 
 const DEFAULT_ROOT_PASSWORD = "root"
 
-func (u *userApi) LoginHandler(ctx echo.Context) error {
+func (u *userApi) LoginHandler(ctx *echo.Context) error {
 	var req model.LoginHandlerReq
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -43,7 +43,7 @@ func (u *userApi) LoginHandler(ctx echo.Context) error {
 	})
 }
 
-func (u *userApi) CreateUser(ctx echo.Context) (err error) {
+func (u *userApi) CreateUser(ctx *echo.Context) (err error) {
 	var req model.User
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -61,7 +61,7 @@ func (u *userApi) CreateUser(ctx echo.Context) (err error) {
 	return
 }
 
-func (u *userApi) EditUser(ctx echo.Context) (err error) {
+func (u *userApi) EditUser(ctx *echo.Context) (err error) {
 	var req model.User
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -83,9 +83,9 @@ func (u *userApi) EditUser(ctx echo.Context) (err error) {
 	return
 }
 
-func (u *userApi) DeleteUser(ctx echo.Context) (err error) {
+func (u *userApi) DeleteUser(ctx *echo.Context) (err error) {
 	var req struct {
-		Account string `form:"account"`
+		Account string `query:"account"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -97,7 +97,7 @@ func (u *userApi) DeleteUser(ctx echo.Context) (err error) {
 	return
 }
 
-func (u *userApi) GetUserList(ctx echo.Context) error {
+func (u *userApi) GetUserList(ctx *echo.Context) error {
 	return ctx.JSON(200, model.Response[[]*model.User]{
 		Data:    repository.UserRepository.GetUserList(),
 		Message: "success",

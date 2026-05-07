@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
 // 演示模式
 func DemoMiddle() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
+		return func(ctx *echo.Context) error {
 			whiteListUri := []string{
 				"/api/user/login",
 				"/api/log",
