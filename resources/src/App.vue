@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import UILayout from "@/layouts/UILayout.vue";
 import LandingLayout from "@/layouts/LandingLayout.vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
@@ -20,13 +19,12 @@ const isRouterLoaded = computed(() => {
 
 const layouts = {
   default: DefaultLayout,
-  ui: UILayout,
   landing: LandingLayout,
   auth: AuthLayout,
   blank: BlankLayout,
 };
 
-type LayoutName = "default" | "ui" | "landing" | "auth" | "blank" | "error";
+type LayoutName = "default" | "landing" | "auth" | "blank" | "error";
 
 const currentLayout = computed(() => {
   const layoutName = route.meta.layout as LayoutName;

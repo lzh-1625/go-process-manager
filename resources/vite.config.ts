@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 // Plugins
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
@@ -42,6 +41,46 @@ export default defineConfig({
         target: "http://localhost:8797",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/sdApi/, ""),
+      },
+    },
+  },
+  build: {
+    target: "es2020",
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/zrender")) {
+            return "chunk-zrender";
+          }
+          if (
+            id.includes("node_modules/echarts") ||
+            id.includes("node_modules/vue-echarts")
+          ) {
+            return "chunk-echarts";
+          }
+          if (id.includes("node_modules/vuetify")) {
+            return "chunk-vuetify";
+          }
+          if (
+            id.includes("node_modules/xterm") ||
+            id.includes("node_modules/@xterm")
+          ) {
+            return "chunk-xterm";
+          }
+          if (
+            id.includes("node_modules/vue/") ||
+            id.includes("node_modules/@vue/") ||
+            id.includes("node_modules/vue-router/") ||
+            id.includes("node_modules/pinia") ||
+            id.includes("node_modules/vue-i18n") ||
+            id.includes("node_modules/@intlify") ||
+            id.includes("node_modules/axios")
+          ) {
+            return "chunk-vendor";
+          }
+        },
       },
     },
   },
