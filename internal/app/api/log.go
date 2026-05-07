@@ -33,7 +33,11 @@ func (a *logApi) GetLog(ctx echo.Context) error {
 		if len(filterName) == 0 {
 			return errors.New("no information found")
 		}
-		return ctx.JSON(200, logic.LogLogicImpl.Search(req, filterName...))
+		return ctx.JSON(200, model.Response[model.LogResp]{
+			Data:    logic.LogLogicImpl.Search(req, filterName...),
+			Message: "success",
+			Code:    0,
+		})
 	}
 }
 

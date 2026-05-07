@@ -28,8 +28,12 @@ func (p *procApi) CreateProcess(ctx echo.Context) error {
 	}
 	req.UUID = index
 	logic.ProcessCtlLogic.NewProcess(req)
-	return ctx.JSON(200, map[string]any{
-		"id": index,
+	return ctx.JSON(200, model.Response[map[string]any]{
+		Data: map[string]any{
+			"id": index,
+		},
+		Message: "success",
+		Code:    0,
 	})
 }
 
@@ -115,9 +119,17 @@ func (p *procApi) KillAllProcess(ctx echo.Context) error {
 
 func (p *procApi) GetProcessList(ctx echo.Context) error {
 	if isAdmin(ctx) {
-		return ctx.JSON(200, logic.ProcessCtlLogic.GetProcessList())
+		return ctx.JSON(200, model.Response[[]model.ProcessInfo]{
+			Data:    logic.ProcessCtlLogic.GetProcessList(),
+			Message: "success",
+			Code:    0,
+		})
 	} else {
-		return ctx.JSON(200, logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)))
+		return ctx.JSON(200, model.Response[[]model.ProcessInfo]{
+			Data:    logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)),
+			Message: "success",
+			Code:    0,
+		})
 	}
 }
 
@@ -141,7 +153,11 @@ func (p *procApi) GetProcessConfig(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, data)
+	return ctx.JSON(200, model.Response[*model.Process]{
+		Data:    data,
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (p *procApi) ProcessControl(ctx echo.Context) error {
@@ -175,7 +191,11 @@ func (p *procApi) ProcessCreateShare(ctx echo.Context) error {
 	}); err != nil {
 		return err
 	}
-	return ctx.JSON(200, map[string]any{
-		"token": token,
+	return ctx.JSON(200, model.Response[map[string]any]{
+		Data: map[string]any{
+			"token": token,
+		},
+		Message: "success",
+		Code:    0,
 	})
 }

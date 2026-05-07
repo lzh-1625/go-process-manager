@@ -1,11 +1,13 @@
 package middle
 
 import (
+	"net/http"
 	"slices"
 	"strings"
 
 	"github.com/labstack/echo"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
@@ -29,7 +31,7 @@ func Auth(next echo.HandlerFunc) echo.HandlerFunc {
 			auth := c.Request().Header.Get("Authorization")
 
 			if auth != "" {
-				token = strings.TrimPrefix(strings.ToLower(auth), "bearer ")
+				token = strings.TrimPrefix(auth, "bearer ")
 			} else {
 				token = c.QueryParam("token")
 			}
@@ -44,6 +46,16 @@ func Auth(next echo.HandlerFunc) echo.HandlerFunc {
 				repository.UserRepository.GetUserByName(mc.Username).Role,
 			)
 		}
-		return next(c)
+		err := next(c)
+		if err != nil {
+			return err
+		}
+		if !c.Response().Committed {
+			return c.JSON(http.StatusOK, model.Response[any]{
+				Code:    0,
+				Message: "success",
+			})
+		}
+		return nil
 	}
 }

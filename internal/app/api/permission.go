@@ -25,5 +25,9 @@ func (p *permissionApi) GetPermissionList(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return ctx.JSON(200, repository.PermissionRepository.GetPermssionList(req.Account))
+	return ctx.JSON(200, model.Response[[]model.PermissionPo]{
+		Data:    repository.PermissionRepository.GetPermssionList(req.Account),
+		Message: "success",
+		Code:    0,
+	})
 }

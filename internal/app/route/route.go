@@ -13,6 +13,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/resources"
 )
@@ -22,6 +23,13 @@ func Route() {
 	r := echo.New()
 	r.Use(middleware.Recover())
 	r.Use(middle.Logger)
+	r.HTTPErrorHandler = func(err error, c echo.Context) {
+		log.Logger.Errorw("HTTPErrorHandler", "err", err)
+		c.JSON(http.StatusInternalServerError, model.Response[struct{}]{
+			Code:    -1,
+			Message: "error: " + err.Error(),
+		})
+	}
 	if config.CF.PprofEnable {
 		pprofInit(r)
 	}
@@ -133,13 +141,6 @@ func routePathInit(r *echo.Echo) {
 			pushGroup.POST("", api.PushApi.AddPushConfig)
 			pushGroup.PUT("", api.PushApi.UpdatePushConfig)
 			pushGroup.DELETE("", api.PushApi.DeletePushConfig)
-		}
-
-		fileGroup := apiGroup.Group("/file", middle.RolePermission(eum.RoleAdmin))
-		{
-			fileGroup.GET("/list", api.FileApi.FilePathHandler)
-			fileGroup.PUT("", api.FileApi.FileWriteHandler)
-			fileGroup.GET("", api.FileApi.FileReadHandler)
 		}
 
 		eventGroup := apiGroup.Group("/event", middle.RolePermission(eum.RoleAdmin))

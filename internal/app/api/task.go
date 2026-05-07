@@ -30,11 +30,19 @@ func (t *taskApi) GetTaskById(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, result)
+	return ctx.JSON(200, model.Response[*model.Task]{
+		Data:    result,
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (t *taskApi) GetTaskList(ctx echo.Context) error {
-	return ctx.JSON(200, logic.TaskLogic.GetAllTaskJob())
+	return ctx.JSON(200, model.Response[[]model.TaskVo]{
+		Data:    logic.TaskLogic.GetAllTaskJob(),
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (t *taskApi) DeleteTaskById(ctx echo.Context) error {

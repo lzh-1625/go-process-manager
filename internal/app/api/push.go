@@ -11,7 +11,11 @@ type pushApi struct{}
 var PushApi = new(pushApi)
 
 func (p *pushApi) GetPushList(ctx echo.Context) error {
-	return ctx.JSON(200, repository.PushRepository.GetPushList())
+	return ctx.JSON(200, model.Response[[]*model.Push]{
+		Data:    repository.PushRepository.GetPushList(),
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (p *pushApi) GetPushById(ctx echo.Context) error {
@@ -21,7 +25,11 @@ func (p *pushApi) GetPushById(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return ctx.JSON(200, repository.PushRepository.GetPushConfigById(req.ID))
+	return ctx.JSON(200, model.Response[*model.Push]{
+		Data:    repository.PushRepository.GetPushConfigById(req.ID),
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (p *pushApi) AddPushConfig(ctx echo.Context) error {

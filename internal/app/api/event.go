@@ -19,8 +19,11 @@ func (e *eventApi) GetEventList(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.EventListResp{
-		Total: total,
-		Data:  data,
+	return ctx.JSON(200, model.Response[model.EventListResp]{
+		Data: model.EventListResp{
+			Total: total,
+			Data:  data,
+		},
+		Message: "success",
 	})
 }

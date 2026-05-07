@@ -98,7 +98,11 @@ func (u *userApi) DeleteUser(ctx echo.Context) (err error) {
 }
 
 func (u *userApi) GetUserList(ctx echo.Context) error {
-	return ctx.JSON(200, repository.UserRepository.GetUserList())
+	return ctx.JSON(200, model.Response[[]*model.User]{
+		Data:    repository.UserRepository.GetUserList(),
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (u *userApi) checkLoginInfo(account, password string) bool {
