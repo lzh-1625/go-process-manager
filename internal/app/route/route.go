@@ -1,10 +1,8 @@
 package route
 
 import (
-	"mime"
 	"net/http"
 	"net/http/pprof"
-	"path/filepath"
 	"strings"
 
 	"github.com/labstack/echo/v5"
@@ -54,17 +52,6 @@ func Route() {
 	// err := r.Start(config.CF.Listen)
 	err := r.Start(":8081")
 	log.Logger.Fatalw("服务器启动失败", "err", err)
-}
-
-func staticInit(r *echo.Echo) {
-	r.Any("/*", func(c *echo.Context) error {
-		path := "dist" + c.Request().URL.Path
-		if data, err := resources.Templates.ReadFile(path); err == nil {
-			return c.Blob(http.StatusOK, mime.TypeByExtension(filepath.Ext(path)), data)
-		}
-		data, _ := resources.Templates.ReadFile("dist/index.html")
-		return c.HTMLBlob(http.StatusOK, data)
-	})
 }
 
 func pprofInit(r *echo.Echo) {
