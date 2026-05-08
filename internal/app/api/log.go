@@ -21,7 +21,11 @@ func (a *logApi) GetLog(ctx *echo.Context) error {
 		return err
 	}
 	if isAdmin(ctx) {
-		return ctx.JSON(200, logic.LogLogicImpl.Search(req, req.FilterName...))
+		return ctx.JSON(200, model.Response[model.LogResp]{
+			Data:    logic.LogLogicImpl.Search(req, req.FilterName...),
+			Message: "success",
+			Code:    0,
+		})
 	} else {
 		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
 		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
