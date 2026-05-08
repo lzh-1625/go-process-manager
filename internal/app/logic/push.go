@@ -3,6 +3,7 @@ package logic
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -25,9 +26,9 @@ func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 		if v.Enable {
 			var resp *http.Response
 			var reader io.Reader = nil
-			var url string = p.getReplaceMessage(placeholders, v.Url)
+			var url string = p.getReplaceMessage(placeholders, v.Url, true)
 			if v.Method == http.MethodPost {
-				reader = strings.NewReader(p.getReplaceMessage(placeholders, v.Body))
+				reader = strings.NewReader(p.getReplaceMessage(placeholders, v.Body, false))
 			}
 			req, err := http.NewRequest(v.Method, url, reader)
 			if err != nil {
@@ -46,9 +47,12 @@ func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 	}
 }
 
-func (p *pushLogic) getReplaceMessage(placeholders map[string]string, message string) string {
+func (p *pushLogic) getReplaceMessage(placeholders map[string]string, message string, urlEncode bool) string {
 	kvs := []string{}
 	for k, v := range placeholders {
+		if urlEncode {
+			v = url.QueryEscape(v)
+		}
 		kvs = append(kvs, k, v)
 	}
 	return strings.NewReplacer(kvs...).Replace(message)
