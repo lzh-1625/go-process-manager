@@ -52,6 +52,7 @@ func hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
 		return per.Stop
 	case eum.OperationTerminalWrite:
 		return per.Write
+	default:
+		panic("unknown operation")
 	}
-	return false
 }

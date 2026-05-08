@@ -56,7 +56,7 @@ func Route() {
 
 func pprofInit(r *echo.Echo) {
 	if config.CF.PprofEnable {
-		g := r.Group("/debug/pprof")
+		g := r.Group("/api/debug/pprof")
 		g.GET("/", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
 		g.GET("/cmdline", echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
 		g.GET("/profile", echo.WrapHandler(http.HandlerFunc(pprof.Profile)))

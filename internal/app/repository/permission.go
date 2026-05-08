@@ -77,6 +77,8 @@ func (p *permissionRepository) GetProcessNameByPermission(user string, op eum.Op
 		tx = tx.Where(query.Permission.Terminal.Is(true))
 	case eum.OperationTerminalWrite:
 		tx = tx.Where(query.Permission.Write.Is(true))
+	default:
+		panic("unknown operation")
 	}
 	tx.Scan(&result)
 	return
