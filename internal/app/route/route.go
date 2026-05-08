@@ -48,9 +48,7 @@ func Route() {
 	}
 	r.Use(middle.EventLogger)
 	routePathInit(r)
-	// pprofInit(r)
-	// err := r.Start(config.CF.Listen)
-	err := r.Start(":8081")
+	err := r.Start(config.CF.Listen)
 	log.Logger.Fatalw("服务器启动失败", "err", err)
 }
 
