@@ -41,11 +41,6 @@ func (t *taskRepository) EditTask(data *model.Task) (err error) {
 	return
 }
 
-func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
-	_, err = query.Task.Where(query.Task.ID.Eq(id)).Update(query.Task.Enable, enable)
-	return
-}
-
 func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 	p := query.Process.As("p")
 	p2 := query.Process.As("p2")
