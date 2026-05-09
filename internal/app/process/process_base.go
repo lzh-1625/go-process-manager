@@ -110,32 +110,8 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 	if p.StateHook != nil {
 		p.StateHook(p, state)
 	}
-	// ProcessWaitCond.Trigger()
-	// p.createEvent(state)
-	// go TaskLogic.RunTaskByTriggerEvent(p.Name, state)
-
 	return true
 }
-
-// func (p *ProcessBase) createEvent(state eum.ProcessState) {
-// 	var eventType eum.EventType
-// 	kv := []string{}
-// 	switch state {
-// 	case eum.ProcessStateRunning:
-// 		eventType = eum.EventProcessStart
-// 		kv = append(kv, "restartTimes", strconv.Itoa(p.State.restartTimes))
-// 	case eum.ProcessStateStop:
-// 		eventType = eum.EventProcessStop
-// 		kv = append(kv, "startTime", p.State.startTime.Format(time.DateTime))
-// 	case eum.ProcessStateWarnning:
-// 		eventType = eum.EventProcessWarning
-// 		kv = append(kv, "reason", p.State.Info, "startTime", p.State.startTime.Format(time.DateTime))
-// 	default:
-// 		return
-// 	}
-// 	kv = append(kv, "operator", p.GetOpertor())
-// 	EventLogic.Create(p.Name, eventType, kv...)
-// }
 
 func (p *ProcessBase) GetUserString() string {
 	return strings.Join(p.GetUserList(), ";")
