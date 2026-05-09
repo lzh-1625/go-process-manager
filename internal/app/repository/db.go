@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 
@@ -50,9 +51,9 @@ func InitDb() {
 	}
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	db = gdb.Session(&defaultConfig)
-	// if config.CF.LogLevel == "debug" {
-	db = db.Debug()
-	// }
+	if config.CF.LogLevel == "debug" {
+		db = db.Debug()
+	}
 	err = db.AutoMigrate(tables...)
 	if err != nil {
 		log.Panicf("database migrate failed! \nerror: %v", err)

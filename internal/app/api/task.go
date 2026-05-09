@@ -87,8 +87,7 @@ func (t *taskApi) EditTask(ctx *echo.Context) error {
 	if _, err := cron.ParseStandard(req.CronExpression); err != nil && req.CronExpression != "" { // cron expression validation
 		return err
 	}
-
-	return logic.TaskLogic.EditTask(req)
+	return logic.TaskLogic.EditTask(&req)
 }
 
 func (t *taskApi) RunTaskByKey(ctx *echo.Context) error {

@@ -52,14 +52,6 @@ func (t *taskLogic) StopTaskJob(id int) error {
 	return nil
 }
 
-func (t *taskLogic) StartTaskJob(id int) error {
-	taskJob, err := t.getTaskJob(id)
-	if err != nil {
-		return err
-	}
-	taskJob.Cron.Run()
-	return nil
-}
 
 func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 	result := repository.TaskRepository.GetAllTaskWithProcessName()
@@ -81,6 +73,12 @@ func (t *taskLogic) GetTaskByID(id int) (*model.Task, error) {
 }
 
 func (t *taskLogic) DeleteTask(id int) (err error) {
+
+	if tj, err := t.getTaskJob(id); err == nil {
+		if tj.Running {
+			return errors.New("task is running, can't delete")
+		}
+	}
 	t.StopTaskJob(id)
 	t.taskJobMap.Delete(id)
 	err = repository.TaskRepository.DeleteTask(id)
@@ -104,7 +102,7 @@ func (t *taskLogic) CreateTask(data model.Task) error {
 	return nil
 }
 
-func (t *taskLogic) EditTask(data model.Task) error {
+func (t *taskLogic) EditTask(data *model.Task) error {
 	tj, err := t.getTaskJob(data.ID)
 	if err != nil {
 		return err
@@ -118,8 +116,12 @@ func (t *taskLogic) EditTask(data model.Task) error {
 		return err
 	}
 
-	tj.TaskConfig = &data
-	return repository.TaskRepository.EditTask(&data)
+	if data.ApiEnable && data.Key == nil {
+		data.Key = new(utils.RandString(10))
+	}
+
+	tj.TaskConfig = data
+	return repository.TaskRepository.EditTask(data)
 }
 
 func (t *taskLogic) CreateApiKey(id int) error {
@@ -127,9 +129,8 @@ func (t *taskLogic) CreateApiKey(id int) error {
 	if err != nil {
 		return err
 	}
-	key := utils.RandString(10)
-	data.Key = &key
-	repository.TaskRepository.EditTask(data)
+	data.Key = new(utils.RandString(10))
+	t.EditTask(data)
 	return nil
 }
 

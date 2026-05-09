@@ -106,7 +106,7 @@ func (p *ProcessPty) readInit() {
 			{
 				n, err := p.pty.Read(buf)
 				if err != nil {
-					log.Logger.Errorw("stdout read failed", "err", err)
+					log.Logger.Debugw("stdout read failed", "err", err)
 					return
 				}
 				p.bufHandle(buf[:n])

@@ -92,6 +92,9 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 				log.Logger.Errorw("next node is running, end task", "nextID", t.TaskConfig.NextID)
 				return
 			}
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+			nextTask.Cancel = cancel
 			return nextTask.Run(ctx)
 		}
 	} else {
