@@ -113,11 +113,11 @@ func (p *ProcessPty) readInit() {
 				if len(p.ws) == 0 {
 					continue
 				}
-				p.wsLock.Lock()
+				p.wsLock.RUnlock()
 				for _, v := range p.ws {
 					v.Write(buf[:n])
 				}
-				p.wsLock.Unlock()
+				p.wsLock.RUnlock()
 			}
 		}
 	}
