@@ -1,6 +1,6 @@
 //go:build !linux
 
-package logic
+package process
 
 import "github.com/lzh-1625/go_process_manager/log"
 

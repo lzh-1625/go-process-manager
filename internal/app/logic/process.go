@@ -4,6 +4,7 @@ import (
 	"errors"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -25,8 +27,8 @@ var (
 	ProcessCtlLogic = new(processCtlLogic)
 )
 
-func (p *processCtlLogic) AddProcess(uuid int, process *ProcessPty) {
-	p.processMap.Store(uuid, process)
+func (p *processCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
+	p.processMap.Store(uuid, proc)
 }
 
 func (p *processCtlLogic) KillProcess(uuid int) error {
@@ -34,19 +36,19 @@ func (p *processCtlLogic) KillProcess(uuid int) error {
 	if !ok {
 		return errors.New("process not exist")
 	}
-	result, ok := value.(*ProcessPty)
+	result, ok := value.(*process.ProcessPty)
 	if !ok {
 		return errors.New("process type error")
 	}
 	return result.Kill()
 }
 
-func (p *processCtlLogic) GetProcess(uuid int) (*ProcessPty, error) {
-	process, ok := p.processMap.Load(uuid)
+func (p *processCtlLogic) GetProcess(uuid int) (*process.ProcessPty, error) {
+	proc, ok := p.processMap.Load(uuid)
 	if !ok {
 		return nil, errors.New("process not exist")
 	}
-	result, ok := process.(*ProcessPty)
+	result, ok := proc.(*process.ProcessPty)
 	if !ok {
 		return nil, errors.New("process type error")
 
@@ -57,7 +59,7 @@ func (p *processCtlLogic) GetProcess(uuid int) (*ProcessPty, error) {
 func (p *processCtlLogic) KillAllProcess() {
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessPty)
+		process := value.(*process.ProcessPty)
 		wg.Go(func() {
 			process.Kill()
 		})
@@ -70,7 +72,7 @@ func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
 	stopPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStop)
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessPty)
+		process := value.(*process.ProcessPty)
 		if !slices.Contains(stopPermissionProcess, process.Name) {
 			return true
 		}
@@ -113,16 +115,16 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		// 使用 Info() 方法获取进程信息快照
 		pi.State.Info = process.State.Info
 		pi.State.State = process.State.State
-		pi.StartTime = process.State.startTime.Format(time.DateTime)
+		pi.StartTime = process.State.StartTime.Format(time.DateTime)
 		pi.User = process.GetUserString()
-		pi.Usage.Cpu = process.performanceStatus.cpu
-		pi.Usage.Mem = process.performanceStatus.mem
+		pi.Usage.Cpu = process.PerformanceStatus.Cpu
+		pi.Usage.Mem = process.PerformanceStatus.Mem
 		pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
 		pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
-		pi.Usage.Time = process.performanceStatus.time
-		pi.CgroupEnable = process.Config.cgroupEnable
-		pi.CpuLimit = process.Config.cpuLimit
-		pi.MemoryLimit = process.Config.memoryLimit
+		pi.Usage.Time = process.PerformanceStatus.Time
+		pi.CgroupEnable = process.Config.CgroupEnable
+		pi.CpuLimit = process.Config.CpuLimit
+		pi.MemoryLimit = process.Config.MemoryLimit
 		pi.Env = process.Env
 		processInfoList = append(processInfoList, pi)
 	}
@@ -131,7 +133,7 @@ func (p *processCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 
 func (p *processCtlLogic) ProcessStartAll() {
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessPty)
+		process := value.(*process.ProcessPty)
 		err := process.Start()
 		if err != nil {
 			log.Logger.Errorw("process start failed", "name", process.Name)
@@ -143,7 +145,7 @@ func (p *processCtlLogic) ProcessStartAll() {
 func (p *processCtlLogic) ProcessInit() {
 	config := repository.ProcessRepository.GetAllProcessConfig()
 	for _, v := range config {
-		proc := NewProcessPty(*v)
+		proc := p.createProcess(*v)
 		p.AddProcess(v.UUID, proc)
 		if v.AutoRestart {
 			err := proc.Start()
@@ -152,14 +154,13 @@ func (p *processCtlLogic) ProcessInit() {
 				continue
 			}
 		}
-		p.AddProcess(v.UUID, proc)
 	}
 }
 
 func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
 	startPermissionProcess := repository.PermissionRepository.GetProcessNameByPermission(userName, eum.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*ProcessPty)
+		process := value.(*process.ProcessPty)
 		if !slices.Contains(startPermissionProcess, process.Name) {
 			return true
 		}
@@ -176,11 +177,11 @@ func (p *processCtlLogic) GetProcessConfigByID(uuid int) (*model.Process, error)
 }
 
 func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
-	process, ok := p.processMap.Load(config.UUID)
+	proc, ok := p.processMap.Load(config.UUID)
 	if !ok {
 		return errors.New("process get failed")
 	}
-	result, ok := process.(*ProcessPty)
+	result, ok := proc.(*process.ProcessPty)
 	if !ok {
 		return errors.New("process type error")
 	}
@@ -188,13 +189,13 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 		return errors.New("process is being used")
 	}
 	defer result.Lock.Unlock()
-	result.Config.logReport = config.LogReport
+	result.Config.LogReport = config.LogReport
 	result.Config.PushIDs = utils.JsonStrToStruct[[]int64](config.PushIDs)
-	result.Config.cgroupEnable = config.CgroupEnable
-	result.Config.memoryLimit = config.MemoryLimit
-	result.Config.cpuLimit = config.CpuLimit
+	result.Config.CgroupEnable = config.CgroupEnable
+	result.Config.MemoryLimit = config.MemoryLimit
+	result.Config.CpuLimit = config.CpuLimit
 	result.Config.AutoRestart = config.AutoRestart
-	result.Config.compulsoryRestart = config.CompulsoryRestart
+	result.Config.CompulsoryRestart = config.CompulsoryRestart
 	result.StartCommand = utils.UnwarpIgnore(shlex.Split(config.Cmd))
 	result.WorkDir = config.Cwd
 	result.Name = config.Name
@@ -202,20 +203,67 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	return repository.ProcessRepository.UpdateProcessConfig(config)
 }
 
-func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessPty) {
+func (p *processCtlLogic) NewProcess(config model.Process) (proc *process.ProcessPty) {
 	index, err := repository.ProcessRepository.AddProcessConfig(config)
 	if err != nil {
 		return nil
 	}
 	config.UUID = index
-	proc = NewProcessPty(config)
+	proc = p.createProcess(config)
 	p.AddProcess(config.UUID, proc)
 	return
 }
 
-func (p *processCtlLogic) RunProcess(config model.Process) (proc *ProcessPty, err error) {
-	proc = NewProcessPty(config)
+func (p *processCtlLogic) RunProcess(config model.Process) (proc *process.ProcessPty, err error) {
+	proc = p.createProcess(config)
 	p.AddProcess(config.UUID, proc)
 	err = proc.Start()
 	return
+}
+
+func (p *processCtlLogic) createProcess(config model.Process) (proc *process.ProcessPty) {
+	return process.NewProcessPty(config,
+		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c process.ConnectInstance) {
+			ProcessWaitCond.Trigger()
+		}),
+		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {
+			ProcessWaitCond.Trigger()
+		}),
+		process.SetLogHandle(func(p *process.ProcessBase, log string) {
+			Loghandler.AddLog(model.ProcessLog{
+				Log:   log,
+				Using: p.GetUserString(),
+				Name:  p.Name,
+				Time:  time.Now().UnixMilli(),
+			})
+		}),
+		process.SetPushHandle(func(p *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
+			PushLogic.Push(p.Config.PushIDs, messagePlaceholders)
+		}),
+		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
+			ProcessWaitCond.Trigger()
+			p.createEvent(proc, state)
+			go TaskLogic.RunTaskByTriggerEvent(proc.Name, state)
+		}),
+	)
+}
+
+func (p *processCtlLogic) createEvent(proc *process.ProcessBase, state eum.ProcessState) {
+	var eventType eum.EventType
+	kv := []string{}
+	switch state {
+	case eum.ProcessStateRunning:
+		eventType = eum.EventProcessStart
+		kv = append(kv, "restartTimes", strconv.Itoa(proc.State.RestartTimes))
+	case eum.ProcessStateStop:
+		eventType = eum.EventProcessStop
+		kv = append(kv, "startTime", proc.State.StartTime.Format(time.DateTime))
+	case eum.ProcessStateWarnning:
+		eventType = eum.EventProcessWarning
+		kv = append(kv, "reason", proc.State.Info, "startTime", proc.State.StartTime.Format(time.DateTime))
+	default:
+		return
+	}
+	kv = append(kv, "operator", proc.GetOpertor())
+	EventLogic.Create(proc.Name, eventType, kv...)
 }

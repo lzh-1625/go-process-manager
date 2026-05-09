@@ -1,4 +1,4 @@
-package logic
+package process
 
 import (
 	"errors"
@@ -37,25 +37,25 @@ type ProcessBase struct {
 	wsLock sync.RWMutex
 	Config struct {
 		AutoRestart       bool
-		compulsoryRestart bool
+		CompulsoryRestart bool
 		PushIDs           []int64
-		logReport         bool
-		cgroupEnable      bool
-		memoryLimit       *float32
-		cpuLimit          *float32
+		LogReport         bool
+		CgroupEnable      bool
+		MemoryLimit       *float32
+		CpuLimit          *float32
 	}
 	State struct {
-		startTime      time.Time
+		StartTime      time.Time
 		Info           string
 		State          eum.ProcessState //0 not running, 1 running, 2 warning state
 		stateLock      sync.Mutex
-		restartTimes   int
+		RestartTimes   int
 		manualStopFlag bool
 	}
-	performanceStatus struct {
-		cpu  []float64
-		mem  []float64
-		time []string
+	PerformanceStatus struct {
+		Cpu  []float64
+		Mem  []float64
+		Time []string
 	}
 	monitor struct {
 		enable bool
@@ -69,6 +69,12 @@ type ProcessBase struct {
 		user atomic.Pointer[string]
 		time time.Time
 	}
+
+	StateHook   func(p *ProcessBase, state eum.ProcessState)
+	AddCoonHook func(p *ProcessBase, user string, c ConnectInstance)
+	DelCoonHook func(p *ProcessBase, user string)
+	LogHandle   func(p *ProcessBase, log string)
+	PushHandle  func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
 }
 type ConnectInstance interface {
 	Write([]byte)
@@ -100,31 +106,35 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 		}
 	}
 	p.State.State = state
-	ProcessWaitCond.Trigger()
-	p.createEvent(state)
-	go TaskLogic.RunTaskByTriggerEvent(p.Name, state)
+	if p.StateHook != nil {
+		p.StateHook(p, state)
+	}
+	// ProcessWaitCond.Trigger()
+	// p.createEvent(state)
+	// go TaskLogic.RunTaskByTriggerEvent(p.Name, state)
+
 	return true
 }
 
-func (p *ProcessBase) createEvent(state eum.ProcessState) {
-	var eventType eum.EventType
-	kv := []string{}
-	switch state {
-	case eum.ProcessStateRunning:
-		eventType = eum.EventProcessStart
-		kv = append(kv, "restartTimes", strconv.Itoa(p.State.restartTimes))
-	case eum.ProcessStateStop:
-		eventType = eum.EventProcessStop
-		kv = append(kv, "startTime", p.State.startTime.Format(time.DateTime))
-	case eum.ProcessStateWarnning:
-		eventType = eum.EventProcessWarning
-		kv = append(kv, "reason", p.State.Info, "startTime", p.State.startTime.Format(time.DateTime))
-	default:
-		return
-	}
-	kv = append(kv, "operator", p.GetOpertor())
-	EventLogic.Create(p.Name, eventType, kv...)
-}
+// func (p *ProcessBase) createEvent(state eum.ProcessState) {
+// 	var eventType eum.EventType
+// 	kv := []string{}
+// 	switch state {
+// 	case eum.ProcessStateRunning:
+// 		eventType = eum.EventProcessStart
+// 		kv = append(kv, "restartTimes", strconv.Itoa(p.State.restartTimes))
+// 	case eum.ProcessStateStop:
+// 		eventType = eum.EventProcessStop
+// 		kv = append(kv, "startTime", p.State.startTime.Format(time.DateTime))
+// 	case eum.ProcessStateWarnning:
+// 		eventType = eum.EventProcessWarning
+// 		kv = append(kv, "reason", p.State.Info, "startTime", p.State.startTime.Format(time.DateTime))
+// 	default:
+// 		return
+// 	}
+// 	kv = append(kv, "operator", p.GetOpertor())
+// 	EventLogic.Create(p.Name, eventType, kv...)
+// }
 
 func (p *ProcessBase) GetUserString() string {
 	return strings.Join(p.GetUserList(), ";")
@@ -156,29 +166,28 @@ func (p *ProcessBase) AddConn(user string, c ConnectInstance) {
 	}
 
 	p.ws[user] = c
-	ProcessWaitCond.Trigger()
+	if p.AddCoonHook != nil {
+		p.AddCoonHook(p, user, c)
+	}
 }
 
 func (p *ProcessBase) DeleteConn(user string) {
 	p.wsLock.Lock()
 	defer p.wsLock.Unlock()
 	delete(p.ws, user)
-	ProcessWaitCond.Trigger()
+	if p.DelCoonHook != nil {
+		p.DelCoonHook(p, user)
+	}
 }
 
 func (p *ProcessBase) logReportHandler(log string) {
-	if p.Config.logReport && len([]rune(log)) > config.CF.LogMinLenth {
-		Loghandler.AddLog(model.ProcessLog{
-			Log:   log,
-			Using: p.GetUserString(),
-			Name:  p.Name,
-			Time:  time.Now().UnixMilli(),
-		})
+	if p.LogHandle != nil {
+		p.LogHandle(p, log)
 	}
 }
 
 func (p *ProcessBase) GetStartTimeFormat() string {
-	return p.State.startTime.Format(time.DateTime)
+	return p.State.StartTime.Format(time.DateTime)
 }
 
 func (p *ProcessBase) ProcessControl(name string) {
@@ -189,23 +198,23 @@ func (p *ProcessBase) ProcessControl(name string) {
 	}
 }
 
-// 没人在使用或控制时间过期
+// not being controlled or control time expired
 func (p *ProcessBase) VerifyControl() bool {
 	return p.Control.Controller == "" || p.Control.changControlTime.Unix() < time.Now().Unix()-config.CF.ProcessExpireTime
 }
 
 func (p *ProcessBase) setProcessConfig(pconfig model.Process) {
 	p.Config.AutoRestart = pconfig.AutoRestart
-	p.Config.logReport = pconfig.LogReport
+	p.Config.LogReport = pconfig.LogReport
 	p.Config.PushIDs = utils.JsonStrToStruct[[]int64](pconfig.PushIDs)
-	p.Config.compulsoryRestart = pconfig.CompulsoryRestart
-	p.Config.cgroupEnable = pconfig.CgroupEnable
-	p.Config.memoryLimit = pconfig.MemoryLimit
-	p.Config.cpuLimit = pconfig.CpuLimit
+	p.Config.CompulsoryRestart = pconfig.CompulsoryRestart
+	p.Config.CgroupEnable = pconfig.CgroupEnable
+	p.Config.MemoryLimit = pconfig.MemoryLimit
+	p.Config.CpuLimit = pconfig.CpuLimit
 }
 
 func (p *ProcessBase) ResetRestartTimes() {
-	p.State.restartTimes = 0
+	p.State.RestartTimes = 0
 }
 
 func (p *ProcessBase) push(message string) {
@@ -216,26 +225,28 @@ func (p *ProcessBase) push(message string) {
 			"{$message}": message,
 			"{$status}":  strconv.Itoa(int(p.State.State)),
 		}
-		PushLogic.Push(p.Config.PushIDs, messagePlaceholders)
+		if p.PushHandle != nil {
+			p.PushHandle(p, p.Config.PushIDs, messagePlaceholders)
+		}
 	}
 }
 
 func (p *ProcessBase) InitPerformanceStatus() {
-	p.performanceStatus.cpu = make([]float64, config.CF.PerformanceInfoListLength)
-	p.performanceStatus.mem = make([]float64, config.CF.PerformanceInfoListLength)
-	p.performanceStatus.time = make([]string, config.CF.PerformanceInfoListLength)
+	p.PerformanceStatus.Cpu = make([]float64, config.CF.PerformanceInfoListLength)
+	p.PerformanceStatus.Mem = make([]float64, config.CF.PerformanceInfoListLength)
+	p.PerformanceStatus.Time = make([]string, config.CF.PerformanceInfoListLength)
 }
 
 func (p *ProcessBase) AddCpuUsage(usage float64) {
-	p.performanceStatus.cpu = append(p.performanceStatus.cpu[1:], usage)
+	p.PerformanceStatus.Cpu = append(p.PerformanceStatus.Cpu[1:], usage)
 }
 
 func (p *ProcessBase) AddMemUsage(usage float64) {
-	p.performanceStatus.mem = append(p.performanceStatus.mem[1:], usage)
+	p.PerformanceStatus.Mem = append(p.PerformanceStatus.Mem[1:], usage)
 }
 
 func (p *ProcessBase) AddRecordTime() {
-	p.performanceStatus.time = append(p.performanceStatus.time[1:], time.Now().Format(time.DateTime))
+	p.PerformanceStatus.Time = append(p.PerformanceStatus.Time[1:], time.Now().Format(time.DateTime))
 }
 
 func (p *ProcessBase) monitorHandler() {

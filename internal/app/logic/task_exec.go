@@ -6,30 +6,31 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
-type conditionFunc func(data *model.Task, proc *ProcessPty) bool
+type conditionFunc func(data *model.Task, proc *process.ProcessPty) bool
 
 var conditionHandle = map[eum.Condition]conditionFunc{
-	eum.TaskCondRunning: func(data *model.Task, proc *ProcessPty) bool {
+	eum.TaskCondRunning: func(data *model.Task, proc *process.ProcessPty) bool {
 		return proc.State.State == eum.ProcessStateRunning
 	},
-	eum.TaskCondNotRunning: func(data *model.Task, proc *ProcessPty) bool {
+	eum.TaskCondNotRunning: func(data *model.Task, proc *process.ProcessPty) bool {
 		state := proc.State.State
 		return state != eum.ProcessStateRunning && state != eum.ProcessStateStart
 	},
-	eum.TaskCondException: func(data *model.Task, proc *ProcessPty) bool {
+	eum.TaskCondException: func(data *model.Task, proc *process.ProcessPty) bool {
 		return proc.State.State == eum.ProcessStateWarnning
 	},
 }
 
 // execute operation, return result whether successfully
-type operationFunc func(*model.Task, *ProcessPty) bool
+type operationFunc func(*model.Task, *process.ProcessPty) bool
 
 func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 	return map[eum.TaskOperation]operationFunc{
-		eum.TaskStart: func(data *model.Task, proc *ProcessPty) bool {
+		eum.TaskStart: func(data *model.Task, proc *process.ProcessPty) bool {
 			state := proc.State.State
 			if state == eum.ProcessStateRunning || state == eum.ProcessStateStart {
 				log.Logger.Debugw("process is running", "proc", proc.Name)
@@ -39,7 +40,7 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 			return true
 		},
 
-		eum.TaskStartWaitDone: func(data *model.Task, proc *ProcessPty) bool {
+		eum.TaskStartWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
 			state := proc.State.State
 			if state == eum.ProcessStateRunning || state == eum.ProcessStateStart {
 				log.Logger.Debugw("process is running", "proc", proc.Name)
@@ -59,7 +60,7 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 			}
 		},
 
-		eum.TaskStop: func(data *model.Task, proc *ProcessPty) bool {
+		eum.TaskStop: func(data *model.Task, proc *process.ProcessPty) bool {
 			if proc.State.State != eum.ProcessStateRunning {
 				log.Logger.Debugw("process is not running", "proc", proc.Name)
 				return false
@@ -69,7 +70,7 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 			return true
 		},
 
-		eum.TaskStopWaitDone: func(data *model.Task, proc *ProcessPty) bool {
+		eum.TaskStopWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
 			if proc.State.State != eum.ProcessStateRunning {
 				log.Logger.Debugw("process is not running", "proc", proc.Name)
 				return false

@@ -13,6 +13,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/gorilla/websocket"
@@ -173,7 +174,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	return
 }
 
-func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *logic.ProcessPty, write bool) {
+func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *process.ProcessPty, write bool) {
 	log.Logger.Debugw("ws read thread started")
 	go func() {
 		for {

@@ -1,6 +1,6 @@
 //go:build linux
 
-package logic
+package process
 
 import (
 	"github.com/containerd/cgroups/v3"
@@ -12,7 +12,7 @@ import (
 )
 
 func (p *ProcessBase) initCgroup() {
-	if !p.Config.cgroupEnable {
+	if !p.Config.CgroupEnable {
 		log.Logger.Debugw("cgroup not enabled")
 		return
 	}
@@ -30,17 +30,17 @@ func (p *ProcessBase) initCgroup() {
 
 func (p *ProcessBase) initCgroupV1() {
 	resources := &specs.LinuxResources{}
-	if p.Config.cpuLimit != nil {
+	if p.Config.CpuLimit != nil {
 		period := uint64(config.CF.CgroupPeriod)
-		quota := int64(float32(config.CF.CgroupPeriod) * *p.Config.cpuLimit * 0.01)
+		quota := int64(float32(config.CF.CgroupPeriod) * *p.Config.CpuLimit * 0.01)
 		cpuResources := &specs.LinuxCPU{
 			Period: &period,
 			Quota:  &quota,
 		}
 		resources.CPU = cpuResources
 	}
-	if p.Config.memoryLimit != nil {
-		limit := int64(*p.Config.memoryLimit * 1024 * 1024)
+	if p.Config.MemoryLimit != nil {
+		limit := int64(*p.Config.MemoryLimit * 1024 * 1024)
 		memResources := &specs.LinuxMemory{
 			Limit: &limit,
 		}
@@ -61,15 +61,15 @@ func (p *ProcessBase) initCgroupV1() {
 
 func (p *ProcessBase) initCgroupV2() {
 	resources := &cgroup2.Resources{}
-	if p.Config.cpuLimit != nil {
+	if p.Config.CpuLimit != nil {
 		period := uint64(config.CF.CgroupPeriod)
-		quota := int64(float32(config.CF.CgroupPeriod) * *p.Config.cpuLimit * 0.01)
+		quota := int64(float32(config.CF.CgroupPeriod) * *p.Config.CpuLimit * 0.01)
 		resources.CPU = &cgroup2.CPU{
 			Max: cgroup2.NewCPUMax(&quota, &period),
 		}
 	}
-	if p.Config.memoryLimit != nil {
-		limit := int64(*p.Config.memoryLimit * 1024 * 1024)
+	if p.Config.MemoryLimit != nil {
+		limit := int64(*p.Config.MemoryLimit * 1024 * 1024)
 		memResources := &cgroup2.Memory{
 			Max: &limit,
 		}

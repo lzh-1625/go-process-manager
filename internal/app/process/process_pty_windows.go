@@ -1,6 +1,6 @@
 //go:build windows
 
-package logic
+package process
 
 import (
 	"bytes"
@@ -63,7 +63,7 @@ func (p *ProcessPty) Start() (err error) {
 		log.Logger.Errorw("process start failed", "err", err)
 		return err
 	}
-	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.restartTimes)
+	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
 	p.pInit()
 	if !p.SetState(eum.ProcessStateRunning, func() bool {
 		return p.State.State == eum.ProcessStateStart
@@ -113,7 +113,7 @@ func (p *ProcessPty) readInit() {
 				if len(p.ws) == 0 {
 					continue
 				}
-				p.wsLock.RUnlock()
+				p.wsLock.RLock()
 				for _, v := range p.ws {
 					v.Write(buf[:n])
 				}
@@ -144,7 +144,7 @@ func (p *ProcessPty) pInit() {
 	log.Logger.Infow("create process success")
 	p.StopChan = make(chan struct{})
 	p.State.manualStopFlag = false
-	p.State.startTime = time.Now()
+	p.State.StartTime = time.Now()
 	p.ws = make(map[string]ConnectInstance)
 	p.Pid = p.op.Pid
 	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
@@ -185,16 +185,16 @@ func (p *ProcessPty) watchDog() {
 	if !p.Config.AutoRestart || p.State.manualStopFlag { // not restart or manual close
 		return
 	}
-	if p.Config.compulsoryRestart { // compulsory restart
+	if p.Config.CompulsoryRestart { // compulsory restart
 		p.Start()
 		return
 	}
 	if state.ExitCode() == 0 { // normal exit
 		return
 	}
-	if p.State.restartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
+	if p.State.RestartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
 		p.Start()
-		p.State.restartTimes++
+		p.State.RestartTimes++
 		return
 	}
 	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
@@ -203,7 +203,45 @@ func (p *ProcessPty) watchDog() {
 	p.push("restart times reached limit")
 }
 
-func NewProcessPty(pconfig model.Process) *ProcessPty {
+type ProcessOptions func(*ProcessPty)
+
+
+// state change hook
+func SetStateHook(fn func(p *ProcessBase, state eum.ProcessState)) ProcessOptions {
+	return func(p *ProcessPty) {
+		p.StateHook = fn
+	}
+}
+
+// ws connect hook
+func SetAddCoonHook(fn func(p *ProcessBase, user string, c ConnectInstance)) ProcessOptions {
+	return func(p *ProcessPty) {
+		p.AddCoonHook = fn
+	}
+}
+
+// ws disconnect hook
+func SetDelCoonHook(fn func(p *ProcessBase, user string)) ProcessOptions {
+	return func(p *ProcessPty) {
+		p.DelCoonHook = fn
+	}
+}
+
+// log handle hook
+func SetLogHandle(fn func(p *ProcessBase, log string)) ProcessOptions {
+	return func(p *ProcessPty) {
+		p.LogHandle = fn
+	}
+}
+
+// push handle hook
+func SetPushHandle(fn func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)) ProcessOptions {
+	return func(p *ProcessPty) {
+		p.PushHandle = fn
+	}
+}
+
+func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty {
 	p := &ProcessPty{
 		ProcessBase: &ProcessBase{
 			Name:         pconfig.Name,
@@ -212,6 +250,11 @@ func NewProcessPty(pconfig model.Process) *ProcessPty {
 			Env:          strings.Split(pconfig.Env, ";"),
 		},
 	}
+
+	for _, option := range options {
+		option(p)
+	}
+
 	p.setProcessConfig(pconfig)
 	return p
 }
