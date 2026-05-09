@@ -135,6 +135,5 @@ func (t *TaskJob) EditStatus(status bool) error {
 			return err
 		}
 	}
-	t.TaskConfig.Enable = status
 	return nil
 }

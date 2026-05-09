@@ -46,6 +46,9 @@ func (t *taskLogic) StopTaskJob(id int) error {
 	if taskJob.Running {
 		taskJob.Cancel()
 	}
+	if taskJob.Cron != nil {
+		taskJob.Cron.Stop()
+	}
 	return nil
 }
 
@@ -75,7 +78,6 @@ func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 
 func (t *taskLogic) DeleteTask(id int) (err error) {
 	t.StopTaskJob(id)
-	t.EditTaskEnable(id, false)
 	t.taskJobMap.Delete(id)
 	err = repository.TaskRepository.DeleteTask(id)
 	if err != nil {
@@ -108,27 +110,12 @@ func (t *taskLogic) EditTask(data model.Task) error {
 		return errors.New("can't edit running task")
 	}
 
-	if tj.Cron != nil {
-		tj.Cron.Stop()
-		tj.Cron = nil
+	if err := tj.EditStatus(data.Enable); err != nil {
+		return err
 	}
 
 	tj.TaskConfig = &data
 	return repository.TaskRepository.EditTask(&data)
-}
-
-func (t *taskLogic) EditTaskEnable(id int, status bool) error {
-	tj, err := t.getTaskJob(id)
-	if err != nil {
-		return err
-	}
-	if err := tj.EditStatus(status); err != nil {
-		return err
-	}
-	if err := repository.TaskRepository.EditTaskEnable(id, status); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (t *taskLogic) CreateApiKey(id int) error {

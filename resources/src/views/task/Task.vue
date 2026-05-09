@@ -90,7 +90,7 @@
               <td>
                 <v-switch
                   color="primary"
-                  @change="changeEnable(item)"
+                  @change="edit(item)"
                   v-model="item.enable"
                   density="compact"
                   inset
@@ -332,7 +332,6 @@ import {
   addTask,
   changeTaskKey,
   editTask,
-  editTaskEnable,
   getTaskAll,
   getTaskById,
   deleteTaskById,
@@ -576,14 +575,6 @@ const edit = (item: TaskItem) => {
   });
 };
 
-// 切换启用状态
-const changeEnable = (item: TaskItem) => {
-  editTaskEnable({ id: item.id, enable: item.enable }).then((res) => {
-    if (res.code === 0) {
-      snackbarStore.showSuccessMessage("修改成功");
-    }
-  });
-};
 
 const startTask = (item: TaskItem) => {
   startTaskById(item.id).then((res) => {

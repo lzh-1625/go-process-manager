@@ -7,6 +7,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/robfig/cron/v3"
 )
 
 type taskApi struct{}
@@ -83,15 +84,12 @@ func (t *taskApi) EditTask(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.TaskLogic.EditTask(req)
-}
 
-func (t *taskApi) EditTaskEnable(ctx *echo.Context) error {
-	var req model.Task
-	if err := ctx.Bind(&req); err != nil {
+	if _, err := cron.ParseStandard(req.CronExpression); err != nil && req.CronExpression != "" { // cron expression validation
 		return err
 	}
-	return logic.TaskLogic.EditTaskEnable(req.ID, req.Enable)
+
+	return logic.TaskLogic.EditTask(req)
 }
 
 func (t *taskApi) RunTaskByKey(ctx *echo.Context) error {

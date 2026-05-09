@@ -112,7 +112,6 @@ func routePathInit(r *echo.Echo) {
 			taskGroup.POST("", api.TaskApi.CreateTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
 			taskGroup.DELETE("", api.TaskApi.DeleteTaskById, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
 			taskGroup.PUT("", api.TaskApi.EditTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.PUT("/enable", api.TaskApi.EditTaskEnable, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
 			taskGroup.GET("/start", api.TaskApi.StartTask, middle.RolePermission(eum.RoleAdmin))
 			taskGroup.GET("/stop", api.TaskApi.StopTask, middle.RolePermission(eum.RoleAdmin))
 			taskGroup.POST("/key", api.TaskApi.CreateTaskApiKey, middle.RolePermission(eum.RoleAdmin))
