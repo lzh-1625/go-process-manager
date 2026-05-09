@@ -60,7 +60,7 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 		},
 
 		eum.TaskStop: func(data *model.Task, proc *ProcessPty) bool {
-			if proc.State.State != eum.ProcessStateRunning && proc.State.State != eum.ProcessStateStart {
+			if proc.State.State != eum.ProcessStateRunning {
 				log.Logger.Debugw("process is not running", "proc", proc.Name)
 				return false
 			}
@@ -70,7 +70,7 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 		},
 
 		eum.TaskStopWaitDone: func(data *model.Task, proc *ProcessPty) bool {
-			if proc.State.State != eum.ProcessStateRunning && proc.State.State != eum.ProcessStateStart {
+			if proc.State.State != eum.ProcessStateRunning {
 				log.Logger.Debugw("process is not running", "proc", proc.Name)
 				return false
 			}
