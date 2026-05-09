@@ -16,6 +16,15 @@ import (
 var (
 	db            *gorm.DB
 	defaultConfig = gorm.Session{PrepareStmt: true, SkipDefaultTransaction: true}
+	tables        = []any{
+		&model.Process{},
+		&model.User{},
+		&model.Permission{},
+		&model.Push{},
+		&model.Config{},
+		&model.ProcessLog{},
+		&model.Task{},
+	}
 )
 
 func InitDb() {
@@ -33,28 +42,21 @@ func InitDb() {
 		Logger: newLogger,
 	})
 	if err != nil {
-		log.Panicf("sqlite数据库初始化失败！\n错误原因：%v", err)
+		log.Panicf("sqlite database init failed! \nerror: %v", err)
 	}
 	sqlDB, err := gdb.DB()
 	if err != nil {
-		log.Panicf("sqlite数据库初始化失败！\n错误原因：%v", err)
+		log.Panicf("sqlite database init failed! \nerror: %v", err)
 	}
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	db = gdb.Session(&defaultConfig)
 	// if config.CF.LogLevel == "debug" {
 	db = db.Debug()
 	// }
-	db.AutoMigrate(
-		&model.Process{},
-		&model.User{},
-		&model.Permission{},
-		&model.Push{},
-		&model.Config{},
-		&model.ProcessLog{},
-		&model.Task{},
-		&model.WsShare{},
-		&model.Event{},
-	)
+	err = db.AutoMigrate(tables...)
+	if err != nil {
+		log.Panicf("database migrate failed! \nerror: %v", err)
+	}
 	gormGen(db)
 	query.SetDefault(db)
 }
