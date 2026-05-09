@@ -38,7 +38,10 @@ func Auth(next echo.HandlerFunc) echo.HandlerFunc {
 
 			mc, err := utils.VerifyToken(token)
 			if err != nil {
-				return err
+				return c.JSON(401, model.Response[struct{}]{
+					Code:    -1,
+					Message: "invalid token",
+				})
 			}
 			c.Set(eum.CtxUserName, mc.Username)
 			c.Set(

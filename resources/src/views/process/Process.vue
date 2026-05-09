@@ -209,7 +209,7 @@ const version = ref(0);
 
 const initProcessData = () => {
   getProcessList().then((e) => {
-    processData.value = e.data!.sort((a, b) => a.name.localeCompare(b.name));
+    processData.value = e.data?.sort((a, b) => a.name.localeCompare(b.name)) || [];
     initFirst.value = true;
     getProcessListWait();
   });
