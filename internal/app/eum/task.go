@@ -18,4 +18,4 @@ const (
 	TaskStopWaitDone
 )
 
-type CtxTaskTraceId struct{}
+type CtxTaskTraceID struct{}

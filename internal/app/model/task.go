@@ -7,9 +7,9 @@ import (
 type Task struct {
 	ID              int               `gorm:"column:id;NOT NULL;primaryKey;autoIncrement;" json:"id" `
 	Name            string            `gorm:"column:name" json:"name" `
-	ProcessId       int               `gorm:"column:process_id;NOT NULL" json:"processId" `
+	ProcessID       int               `gorm:"column:process_id;NOT NULL" json:"processId" `
 	Condition       eum.Condition     `gorm:"column:condition;NOT NULL" json:"condition" `
-	NextId          *int              `gorm:"column:next_id;" json:"nextId" `
+	NextID          *int              `gorm:"column:next_id;" json:"nextId" `
 	Operation       eum.TaskOperation `gorm:"column:operation;NOT NULL" json:"operation" `
 	TriggerEvent    *eum.ProcessState `gorm:"column:trigger_event;" json:"triggerEvent" `
 	TriggerTarget   *int              `gorm:"column:trigger_target;" json:"triggerTarget" `

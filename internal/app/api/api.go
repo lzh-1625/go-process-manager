@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 )
 
 func getRole(c *echo.Context) eum.Role {
@@ -33,7 +33,7 @@ func hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
 		return true
 	}
 
-	per := repository.PermissionRepository.GetPermission(
+	per := logic.PermissionLogic.GetPermission(
 		getUserName(c),
 		uuid,
 	)

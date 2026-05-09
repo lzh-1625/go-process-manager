@@ -15,7 +15,7 @@ func (t *taskRepository) GetAllTask() (result []*model.Task) {
 	return
 }
 
-func (t *taskRepository) GetTaskById(id int) (result *model.Task, err error) {
+func (t *taskRepository) GetTaskByID(id int) (result *model.Task, err error) {
 	result, err = query.Task.Where(query.Task.ID.Eq(id)).First()
 	return
 }
@@ -25,9 +25,9 @@ func (t *taskRepository) GetTaskByKey(key string) (result *model.Task, err error
 	return
 }
 
-func (t *taskRepository) AddTask(data model.Task) (taskId int, err error) {
+func (t *taskRepository) AddTask(data model.Task) (task int, err error) {
 	err = query.Task.Create(&data)
-	taskId = data.ID
+	task = data.ID
 	return
 }
 
@@ -57,7 +57,7 @@ func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 		p2.Name.As("target_name"),
 		p3.Name.As("trigger_name"),
 	).
-		LeftJoin(p, p.UUID.EqCol(task.ProcessId)).
+		LeftJoin(p, p.UUID.EqCol(task.Process)).
 		LeftJoin(p2, p2.UUID.EqCol(task.OperationTarget)).
 		LeftJoin(p3, p3.UUID.EqCol(task.TriggerTarget)).
 		Scan(&result)

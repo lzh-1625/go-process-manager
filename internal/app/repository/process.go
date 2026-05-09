@@ -43,7 +43,7 @@ func (p *processRepository) DeleteProcessConfig(uuid int) error {
 	return err
 }
 
-func (p *processRepository) GetProcessConfigById(uuid int) (data *model.Process, err error) {
+func (p *processRepository) GetProcessConfigByID(uuid int) (data *model.Process, err error) {
 	data, err = query.Process.Where(query.Process.UUID.Eq(uuid)).First()
 	return
 }

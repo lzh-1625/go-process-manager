@@ -14,7 +14,7 @@ func (p *pushRepository) GetPushList() (result []*model.Push) {
 	return
 }
 
-func (p *pushRepository) GetPushConfigById(id int) (result *model.Push) {
+func (p *pushRepository) GetPushConfigByID(id int) (result *model.Push) {
 	result, _ = query.Push.Where(query.Push.ID.Eq(int64(id))).First()
 	return
 }
@@ -32,7 +32,7 @@ func (p *pushRepository) DeletePushConfig(id int) error {
 	return err
 }
 
-func (p *pushRepository) GetPushConfigByIds(ids []int64) (result []*model.Push) {
+func (p *pushRepository) GetPushConfigByIDs(ids []int64) (result []*model.Push) {
 	result, _ = query.Push.Where(query.Push.ID.In(ids...)).Find()
 	return
 }

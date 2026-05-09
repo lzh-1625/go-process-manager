@@ -76,6 +76,10 @@ func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 	return result
 }
 
+func (t *taskLogic) GetTaskByID(id int) (*model.Task, error) {
+	return repository.TaskRepository.GetTaskByID(id)
+}
+
 func (t *taskLogic) DeleteTask(id int) (err error) {
 	t.StopTaskJob(id)
 	t.taskJobMap.Delete(id)
@@ -91,12 +95,12 @@ func (t *taskLogic) CreateTask(data model.Task) error {
 	if err != nil {
 		return err
 	}
-	taskId, err := repository.TaskRepository.AddTask(data)
+	taskID, err := repository.TaskRepository.AddTask(data)
 	if err != nil {
 		return err
 	}
-	tj.TaskConfig.ID = taskId
-	t.taskJobMap.Store(taskId, tj)
+	tj.TaskConfig.ID = taskID
+	t.taskJobMap.Store(taskID, tj)
 	return nil
 }
 
@@ -119,7 +123,7 @@ func (t *taskLogic) EditTask(data model.Task) error {
 }
 
 func (t *taskLogic) CreateApiKey(id int) error {
-	data, err := repository.TaskRepository.GetTaskById(id)
+	data, err := repository.TaskRepository.GetTaskByID(id)
 	if err != nil {
 		return err
 	}
@@ -134,7 +138,7 @@ func (t *taskLogic) RunTaskByKey(key string) error {
 	if err != nil {
 		return errors.New("don't exist key")
 	}
-	go t.RunTaskById(data.ID)
+	go t.RunTaskByID(data.ID)
 	return nil
 }
 
@@ -145,12 +149,12 @@ func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessS
 	}
 	log.Logger.Infow("get trigger task", "count", len(taskList), "prcess", processName, "trigger event", event)
 	for _, v := range taskList {
-		log.Logger.Infow("execute trigger task", "taskId", v.ID)
-		t.RunTaskById(v.ID)
+		log.Logger.Infow("execute trigger task", "taskID", v.ID)
+		t.RunTaskByID(v.ID)
 	}
 }
 
-func (t *taskLogic) RunTaskById(id int) error {
+func (t *taskLogic) RunTaskByID(id int) error {
 	task, err := t.getTaskJob(id)
 	if err != nil {
 		return err

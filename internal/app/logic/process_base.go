@@ -20,6 +20,7 @@ import (
 )
 
 type ProcessBase struct {
+	UUID         int
 	op           *os.Process
 	Name         string
 	Pid          int
@@ -37,7 +38,7 @@ type ProcessBase struct {
 	Config struct {
 		AutoRestart       bool
 		compulsoryRestart bool
-		PushIds           []int64
+		PushIDs           []int64
 		logReport         bool
 		cgroupEnable      bool
 		memoryLimit       *float32
@@ -196,7 +197,7 @@ func (p *ProcessBase) VerifyControl() bool {
 func (p *ProcessBase) setProcessConfig(pconfig model.Process) {
 	p.Config.AutoRestart = pconfig.AutoRestart
 	p.Config.logReport = pconfig.LogReport
-	p.Config.PushIds = utils.JsonStrToStruct[[]int64](pconfig.PushIds)
+	p.Config.PushIDs = utils.JsonStrToStruct[[]int64](pconfig.PushIDs)
 	p.Config.compulsoryRestart = pconfig.CompulsoryRestart
 	p.Config.cgroupEnable = pconfig.CgroupEnable
 	p.Config.memoryLimit = pconfig.MemoryLimit
@@ -208,14 +209,14 @@ func (p *ProcessBase) ResetRestartTimes() {
 }
 
 func (p *ProcessBase) push(message string) {
-	if len(p.Config.PushIds) != 0 {
+	if len(p.Config.PushIDs) != 0 {
 		messagePlaceholders := map[string]string{
 			"{$name}":    p.Name,
 			"{$user}":    p.GetUserString(),
 			"{$message}": message,
 			"{$status}":  strconv.Itoa(int(p.State.State)),
 		}
-		PushLogic.Push(p.Config.PushIds, messagePlaceholders)
+		PushLogic.Push(p.Config.PushIDs, messagePlaceholders)
 	}
 }
 

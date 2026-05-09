@@ -10,7 +10,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
@@ -23,15 +22,13 @@ func (p *procApi) CreateProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	index, err := repository.ProcessRepository.AddProcessConfig(req)
-	if err != nil {
-		return err
+	proc := logic.ProcessCtlLogic.NewProcess(req)
+	if proc == nil {
+		return errors.New("create process failed")
 	}
-	req.UUID = index
-	logic.ProcessCtlLogic.NewProcess(req)
 	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
 		Data: map[string]any{
-			"id": index,
+			"id": proc.UUID,
 		},
 		Message: "success",
 		Code:    0,
@@ -48,7 +45,7 @@ func (p *procApi) DeleteProcess(ctx *echo.Context) error {
 	if err := logic.ProcessCtlLogic.DeleteProcess(req.UUID); err != nil {
 		return err
 	}
-	return repository.ProcessRepository.DeleteProcessConfig(req.UUID)
+	return nil
 }
 
 func (p *procApi) KillProcess(ctx *echo.Context) error {
@@ -81,11 +78,11 @@ func (p *procApi) StartProcess(ctx *echo.Context) error {
 	}
 	prod, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
 	if err != nil {
-		proConfig, err := repository.ProcessRepository.GetProcessConfigById(req.UUID)
+		proConfig, err := logic.ProcessCtlLogic.GetProcessConfigByID(req.UUID)
 		if err != nil {
 			return err
 		}
-		proc, err := logic.ProcessCtlLogic.RunNewProcess(*proConfig)
+		proc, err := logic.ProcessCtlLogic.RunProcess(*proConfig)
 		if err != nil {
 			return err
 		}
@@ -139,8 +136,7 @@ func (p *procApi) UpdateProcessConfig(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	logic.ProcessCtlLogic.UpdateProcessConfig(req)
-	return repository.ProcessRepository.UpdateProcessConfig(req)
+	return logic.ProcessCtlLogic.UpdateProcessConfig(req)
 }
 
 func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
@@ -150,7 +146,7 @@ func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	data, err := repository.ProcessRepository.GetProcessConfigById(req.UUID)
+	data, err := logic.ProcessCtlLogic.GetProcessConfigByID(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -183,7 +179,7 @@ func (p *procApi) ProcessCreateShare(ctx *echo.Context) error {
 		return err
 	}
 	token := utils.UnwarpIgnore(uuid.NewRandom()).String()
-	if err := repository.WsShare.AddShareData(model.WsShare{
+	if err := logic.WsShareLogic.AddShareData(model.WsShare{
 		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
 		Write:      req.Write,
 		Token:      token,

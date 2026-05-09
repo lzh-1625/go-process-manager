@@ -9,7 +9,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 )
 
 type logApi struct{}
@@ -28,7 +27,7 @@ func (a *logApi) GetLog(ctx *echo.Context) error {
 			Code:    0,
 		})
 	} else {
-		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
+		processNameList := logic.PermissionLogic.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
 		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
 			return !slices.Contains(processNameList, s)
 		})

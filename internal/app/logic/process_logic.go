@@ -85,7 +85,7 @@ func (p *processCtlLogic) KillAllProcessByUserName(userName string) {
 func (p *processCtlLogic) DeleteProcess(uuid int) error {
 	p.KillProcess(uuid)
 	p.processMap.Delete(uuid)
-	return nil
+	return repository.ProcessRepository.DeleteProcessConfig(uuid)
 }
 
 func (p *processCtlLogic) GetProcessList() []model.ProcessInfo {
@@ -143,7 +143,8 @@ func (p *processCtlLogic) ProcessStartAll() {
 func (p *processCtlLogic) ProcessInit() {
 	config := repository.ProcessRepository.GetAllProcessConfig()
 	for _, v := range config {
-		proc := p.NewProcess(*v)
+		proc := NewProcessPty(*v)
+		p.AddProcess(v.UUID, proc)
 		if v.AutoRestart {
 			err := proc.Start()
 			if err != nil {
@@ -170,6 +171,10 @@ func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
 	})
 }
 
+func (p *processCtlLogic) GetProcessConfigByID(uuid int) (*model.Process, error) {
+	return repository.ProcessRepository.GetProcessConfigByID(uuid)
+}
+
 func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	process, ok := p.processMap.Load(config.UUID)
 	if !ok {
@@ -184,7 +189,7 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	}
 	defer result.Lock.Unlock()
 	result.Config.logReport = config.LogReport
-	result.Config.PushIds = utils.JsonStrToStruct[[]int64](config.PushIds)
+	result.Config.PushIDs = utils.JsonStrToStruct[[]int64](config.PushIDs)
 	result.Config.cgroupEnable = config.CgroupEnable
 	result.Config.memoryLimit = config.MemoryLimit
 	result.Config.cpuLimit = config.CpuLimit
@@ -194,17 +199,23 @@ func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	result.WorkDir = config.Cwd
 	result.Name = config.Name
 	result.Env = strings.Split(config.Env, ";")
-	return nil
+	return repository.ProcessRepository.UpdateProcessConfig(config)
 }
 
 func (p *processCtlLogic) NewProcess(config model.Process) (proc *ProcessPty) {
+	index, err := repository.ProcessRepository.AddProcessConfig(config)
+	if err != nil {
+		return nil
+	}
+	config.UUID = index
 	proc = NewProcessPty(config)
 	p.AddProcess(config.UUID, proc)
 	return
 }
 
-func (p *processCtlLogic) RunNewProcess(config model.Process) (proc *ProcessPty, err error) {
-	proc = p.NewProcess(config)
+func (p *processCtlLogic) RunProcess(config model.Process) (proc *ProcessPty, err error) {
+	proc = NewProcessPty(config)
+	p.AddProcess(config.UUID, proc)
 	err = proc.Start()
 	return
 }

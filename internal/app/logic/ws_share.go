@@ -7,12 +7,24 @@ import (
 
 type wsShareLogic struct{}
 
-var WsSahreLogic = &wsShareLogic{}
+var WsShareLogic = &wsShareLogic{}
+
+func (w *wsShareLogic) GetWsShareDataByToken(token string) (*model.WsShare, error) {
+	return repository.WsShare.GetWsShareDataByToken(token)
+}
 
 func (w *wsShareLogic) GetWsShareList() []*model.WsShare {
 	return repository.WsShare.GetWsShareList()
 }
 
-func (w *wsShareLogic) DeleteById(id int) error {
+func (w *wsShareLogic) DeleteByID(id int) error {
 	return repository.WsShare.Delete(id)
+}
+
+func (w *wsShareLogic) Edit(data *model.WsShare) error {
+	return repository.WsShare.Edit(data)
+}
+
+func (w *wsShareLogic) AddShareData(data model.WsShare) error {
+	return repository.WsShare.AddShareData(data)
 }

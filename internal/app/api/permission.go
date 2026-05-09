@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 )
 
 var PermissionApi = new(permissionApi)
@@ -17,7 +17,7 @@ func (p *permissionApi) EditPermssion(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return repository.PermissionRepository.EditPermssion(req)
+	return logic.PermissionLogic.EditPermssion(req)
 }
 
 func (p *permissionApi) GetPermissionList(ctx *echo.Context) error {
@@ -28,7 +28,7 @@ func (p *permissionApi) GetPermissionList(ctx *echo.Context) error {
 		return err
 	}
 	return ctx.JSON(http.StatusOK, model.Response[[]model.PermissionPo]{
-		Data:    repository.PermissionRepository.GetPermssionList(req.Account),
+		Data:    logic.PermissionLogic.GetPermssionList(req.Account),
 		Message: "success",
 		Code:    0,
 	})

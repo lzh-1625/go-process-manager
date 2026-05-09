@@ -81,7 +81,7 @@ func routePathInit(r *echo.Echo) {
 			wsGroup.GET("", api.WsApi.WebsocketHandle)
 			wsGroup.GET("/share", api.WsApi.WebsocketShareHandle)
 			wsGroup.GET("/token/list", api.GetWsShareList, middle.RolePermission(eum.RoleAdmin))
-			wsGroup.DELETE("/token", api.DeleteWsShareById, middle.RolePermission(eum.RoleAdmin))
+			wsGroup.DELETE("/token", api.DeleteWsShareByID, middle.RolePermission(eum.RoleAdmin))
 		}
 
 		processGroup := apiGroup.Group("/process")
@@ -106,11 +106,11 @@ func routePathInit(r *echo.Echo) {
 
 		taskGroup := apiGroup.Group("/task")
 		{
-			taskGroup.GET("", api.TaskApi.GetTaskById, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.GET("", api.TaskApi.GetTaskByID, middle.RolePermission(eum.RoleAdmin))
 			taskGroup.GET("/all", api.TaskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin))
 			taskGroup.GET("/all/wait", api.TaskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitGetMiddel)
 			taskGroup.POST("", api.TaskApi.CreateTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.DELETE("", api.TaskApi.DeleteTaskById, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.DELETE("", api.TaskApi.DeleteTaskByID, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
 			taskGroup.PUT("", api.TaskApi.EditTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
 			taskGroup.GET("/start", api.TaskApi.StartTask, middle.RolePermission(eum.RoleAdmin))
 			taskGroup.GET("/stop", api.TaskApi.StopTask, middle.RolePermission(eum.RoleAdmin))
@@ -130,7 +130,7 @@ func routePathInit(r *echo.Echo) {
 		pushGroup := apiGroup.Group("/push", middle.RolePermission(eum.RoleAdmin))
 		{
 			pushGroup.GET("/list", api.PushApi.GetPushList)
-			pushGroup.GET("", api.PushApi.GetPushById)
+			pushGroup.GET("", api.PushApi.GetPushByID)
 			pushGroup.POST("", api.PushApi.AddPushConfig)
 			pushGroup.PUT("", api.PushApi.UpdatePushConfig)
 			pushGroup.DELETE("", api.PushApi.DeletePushConfig)

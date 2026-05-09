@@ -6,7 +6,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/robfig/cron/v3"
 )
 
@@ -22,14 +21,14 @@ func (t *taskApi) CreateTask(ctx *echo.Context) error {
 	return logic.TaskLogic.CreateTask(req)
 }
 
-func (t *taskApi) GetTaskById(ctx *echo.Context) error {
+func (t *taskApi) GetTaskByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	result, err := repository.TaskRepository.GetTaskById(req.ID)
+	result, err := logic.TaskLogic.GetTaskByID(req.ID)
 	if err != nil {
 		return err
 	}
@@ -48,7 +47,7 @@ func (t *taskApi) GetTaskList(ctx *echo.Context) error {
 	})
 }
 
-func (t *taskApi) DeleteTaskById(ctx *echo.Context) error {
+func (t *taskApi) DeleteTaskByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id" binding:"required"`
 	}
@@ -65,7 +64,7 @@ func (t *taskApi) StartTask(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	go logic.TaskLogic.RunTaskById(req.ID)
+	go logic.TaskLogic.RunTaskByID(req.ID)
 	return nil
 }
 

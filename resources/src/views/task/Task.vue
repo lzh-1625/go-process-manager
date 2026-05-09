@@ -333,7 +333,7 @@ import {
   changeTaskKey,
   editTask,
   getTaskAll,
-  getTaskById,
+  GetTaskByID,
   deleteTaskById,
   startTaskById,
   stopTaskById,
@@ -456,7 +456,7 @@ const addTaskBefore = () => {
 // 打开编辑任务弹窗
 const editTaskBefore = (row: TaskItem) => {
   isAdd.value = false;
-  getTaskById(row.id).then((res) => {
+  GetTaskByID(row.id).then((res) => {
     taskForm.value = res.data ?? {};
     if (taskForm.value.processId === 0) {
       taskForm.value.processId = undefined;
@@ -597,7 +597,7 @@ const changeApi = () => {
   changeTaskKey(taskForm.value.id).then((res) => {
     if (res.code === 0) {
       snackbarStore.showSuccessMessage("API 更新成功");
-      getTaskById(taskForm.value?.id).then((e) => {
+      GetTaskByID(taskForm.value?.id).then((e) => {
         Object.assign(taskForm.value, e.data);
       });
     }

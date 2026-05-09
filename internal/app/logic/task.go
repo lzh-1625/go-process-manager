@@ -36,12 +36,12 @@ func NewTaskJob(data *model.Task) (*TaskJob, error) {
 }
 
 func (t *TaskJob) Run(ctx context.Context) (err error) {
-	if ctx.Value(eum.CtxTaskTraceId{}) == nil {
-		ctx = context.WithValue(ctx, eum.CtxTaskTraceId{}, uuid.NewString())
+	if ctx.Value(eum.CtxTaskTraceID{}) == nil {
+		ctx = context.WithValue(ctx, eum.CtxTaskTraceID{}, uuid.NewString())
 	}
-	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string))
+	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
 	defer func() {
-		EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceId", ctx.Value(eum.CtxTaskTraceId{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
+		EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
 	}()
 	t.Running = true
 	t.StartTime = time.Now()
@@ -59,7 +59,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 
 	var ok bool
 	// check if the condition is satisfied
-	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessId == 0 {
+	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessID == 0 {
 		ok = true
 	} else {
 		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
@@ -76,20 +76,20 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	}
 	log.Logger.Infow("task execution success", "target", t.TaskConfig.OperationTarget)
 
-	if t.TaskConfig.NextId != nil {
+	if t.TaskConfig.NextID != nil {
 		var nextTask *TaskJob
-		nextTask, err = TaskLogic.getTaskJob(*t.TaskConfig.NextId)
+		nextTask, err = TaskLogic.getTaskJob(*t.TaskConfig.NextID)
 		if err != nil {
-			log.Logger.Errorw("cannot get next node, end task", "nextId", t.TaskConfig.NextId)
+			log.Logger.Errorw("cannot get next node, end task", "nextID", t.TaskConfig.NextID)
 			return err
 		}
 		select {
 		case <-ctx.Done():
 			log.Logger.Infow("task flow manually ended")
 		default:
-			log.Logger.Debugw("execute next node", "nextId", *t.TaskConfig.NextId)
+			log.Logger.Debugw("execute next node", "nextID", *t.TaskConfig.NextID)
 			if nextTask.Running {
-				log.Logger.Errorw("next node is running, end task", "nextId", t.TaskConfig.NextId)
+				log.Logger.Errorw("next node is running, end task", "nextID", t.TaskConfig.NextID)
 				return
 			}
 			return nextTask.Run(ctx)

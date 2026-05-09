@@ -27,11 +27,12 @@ func TestCgroup(t *testing.T) {
 		panic(err)
 	}
 	defer control.Delete()
-	p, err := logic.ProcessCtlLogic.RunNewProcess(model.Process{
+	p := logic.ProcessCtlLogic.NewProcess(model.Process{
 		Name: "test",
 		Cmd:  "bash",
 		Cwd:  `/root`,
 	})
+	err = p.Start()
 	if err != nil {
 		t.FailNow()
 	}

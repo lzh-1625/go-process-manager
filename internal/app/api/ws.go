@@ -13,7 +13,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/gorilla/websocket"
@@ -113,7 +112,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	data, err := repository.WsShare.GetWsShareDataByToken(req.Token)
+	data, err := logic.WsShareLogic.GetWsShareDataByToken(req.Token)
 	if err != nil {
 		return err
 	}
@@ -141,7 +140,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	defer conn.Close()
 	log.Logger.Infow("ws connection success", "user", data.CreateBy, "process", proc.Name)
 	data.LastLink = time.Now()
-	repository.WsShare.Edit(data)
+	logic.WsShareLogic.Edit(data)
 
 	proc.SetTerminalSize(req.Cols, req.Rows)
 	wsCtx, cancel := context.WithCancel(context.Background())
@@ -217,18 +216,18 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 
 func GetWsShareList(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]*model.WsShare]{
-		Data:    logic.WsSahreLogic.GetWsShareList(),
+		Data:    logic.WsShareLogic.GetWsShareList(),
 		Message: "success",
 		Code:    0,
 	})
 }
 
-func DeleteWsShareById(ctx *echo.Context) error {
+func DeleteWsShareByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.WsSahreLogic.DeleteById(req.ID)
+	return logic.WsShareLogic.DeleteByID(req.ID)
 }

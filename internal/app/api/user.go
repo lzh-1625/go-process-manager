@@ -1,14 +1,11 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
-	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
@@ -16,15 +13,13 @@ type userApi struct{}
 
 var UserApi = new(userApi)
 
-const DEFAULT_ROOT_ACCOUNT = "root"
-const DEFAULT_ROOT_PASSWORD = "root"
-
 func (u *userApi) LoginHandler(ctx *echo.Context) error {
 	var req model.LoginHandlerReq
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !u.checkLoginInfo(req.Account, req.Password) {
+	user, ok := logic.UserLogic.CheckLoginInfo(req.Account, req.Password)
+	if !ok {
 		return ctx.JSON(http.StatusUnauthorized, model.Response[struct{}]{
 			Message: "incorrect username or password",
 			Code:    -1,
@@ -40,7 +35,7 @@ func (u *userApi) LoginHandler(ctx *echo.Context) error {
 		Data: map[string]any{
 			"token":    token,
 			"username": req.Account,
-			"role":     repository.UserRepository.GetUserByName(req.Account).Role,
+			"role":     user.Role,
 		},
 	})
 }
@@ -50,16 +45,7 @@ func (u *userApi) CreateUser(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if req.Role == eum.RoleRoot {
-		return errors.New("creation of root accounts is forbidden")
-	}
-	if req.Account == eum.Console {
-		return errors.New("operation failed")
-	}
-	if len(req.Password) < config.CF.UserPassWordMinLength {
-		return errors.New("password is too short")
-	}
-	err = repository.UserRepository.CreateUser(req)
+	err = logic.UserLogic.CreateUser(req)
 	return
 }
 
@@ -68,20 +54,7 @@ func (u *userApi) EditUser(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	reqUser := getUserName(ctx)
-	if req.Account == DEFAULT_ROOT_ACCOUNT {
-		return errors.New("can not edit root user")
-	}
-	if getRole(ctx) != eum.RoleRoot && req.Account != "" {
-		return errors.New("invalid parameters")
-	}
-	if req.Account == "" {
-		req.Account = reqUser
-	}
-	if len(req.Password) != 0 && len(req.Password) < config.CF.UserPassWordMinLength {
-		return errors.New("password is too short")
-	}
-	err = repository.UserRepository.EditUser(req)
+	err = logic.UserLogic.EditUser(req, getUserName(ctx), getRole(ctx))
 	return
 }
 
@@ -92,30 +65,14 @@ func (u *userApi) DeleteUser(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if req.Account == DEFAULT_ROOT_ACCOUNT {
-		return errors.New("deletion of root accounts is forbidden")
-	}
-	err = repository.UserRepository.DeleteUser(req.Account)
+	err = logic.UserLogic.DeleteUser(req.Account)
 	return
 }
 
 func (u *userApi) GetUserList(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]*model.User]{
-		Data:    repository.UserRepository.GetUserList(),
+		Data:    logic.UserLogic.GetUserList(),
 		Message: "success",
 		Code:    0,
 	})
-}
-
-func (u *userApi) checkLoginInfo(account, password string) bool {
-	user := repository.UserRepository.GetUserByName(account)
-	if user == nil && account == DEFAULT_ROOT_ACCOUNT { // if root user not exist, create a root user
-		repository.UserRepository.CreateUser(model.User{
-			Account:  DEFAULT_ROOT_ACCOUNT,
-			Password: DEFAULT_ROOT_PASSWORD,
-			Role:     eum.RoleRoot,
-		})
-		return password == DEFAULT_ROOT_PASSWORD
-	}
-	return user != nil && user.Password == utils.Md5(password)
 }

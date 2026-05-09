@@ -9,7 +9,7 @@ export function getTaskAllWait() {
   return api.get("/task/all/wait", undefined).then((res) => res);
 }
 
-export function getTaskById(id) {
+export function GetTaskByID(id) {
   return api.get<TaskItem>("/task", { id }).then((res) => res);
 }
 

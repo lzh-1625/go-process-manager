@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
 )
@@ -21,7 +22,7 @@ var PushLogic = &pushLogic{
 }
 
 func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
-	pl := repository.PushRepository.GetPushConfigByIds(ids)
+	pl := repository.PushRepository.GetPushConfigByIDs(ids)
 	for _, v := range pl {
 		if v.Enable {
 			var resp *http.Response
@@ -45,6 +46,26 @@ func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 			resp.Body.Close()
 		}
 	}
+}
+
+func (p *pushLogic) GetPushList() []*model.Push {
+	return repository.PushRepository.GetPushList()
+}
+
+func (p *pushLogic) GetPushConfigByID(id int) *model.Push {
+	return repository.PushRepository.GetPushConfigByID(id)
+}
+
+func (p *pushLogic) AddPushConfig(data model.Push) error {
+	return repository.PushRepository.AddPushConfig(data)
+}
+
+func (p *pushLogic) UpdatePushConfig(data model.Push) error {
+	return repository.PushRepository.UpdatePushConfig(data)
+}
+
+func (p *pushLogic) DeletePushConfig(id int) error {
+	return repository.PushRepository.DeletePushConfig(id)
 }
 
 func (p *pushLogic) getReplaceMessage(placeholders map[string]string, message string, urlEncode bool) string {

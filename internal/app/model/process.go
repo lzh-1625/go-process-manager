@@ -7,7 +7,7 @@ type Process struct {
 	Cwd               string   `gorm:"column:cwd" json:"cwd"`
 	AutoRestart       bool     `gorm:"column:auto_restart" json:"autoRestart"`
 	CompulsoryRestart bool     `gorm:"column:compulsory_restart" json:"compulsoryRestart"`
-	PushIds           string   `gorm:"column:push_ids;type:json" json:"pushIds"`
+	PushIDs           string   `gorm:"column:push_ids;type:json" json:"pushIds"`
 	LogReport         bool     `gorm:"column:log_report" json:"logReport"`
 	CgroupEnable      bool     `gorm:"column:cgroup_enable" json:"cgroupEnable"`
 	MemoryLimit       *float32 `gorm:"column:memory_limit" json:"memoryLimit"`

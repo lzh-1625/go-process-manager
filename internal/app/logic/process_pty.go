@@ -203,6 +203,7 @@ func (p *ProcessPty) watchDog() {
 func NewProcessPty(pconfig model.Process) *ProcessPty {
 	p := &ProcessPty{
 		ProcessBase: &ProcessBase{
+			UUID:         pconfig.UUID,
 			Name:         pconfig.Name,
 			StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
 			WorkDir:      pconfig.Cwd,
