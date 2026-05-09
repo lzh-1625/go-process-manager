@@ -154,8 +154,8 @@
                     variant="outlined"
                     density="comfortable"
                     rows="4"
-                    placeholder='{"message": "{$messsage}", "user": "{$user}"}'
-                    hint="占位符：{$name}进程名称 {$user}使用者 {$messsage}消息内容 {$status}进程状态"
+                    placeholder='{"message": "{$message}", "user": "{$user}"}'
+                    hint="占位符：{$name}进程名称 {$user}使用者 {$message}消息内容 {$status}进程状态"
                     persistent-hint
                   ></v-textarea>
                 </v-col>
