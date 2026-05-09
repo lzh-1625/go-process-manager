@@ -34,7 +34,7 @@ left join permission p2 on
 WHERE
 	u.account = ?
 	or u.account ISNULL`, account).Find(&result); err.Error != nil {
-		log.Logger.Warnw("权限查询失败", "err", err)
+		log.Logger.Warnw("permission query failed", "err", err)
 	}
 
 	return result

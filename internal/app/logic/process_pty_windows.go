@@ -31,46 +31,46 @@ func (p *ProcessPty) Start() (err error) {
 		if err != nil {
 			p.Config.AutoRestart = false
 			p.SetState(eum.ProcessStateWarnning)
-			p.State.Info = "进程启动失败:" + err.Error()
+			p.State.Info = "process start failed: " + err.Error()
 		}
 	}()
 	if ok := p.SetState(eum.ProcessStateStart, func() bool {
 		return p.State.State != eum.ProcessStateRunning && p.State.State != eum.ProcessStateStart
 	}); !ok {
-		log.Logger.Warnw("进程已在运行，跳过启动")
+		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}
 	pty, err := console.New(100, 100)
 	if err != nil {
-		log.Logger.Errorw("进程启动失败", "err", err)
+		log.Logger.Errorw("process start failed", "err", err)
 		return err
 	}
 	pty.SetCWD(p.WorkDir)
 	pty.SetENV(p.Env)
 	err = pty.Start(p.StartCommand)
 	if err != nil {
-		log.Logger.Errorw("进程启动失败", "err", err)
+		log.Logger.Errorw("process start failed", "err", err)
 		return err
 	}
 	p.pty = pty
 	pid, err := pty.Pid()
 	if err != nil {
-		log.Logger.Errorw("进程启动失败", "err", err)
+		log.Logger.Errorw("process start failed", "err", err)
 		return err
 	}
 	p.op, err = os.FindProcess(pid)
 	if err != nil {
-		log.Logger.Errorw("进程启动失败", "err", err)
+		log.Logger.Errorw("process start failed", "err", err)
 		return err
 	}
-	log.Logger.Infow("进程启动成功", "进程名称", p.Name, "重启次数", p.State.restartTimes)
+	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.restartTimes)
 	p.pInit()
 	if !p.SetState(eum.ProcessStateRunning, func() bool {
 		return p.State.State == eum.ProcessStateStart
 	}) {
-		return errors.New("状态异常启动失败")
+		return errors.New("state abnormal start failed")
 	}
-	p.push("进程启动成功")
+	p.push("process start success")
 	return nil
 }
 
@@ -93,20 +93,20 @@ func (p *ProcessPty) Write(input string) (err error) {
 }
 
 func (p *ProcessPty) readInit() {
-	log.Logger.Debugw("stdout读取线程已启动", "进程名", p.Name, "使用者", p.GetUserString())
+	log.Logger.Debugw("stdout read thread started", "process name", p.Name, "user", p.GetUserString())
 	buf := make([]byte, 1024)
 	for {
 		select {
 		case <-p.StopChan:
 			{
-				log.Logger.Debugw("stdout读取线程已退出", "进程名", p.Name, "使用者", p.GetUserString())
+				log.Logger.Debugw("stdout read thread exited", "process name", p.Name, "user", p.GetUserString())
 				return
 			}
 		default:
 			{
 				n, err := p.pty.Read(buf)
 				if err != nil {
-					log.Logger.Errorw("stdout读取失败", "err", err)
+					log.Logger.Errorw("stdout read failed", "err", err)
 					return
 				}
 				p.bufHandle(buf[:n])
@@ -141,7 +141,7 @@ func (p *ProcessPty) bufHandle(b []byte) {
 }
 
 func (p *ProcessPty) pInit() {
-	log.Logger.Infow("创建进程成功")
+	log.Logger.Infow("create process success")
 	p.StopChan = make(chan struct{})
 	p.State.manualStopFlag = false
 	p.State.startTime = time.Now()
@@ -161,11 +161,11 @@ func (p *ProcessPty) watchDog() {
 	if p.cgroup.enable && p.cgroup.delete != nil {
 		err := p.cgroup.delete()
 		if err != nil {
-			log.Logger.Errorw("cgroup删除失败", "err", err, "进程名称", p.Name)
+			log.Logger.Errorw("cgroup delete failed", "err", err, "process name", p.Name)
 		}
 	}
 	if !p.SetState(eum.ProcessStateStop, func() bool {
-		// 进程已是停止或警告状态，无需重复设置状态
+		// process is already stopped or warning state, no need to repeat set state
 		if eum.ProcessStateStop == p.State.State || eum.ProcessStateWarnning == p.State.State {
 			return false
 		}
@@ -176,31 +176,31 @@ func (p *ProcessPty) watchDog() {
 		return
 	}
 	if state.ExitCode() != 0 {
-		log.Logger.Infow("进程停止", "进程名称", p.Name, "exitCode", state.ExitCode())
-		p.push(fmt.Sprintf("进程停止,退出码 %d", state.ExitCode()))
+		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
+		p.push(fmt.Sprintf("process stopped, exit code %d", state.ExitCode()))
 	} else {
-		log.Logger.Infow("进程正常退出", "进程名称", p.Name)
-		p.push("进程正常退出")
+		log.Logger.Infow("process normal exit", "process name", p.Name)
+		p.push("process normal exit")
 	}
-	if !p.Config.AutoRestart || p.State.manualStopFlag { // 不重启或手动关闭
+	if !p.Config.AutoRestart || p.State.manualStopFlag { // not restart or manual close
 		return
 	}
-	if p.Config.compulsoryRestart { // 强制重启
+	if p.Config.compulsoryRestart { // compulsory restart
 		p.Start()
 		return
 	}
-	if state.ExitCode() == 0 { // 正常退出
+	if state.ExitCode() == 0 { // normal exit
 		return
 	}
-	if p.State.restartTimes < config.CF.ProcessRestartsLimit { // 重启次数未达限制
+	if p.State.restartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
 		p.Start()
 		p.State.restartTimes++
 		return
 	}
-	log.Logger.Warnw("重启次数达到上限", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
+	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
 	p.SetState(eum.ProcessStateWarnning)
-	p.State.Info = "重启次数异常"
-	p.push("进程重启次数达到上限")
+	p.State.Info = "restart times abnormal"
+	p.push("restart times reached limit")
 }
 
 func NewProcessPty(pconfig model.Process) *ProcessPty {

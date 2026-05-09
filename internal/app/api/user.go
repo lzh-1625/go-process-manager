@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
@@ -15,6 +16,7 @@ type userApi struct{}
 
 var UserApi = new(userApi)
 
+const DEFAULT_ROOT_ACCOUNT = "root"
 const DEFAULT_ROOT_PASSWORD = "root"
 
 func (u *userApi) LoginHandler(ctx *echo.Context) error {
@@ -23,7 +25,7 @@ func (u *userApi) LoginHandler(ctx *echo.Context) error {
 		return err
 	}
 	if !u.checkLoginInfo(req.Account, req.Password) {
-		return ctx.JSON(401, model.Response[struct{}]{
+		return ctx.JSON(http.StatusUnauthorized, model.Response[struct{}]{
 			Message: "incorrect username or password",
 			Code:    -1,
 		})
@@ -32,7 +34,7 @@ func (u *userApi) LoginHandler(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[map[string]any]{
+	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
 		Message: "login success",
 		Code:    0,
 		Data: map[string]any{
@@ -67,7 +69,7 @@ func (u *userApi) EditUser(ctx *echo.Context) (err error) {
 		return err
 	}
 	reqUser := getUserName(ctx)
-	if req.Account == "root" {
+	if req.Account == DEFAULT_ROOT_ACCOUNT {
 		return errors.New("can not edit root user")
 	}
 	if getRole(ctx) != eum.RoleRoot && req.Account != "" {
@@ -90,7 +92,7 @@ func (u *userApi) DeleteUser(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if req.Account == "root" {
+	if req.Account == DEFAULT_ROOT_ACCOUNT {
 		return errors.New("deletion of root accounts is forbidden")
 	}
 	err = repository.UserRepository.DeleteUser(req.Account)
@@ -98,7 +100,7 @@ func (u *userApi) DeleteUser(ctx *echo.Context) (err error) {
 }
 
 func (u *userApi) GetUserList(ctx *echo.Context) error {
-	return ctx.JSON(200, model.Response[[]*model.User]{
+	return ctx.JSON(http.StatusOK, model.Response[[]*model.User]{
 		Data:    repository.UserRepository.GetUserList(),
 		Message: "success",
 		Code:    0,
@@ -107,9 +109,9 @@ func (u *userApi) GetUserList(ctx *echo.Context) error {
 
 func (u *userApi) checkLoginInfo(account, password string) bool {
 	user := repository.UserRepository.GetUserByName(account)
-	if user == nil && account == "root" { // 如果root用户不存在，则创建一个root用户
+	if user == nil && account == DEFAULT_ROOT_ACCOUNT { // if root user not exist, create a root user
 		repository.UserRepository.CreateUser(model.User{
-			Account:  "root",
+			Account:  DEFAULT_ROOT_ACCOUNT,
 			Password: DEFAULT_ROOT_PASSWORD,
 			Role:     eum.RoleRoot,
 		})

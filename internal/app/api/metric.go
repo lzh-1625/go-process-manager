@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -15,7 +17,7 @@ func (m *metricApi) GetPerformceUsage(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[*model.PerformceUsage]{
+	return ctx.JSON(http.StatusOK, model.Response[*model.PerformceUsage]{
 		Data:    result,
 		Message: "success",
 		Code:    0,
@@ -29,7 +31,7 @@ func (m *metricApi) GetLogicStatsticMetric(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[model.LogStatsticMetric]{
+	return ctx.JSON(http.StatusOK, model.Response[model.LogStatsticMetric]{
 		Data:    logic.MetricLogic.GetLogMetric(req.DateType),
 		Message: "success",
 		Code:    0,

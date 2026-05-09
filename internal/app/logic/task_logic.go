@@ -31,7 +31,7 @@ func (t *taskLogic) InitTaskJob() {
 	for _, v := range repository.TaskRepository.GetAllTask() {
 		tj, err := NewTaskJob(v)
 		if err != nil {
-			log.Logger.Warnw("任务初始化失败", "err", err)
+			log.Logger.Warnw("task initialization failed", "err", err)
 			continue
 		}
 		t.taskJobMap.Store(v.ID, tj)
@@ -41,7 +41,7 @@ func (t *taskLogic) InitTaskJob() {
 func (t *taskLogic) StopTaskJob(id int) error {
 	taskJob, err := t.getTaskJob(id)
 	if err != nil {
-		return errors.New("don't exist this task id")
+		return err
 	}
 	if taskJob.Running {
 		taskJob.Cancel()
@@ -52,7 +52,7 @@ func (t *taskLogic) StopTaskJob(id int) error {
 func (t *taskLogic) StartTaskJob(id int) error {
 	taskJob, err := t.getTaskJob(id)
 	if err != nil {
-		return errors.New("don't exist this task id")
+		return err
 	}
 	taskJob.Cron.Run()
 	return nil
@@ -101,7 +101,7 @@ func (t *taskLogic) CreateTask(data model.Task) error {
 func (t *taskLogic) EditTask(data model.Task) error {
 	tj, err := t.getTaskJob(data.ID)
 	if err != nil {
-		return errors.New("task id not exist")
+		return err
 	}
 
 	if tj.Running {
@@ -114,17 +114,13 @@ func (t *taskLogic) EditTask(data model.Task) error {
 	}
 
 	tj.TaskConfig = &data
-	t.EditTaskEnable(data.ID, tj.TaskConfig.Enable)
 	return repository.TaskRepository.EditTask(&data)
 }
 
 func (t *taskLogic) EditTaskEnable(id int, status bool) error {
 	tj, err := t.getTaskJob(id)
 	if err != nil {
-		return errors.New("don't exist this task id")
-	}
-	if tj.TaskConfig.CronExpression == "" {
-		return errors.New("task cron expression is empty")
+		return err
 	}
 	if err := tj.EditStatus(status); err != nil {
 		return err
@@ -160,9 +156,9 @@ func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessS
 	if len(taskList) == 0 {
 		return
 	}
-	log.Logger.Infow("获取触发任务", "count", len(taskList), "prcess", processName, "触发事件", event)
+	log.Logger.Infow("get trigger task", "count", len(taskList), "prcess", processName, "trigger event", event)
 	for _, v := range taskList {
-		log.Logger.Infow("执行触发任务", "taskId", v.ID)
+		log.Logger.Infow("execute trigger task", "taskId", v.ID)
 		t.RunTaskById(v.ID)
 	}
 }
@@ -170,7 +166,7 @@ func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessS
 func (t *taskLogic) RunTaskById(id int) error {
 	task, err := t.getTaskJob(id)
 	if err != nil {
-		return errors.New("id不存在")
+		return err
 	}
 	if task.Running {
 		return errors.New("task is running")

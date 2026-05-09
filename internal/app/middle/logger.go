@@ -19,12 +19,12 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		start := time.Now()
 		path := c.Request().URL.Path
 
-		// 非 /api 直接放行
+		// non /api direct pass
 		if !strings.HasPrefix(path, "/api") {
 			return next(c)
 		}
 
-		// 执行 handler
+		// execute handler
 		err := next(c)
 		_, code := echo.ResolveResponseStatus(c.Response(), err)
 
@@ -32,7 +32,7 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		logKv = append(logKv, "Method", c.Request().Method)
 		logKv = append(logKv, "Status", code)
 		logKv = append(logKv, "Path", path)
-		logKv = append(logKv, "耗时", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
+		logKv = append(logKv, "time", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
 
 		if user, ok := c.Get(eum.CtxUserName).(string); ok && user != "" {
 			logKv = append(logKv, "user", user)

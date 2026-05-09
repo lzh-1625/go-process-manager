@@ -27,10 +27,9 @@ func NewTaskJob(data *model.Task) (*TaskJob, error) {
 		TaskConfig: data,
 		StartTime:  time.Now(),
 	}
-	if data.Enable && data.CronExpression != "" {
-		err := tj.InitCronHandle()
-		if err != nil {
-			log.Logger.Warnw("定时任务启动失败", "err", err, "task", data.ID)
+	if data.Enable {
+		if err := tj.InitCronHandle(); err != nil {
+			log.Logger.Warnw("cron task start failed", "err", err, "task", data.ID)
 		}
 	}
 	return tj, nil
@@ -51,77 +50,73 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 		t.Running = false
 		TaskWaitCond.Trigger()
 	}()
-	var ok bool
-	// 判断条件是否满足
-	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessId == 0 {
-		ok = true
-	} else {
-		proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
-		if err != nil {
-			return err
-		}
-		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
-	}
-	log.Logger.Debugw("任务条件判断", "pass", ok)
-	if !ok {
-		return
-	}
 
 	proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
 	if err != nil {
-		log.Logger.Debugw("不存在该进程，结束任务")
+		log.Logger.Debugw("process not found, end task")
 		return err
 	}
 
-	// 执行操作
-	log.Logger.Infow("任务开始执行")
-	if !GetOperationHandle()[t.TaskConfig.Operation](t.TaskConfig, proc) {
-		log.Logger.Warnw("任务执行失败")
-		return errors.New("task execute failed")
+	var ok bool
+	// check if the condition is satisfied
+	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessId == 0 {
+		ok = true
+	} else {
+		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
 	}
-	log.Logger.Infow("任务执行成功", "target", t.TaskConfig.OperationTarget)
+	log.Logger.Debugw("task condition check", "pass", ok)
+	if !ok {
+		return
+	}
+	// execute operation
+	log.Logger.Infow("task execute started")
+	if !GetOperationHandle()[t.TaskConfig.Operation](t.TaskConfig, proc) {
+		log.Logger.Warnw("task execution failed")
+		return errors.New("task execution failed")
+	}
+	log.Logger.Infow("task execution success", "target", t.TaskConfig.OperationTarget)
 
 	if t.TaskConfig.NextId != nil {
 		var nextTask *TaskJob
 		nextTask, err = TaskLogic.getTaskJob(*t.TaskConfig.NextId)
 		if err != nil {
-			log.Logger.Errorw("无法获取到下一个节点,结束任务", "nextId", t.TaskConfig.NextId)
+			log.Logger.Errorw("cannot get next node, end task", "nextId", t.TaskConfig.NextId)
 			return err
 		}
 		select {
 		case <-ctx.Done():
-			log.Logger.Infow("任务流被手动结束")
+			log.Logger.Infow("task flow manually ended")
 		default:
-			log.Logger.Debugw("执行下一个节点", "nextId", *t.TaskConfig.NextId)
+			log.Logger.Debugw("execute next node", "nextId", *t.TaskConfig.NextId)
 			if nextTask.Running {
-				log.Logger.Errorw("下一个节点已在运行，结束任务", "nextId", t.TaskConfig.NextId)
+				log.Logger.Errorw("next node is running, end task", "nextId", t.TaskConfig.NextId)
 				return
 			}
 			return nextTask.Run(ctx)
 		}
 	} else {
-		log.Logger.Infow("任务流结束")
+		log.Logger.Infow("task flow ended")
 	}
 	return
 }
 
 func (t *TaskJob) InitCronHandle() error {
-	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron表达式校验
-		log.Logger.Errorw("cron解析失败", "cron", t.TaskConfig.CronExpression, "err", err)
+	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron expression validation
+		log.Logger.Errorw("cron parse failed", "cron", t.TaskConfig.CronExpression, "err", err)
 		return err
 	}
 	c := cron.New()
 	_, err := c.AddFunc(t.TaskConfig.CronExpression, func() {
-		log.Logger.Infow("定时任务启动")
+		log.Logger.Infow("cron task start")
 		if t.Running {
-			log.Logger.Infow("任务已在运行，跳过当前任务")
+			log.Logger.Infow("task is running, skip current task")
 			return
 		}
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		t.Cancel = cancel
 		t.Run(ctx)
-		log.Logger.Infow("定时任务结束")
+		log.Logger.Infow("cron task ended")
 	})
 	if err != nil {
 		return err
@@ -132,10 +127,10 @@ func (t *TaskJob) InitCronHandle() error {
 }
 
 func (t *TaskJob) EditStatus(status bool) error {
-	if !status && t.Cron != nil { // 停止定时器
+	if t.Cron != nil { // stop cron
 		t.Cron.Stop()
 	}
-	if status { // 启动定时器
+	if status { // start cron
 		if err := t.InitCronHandle(); err != nil {
 			return err
 		}

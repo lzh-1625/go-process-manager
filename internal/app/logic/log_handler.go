@@ -20,7 +20,7 @@ var (
 
 func InitLogHandle() {
 	Loghandler.antsPool, _ = ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i any) {
-		log.Logger.Warnw("日志储存失败", "err", i)
+		log.Logger.Warnw("log storage failed", "err", i)
 	}))
 }
 
@@ -28,7 +28,7 @@ func (l *loghandler) AddLog(data model.ProcessLog) {
 	if err := l.antsPool.Submit(func() {
 		LogLogicImpl.Insert(data.Log, data.Name, data.Using, data.Time)
 	}); err != nil {
-		log.Logger.Warnw("协程池添加任务失败", "err", err, "当前运行数量", l.antsPool.Running())
+		log.Logger.Warnw("coroutine pool add task failed", "err", err, "current running number", l.antsPool.Running())
 	}
 }
 

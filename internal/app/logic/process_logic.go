@@ -32,11 +32,11 @@ func (p *processCtlLogic) AddProcess(uuid int, process *ProcessPty) {
 func (p *processCtlLogic) KillProcess(uuid int) error {
 	value, ok := p.processMap.Load(uuid)
 	if !ok {
-		return errors.New("进程不存在")
+		return errors.New("process not exist")
 	}
 	result, ok := value.(*ProcessPty)
 	if !ok {
-		return errors.New("进程类型错误")
+		return errors.New("process type error")
 	}
 	return result.Kill()
 }
@@ -134,7 +134,7 @@ func (p *processCtlLogic) ProcessStartAll() {
 		process := value.(*ProcessPty)
 		err := process.Start()
 		if err != nil {
-			log.Logger.Errorw("进程启动失败", "name", process.Name)
+			log.Logger.Errorw("process start failed", "name", process.Name)
 		}
 		return true
 	})
@@ -147,7 +147,7 @@ func (p *processCtlLogic) ProcessInit() {
 		if v.AutoRestart {
 			err := proc.Start()
 			if err != nil {
-				log.Logger.Warnw("初始化启动进程失败", v.Name, "name", "err", err)
+				log.Logger.Warnw("initialize process start failed", v.Name, "name", "err", err)
 				continue
 			}
 		}
@@ -164,7 +164,7 @@ func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
 		}
 		err := process.Start()
 		if err != nil {
-			log.Logger.Errorw("进程启动失败", "name", process.Name)
+			log.Logger.Errorw("process start failed", "name", process.Name)
 		}
 		return true
 	})
@@ -173,14 +173,14 @@ func (p *processCtlLogic) ProcesStartAllByUsername(userName string) {
 func (p *processCtlLogic) UpdateProcessConfig(config model.Process) error {
 	process, ok := p.processMap.Load(config.UUID)
 	if !ok {
-		return errors.New("进程获取失败")
+		return errors.New("process get failed")
 	}
 	result, ok := process.(*ProcessPty)
 	if !ok {
-		return errors.New("进程类型错误")
+		return errors.New("process type error")
 	}
 	if !result.Lock.TryLock() {
-		return errors.New("进程当前正在被使用")
+		return errors.New("process is being used")
 	}
 	defer result.Lock.Unlock()
 	result.Config.logReport = config.LogReport

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -11,7 +13,7 @@ type pushApi struct{}
 var PushApi = new(pushApi)
 
 func (p *pushApi) GetPushList(ctx *echo.Context) error {
-	return ctx.JSON(200, model.Response[[]*model.Push]{
+	return ctx.JSON(http.StatusOK, model.Response[[]*model.Push]{
 		Data:    repository.PushRepository.GetPushList(),
 		Message: "success",
 		Code:    0,
@@ -25,7 +27,7 @@ func (p *pushApi) GetPushById(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[*model.Push]{
+	return ctx.JSON(http.StatusOK, model.Response[*model.Push]{
 		Data:    repository.PushRepository.GetPushConfigById(req.ID),
 		Message: "success",
 		Code:    0,

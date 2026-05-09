@@ -32,13 +32,13 @@ func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 			}
 			req, err := http.NewRequest(v.Method, url, reader)
 			if err != nil {
-				log.Logger.Warnw("推送失败", "err", err, "remark", v.Remark)
+				log.Logger.Warnw("push failed", "err", err, "remark", v.Remark)
 				continue
 			}
 			req.Header.Add("content-type", "application/json")
 			resp, err = p.httpClient.Do(req)
 			if err != nil {
-				log.Logger.Warnw("推送失败", "err", err, "remark", v.Remark)
+				log.Logger.Warnw("push failed", "err", err, "remark", v.Remark)
 				continue
 			}
 			io.Copy(io.Discard, resp.Body)

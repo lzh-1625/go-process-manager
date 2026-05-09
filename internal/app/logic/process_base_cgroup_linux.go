@@ -13,17 +13,17 @@ import (
 
 func (p *ProcessBase) initCgroup() {
 	if !p.Config.cgroupEnable {
-		log.Logger.Debugw("不启用cgroup")
+		log.Logger.Debugw("cgroup not enabled")
 		return
 	}
 	switch cgroups.Mode() {
 	case cgroups.Unavailable:
-		log.Logger.Warnw("当前系统不支持cgroup")
+		log.Logger.Warnw("cgroup not supported by current system")
 	case cgroups.Legacy, cgroups.Hybrid:
-		log.Logger.Debugw("启用cgroupv1")
+		log.Logger.Debugw("cgroupv1 enabled")
 		p.initCgroupV1()
 	case cgroups.Unified:
-		log.Logger.Debugw("启用cgroupv2")
+		log.Logger.Debugw("cgroupv2 enabled")
 		p.initCgroupV2()
 	}
 }
@@ -51,7 +51,7 @@ func (p *ProcessBase) initCgroupV1() {
 	}
 	control, err := cgroup1.New(cgroup1.StaticPath("/"+p.Name), resources)
 	if err != nil {
-		log.Logger.Errorw("启用cgroup失败", "err", err, "name", p.Name)
+		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
 	}
 	control.AddProc(uint64(p.Pid))
@@ -80,7 +80,7 @@ func (p *ProcessBase) initCgroupV2() {
 	}
 	control, err := cgroup2.NewSystemd("/", p.Name+".slice", -1, resources)
 	if err != nil {
-		log.Logger.Errorw("启用cgroup失败", "err", err, "name", p.Name)
+		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
 	}
 	control.AddProc(uint64(p.Pid))

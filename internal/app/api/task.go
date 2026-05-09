@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -30,7 +32,7 @@ func (t *taskApi) GetTaskById(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[*model.Task]{
+	return ctx.JSON(http.StatusOK, model.Response[*model.Task]{
 		Data:    result,
 		Message: "success",
 		Code:    0,
@@ -38,7 +40,7 @@ func (t *taskApi) GetTaskById(ctx *echo.Context) error {
 }
 
 func (t *taskApi) GetTaskList(ctx *echo.Context) error {
-	return ctx.JSON(200, model.Response[[]model.TaskVo]{
+	return ctx.JSON(http.StatusOK, model.Response[[]model.TaskVo]{
 		Data:    logic.TaskLogic.GetAllTaskJob(),
 		Message: "success",
 		Code:    0,

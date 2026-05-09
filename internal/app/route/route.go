@@ -48,8 +48,7 @@ func Route() {
 	}
 	r.Use(middle.EventLogger)
 	routePathInit(r)
-	err := r.Start(config.CF.Listen)
-	log.Logger.Fatalw("服务器启动失败", "err", err)
+	log.Logger.Fatalw("server start failed", "err", r.Start(config.CF.Listen))
 }
 
 func pprofInit(r *echo.Echo) {
@@ -64,7 +63,7 @@ func pprofInit(r *echo.Echo) {
 		g.GET("/goroutine", echo.WrapHandler(pprof.Handler("goroutine")))
 		g.GET("/threadcreate", echo.WrapHandler(pprof.Handler("threadcreate")))
 		g.GET("/block", echo.WrapHandler(pprof.Handler("block")))
-		log.Logger.Debug("启用 pprof")
+		log.Logger.Debug("enable pprof")
 	}
 }
 

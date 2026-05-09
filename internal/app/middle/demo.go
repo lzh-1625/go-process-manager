@@ -21,7 +21,7 @@ func DemoMiddle() echo.MiddlewareFunc {
 			} else {
 				return ctx.JSON(http.StatusForbidden, model.Response[struct{}]{
 					Code:    -1,
-					Message: "当前处于演示模式",
+					Message: "currently in demo mode",
 				})
 			}
 		}

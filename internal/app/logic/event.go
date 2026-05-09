@@ -16,7 +16,7 @@ var EventLogic = new(eventLogic)
 
 func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv ...string) {
 	if len(additionalKv)%2 != 0 {
-		log.Logger.Errorw("参数长度错误", "args", additionalKv)
+		log.Logger.Errorw("parameters length error", "args", additionalKv)
 		return
 	}
 	data := model.Event{
@@ -30,7 +30,7 @@ func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv .
 	}
 	data.Additional = utils.StructToJsonStr(m)
 	if err := repository.EventRepository.Create(data); err != nil {
-		log.Logger.Errorw("事件创建失败", "err", err)
+		log.Logger.Errorw("event creation failed", "err", err)
 	}
 }
 

@@ -76,7 +76,7 @@ func (w *wsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 		return err
 	}
 	defer conn.Close()
-	log.Logger.Infow("ws连接成功")
+	log.Logger.Infow("ws connection success", "user", reqUser, "process", proc.Name)
 
 	wsCtx, cancel := context.WithCancel(context.Background())
 	wci := &WsConnetInstance{
@@ -101,9 +101,9 @@ func (w *wsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	})
 	select {
 	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
-		log.Logger.Infow("ws连接断开", "操作类型", "连接时间超过最大时长限制")
+		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
 	case <-wsCtx.Done():
-		log.Logger.Infow("ws连接断开", "操作类型", "tcp连接建立已被关闭")
+		log.Logger.Infow("ws connection closed", "reason", "tcp connection closed")
 	}
 	return
 }
@@ -124,7 +124,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	guestName := "guest-" + strconv.Itoa(int(data.ID)) // 构造访客用户名
+	guestName := "guest-" + strconv.Itoa(int(data.ID)) // construct guest username
 	if proc.HasWsConn(guestName) {
 		return errors.New("connection already exists")
 	}
@@ -139,7 +139,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 		return err
 	}
 	defer conn.Close()
-	log.Logger.Infow("ws连接成功")
+	log.Logger.Infow("ws connection success", "user", data.CreateBy, "process", proc.Name)
 	data.LastLink = time.Now()
 	repository.WsShare.Edit(data)
 
@@ -163,24 +163,24 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	})
 	select {
 	case <-proc.StopChan:
-		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
+		log.Logger.Infow("ws connection closed", "reason", "process stopped, force close ws connection")
 	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
-		log.Logger.Infow("ws连接断开", "操作类型", "连接时间超过最大时长限制")
+		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
 	case <-wsCtx.Done():
-		log.Logger.Infow("ws连接断开", "操作类型", "tcp连接建立已被关闭")
+		log.Logger.Infow("ws connection closed", "reason", "tcp connection closed")
 	case <-time.After(time.Until(data.ExpireTime)):
-		log.Logger.Infow("ws连接断开", "操作类型", "分享时间已结束")
+		log.Logger.Infow("ws connection closed", "reason", "share time expired")
 	}
 	return
 }
 
 func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *logic.ProcessPty, write bool) {
-	log.Logger.Debugw("ws读取线程已启动")
+	log.Logger.Debugw("ws read thread started")
 	go func() {
 		for {
 			_, b, err := wci.WsConnect.ReadMessage()
 			if err != nil {
-				log.Logger.Debugw("ws读取线程已退出", "info", err)
+				log.Logger.Debugw("ws read thread exited", "info", err)
 				return
 			}
 			if write {
@@ -216,7 +216,7 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 }
 
 func GetWsShareList(ctx *echo.Context) error {
-	return ctx.JSON(200, model.Response[[]*model.WsShare]{
+	return ctx.JSON(http.StatusOK, model.Response[[]*model.WsShare]{
 		Data:    logic.WsSahreLogic.GetWsShareList(),
 		Message: "success",
 		Code:    0,

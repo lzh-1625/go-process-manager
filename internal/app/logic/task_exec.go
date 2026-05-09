@@ -24,7 +24,7 @@ var conditionHandle = map[eum.Condition]conditionFunc{
 	},
 }
 
-// 执行操作，返回结果是否成功
+// execute operation, return result whether successfully
 type operationFunc func(*model.Task, *ProcessPty) bool
 
 func GetOperationHandle() map[eum.TaskOperation]operationFunc {
@@ -32,7 +32,7 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 		eum.TaskStart: func(data *model.Task, proc *ProcessPty) bool {
 			state := proc.State.State
 			if state == eum.ProcessStateRunning || state == eum.ProcessStateStart {
-				log.Logger.Debugw("进程已在运行", "proc", proc.Name)
+				log.Logger.Debugw("process is running", "proc", proc.Name)
 				return false
 			}
 			proc.Start()
@@ -42,39 +42,39 @@ func GetOperationHandle() map[eum.TaskOperation]operationFunc {
 		eum.TaskStartWaitDone: func(data *model.Task, proc *ProcessPty) bool {
 			state := proc.State.State
 			if state == eum.ProcessStateRunning || state == eum.ProcessStateStart {
-				log.Logger.Debugw("进程已在运行", "proc", proc.Name)
+				log.Logger.Debugw("process is running", "proc", proc.Name)
 				return false
 			}
 			if err := proc.Start(); err != nil {
-				log.Logger.Debugw("进程启动失败", "proc", proc.Name)
+				log.Logger.Debugw("process start failed", "proc", proc.Name)
 				return false
 			}
 			select {
 			case <-proc.StopChan:
-				log.Logger.Debugw("进程停止，任务完成", "proc", proc.Name)
+				log.Logger.Debugw("process stopped, task completed", "proc", proc.Name)
 				return true
 			case <-time.After(time.Second * time.Duration(config.CF.TaskTimeout)):
-				log.Logger.Errorw("任务超时")
+				log.Logger.Errorw("task timeout")
 				return false
 			}
 		},
 
 		eum.TaskStop: func(data *model.Task, proc *ProcessPty) bool {
 			if proc.State.State == eum.ProcessStateRunning {
-				log.Logger.Debugw("进程未在运行", "proc", proc.Name)
+				log.Logger.Debugw("process is not running", "proc", proc.Name)
 				return false
 			}
-			log.Logger.Debugw("异步停止任务", "proc", proc.Name)
+			log.Logger.Debugw("async stop task", "proc", proc.Name)
 			go proc.Kill()
 			return true
 		},
 
 		eum.TaskStopWaitDone: func(data *model.Task, proc *ProcessPty) bool {
 			if proc.State.State == eum.ProcessStateRunning {
-				log.Logger.Debugw("进程未在运行", "proc", proc.Name)
+				log.Logger.Debugw("process is not running", "proc", proc.Name)
 				return false
 			}
-			log.Logger.Debugw("停止任务并等待结束", "proc", proc.Name)
+			log.Logger.Debugw("stop task and wait done", "proc", proc.Name)
 			return proc.Kill() == nil
 		},
 	}

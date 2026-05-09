@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -19,7 +21,7 @@ func (e *eventApi) GetEventList(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[model.EventListResp]{
+	return ctx.JSON(http.StatusOK, model.Response[model.EventListResp]{
 		Data: model.EventListResp{
 			Total: total,
 			Data:  data,

@@ -27,13 +27,13 @@ func InitLog() {
 	}
 	level, err := zapcore.ParseLevel(config.CF.LogLevel)
 	if err != nil {
-		log.Printf("日志等级错误！不存在“%v”日志等级", config.CF.LogLevel)
+		log.Printf("log level error! level [%v] not exist", config.CF.LogLevel)
 		level = zap.DebugLevel
 	}
 	atom := zap.NewAtomicLevelAt(level)
 	zap.NewDevelopmentConfig()
 	var outputPaths []string = []string{"info.log"}
-	if !config.CF.Tui { // 不使用tui则打印日志到stdout
+	if !config.CF.Tui { // not use tui then print log to stdout
 		outputPaths = append(outputPaths, "stdout")
 	}
 	config := zap.Config{

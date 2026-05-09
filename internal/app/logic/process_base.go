@@ -46,7 +46,7 @@ type ProcessBase struct {
 	State struct {
 		startTime      time.Time
 		Info           string
-		State          eum.ProcessState //0 为未运行，1为运作中，2为异常状态
+		State          eum.ProcessState //0 not running, 1 running, 2 warning state
 		stateLock      sync.Mutex
 		restartTimes   int
 		manualStopFlag bool
@@ -89,7 +89,7 @@ func (p *ProcessBase) GetOpertor() string {
 	return *s
 }
 
-// fn 函数执行成功的情况下对state赋值
+// fn function execution successfully, set state
 func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
@@ -150,7 +150,7 @@ func (p *ProcessBase) AddConn(user string, c ConnectInstance) {
 	defer p.wsLock.Unlock()
 
 	if p.ws[user] != nil {
-		log.Logger.Error("已存在连接")
+		log.Logger.Error("connection already exists")
 		return
 	}
 
@@ -241,28 +241,27 @@ func (p *ProcessBase) monitorHandler() {
 	if !p.monitor.enable {
 		return
 	}
-	defer log.Logger.Infow("性能监控结束")
+	defer log.Logger.Infow("performance monitoring ended")
 	ticker := time.NewTicker(time.Second * time.Duration(config.CF.PerformanceInfoInterval))
 	defer ticker.Stop()
 	for {
 		if p.State.State != eum.ProcessStateRunning {
-			log.Logger.Debugw("进程未在运行", "state", p.State.State)
+			log.Logger.Debugw("process not running", "state", p.State.State)
 			return
 		}
 		cpuPercent, err := p.monitor.pu.CPUPercent()
 		if err != nil {
-			log.Logger.Errorw("CPU使用率获取失败", "err", err)
+			log.Logger.Errorw("CPU usage get failed", "err", err)
 			return
 		}
 		memInfo, err := p.monitor.pu.MemoryInfo()
 		if err != nil {
-			log.Logger.Errorw("内存使用率获取失败", "err", err)
+			log.Logger.Errorw("memory usage get failed", "err", err)
 			return
 		}
 		p.AddRecordTime()
 		p.AddCpuUsage(cpuPercent)
 		p.AddMemUsage(float64(memInfo.RSS >> 10))
-		// log.Logger.Debugw("进程资源使用率获取成功", "cpu", cpuPercent, "mem", memInfo.RSS)
 		select {
 		case <-ticker.C:
 		case <-p.StopChan:
@@ -275,10 +274,10 @@ func (p *ProcessBase) initPsutil() {
 	pup, err := pu.NewProcess(int32(p.Pid))
 	if err != nil {
 		p.monitor.enable = false
-		log.Logger.Debug("pu进程获取失败")
+		log.Logger.Debug("pu process get failed")
 	} else {
 		p.monitor.enable = true
-		log.Logger.Debug("pu进程获取成功")
+		log.Logger.Debug("pu process get success")
 		p.monitor.pu = pup
 	}
 }
@@ -292,7 +291,7 @@ func (p *ProcessBase) Kill() error {
 	p.State.stateLock.Unlock()
 
 	if err := p.op.Signal(syscall.SIGINT); err != nil {
-		log.Logger.Errorw("发送SIGINT信号失败", "err", err)
+		log.Logger.Errorw("send SIGINT signal failed", "err", err)
 		return p.op.Kill()
 	}
 
@@ -303,7 +302,7 @@ func (p *ProcessBase) Kill() error {
 		}
 	case <-time.After(time.Second * time.Duration(config.CF.KillWaitTime)):
 		{
-			log.Logger.Debugw("进程kill超时,强制停止进程", "name", p.Name)
+			log.Logger.Debugw("process kill timeout, force stop process", "name", p.Name)
 			return p.op.Kill()
 		}
 	}

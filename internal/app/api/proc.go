@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,7 +29,7 @@ func (p *procApi) CreateProcess(ctx *echo.Context) error {
 	}
 	req.UUID = index
 	logic.ProcessCtlLogic.NewProcess(req)
-	return ctx.JSON(200, model.Response[map[string]any]{
+	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
 		Data: map[string]any{
 			"id": index,
 		},
@@ -119,13 +120,13 @@ func (p *procApi) KillAllProcess(ctx *echo.Context) error {
 
 func (p *procApi) GetProcessList(ctx *echo.Context) error {
 	if isAdmin(ctx) {
-		return ctx.JSON(200, model.Response[[]model.ProcessInfo]{
+		return ctx.JSON(http.StatusOK, model.Response[[]model.ProcessInfo]{
 			Data:    logic.ProcessCtlLogic.GetProcessList(),
 			Message: "success",
 			Code:    0,
 		})
 	} else {
-		return ctx.JSON(200, model.Response[[]model.ProcessInfo]{
+		return ctx.JSON(http.StatusOK, model.Response[[]model.ProcessInfo]{
 			Data:    logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)),
 			Message: "success",
 			Code:    0,
@@ -153,7 +154,7 @@ func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[*model.Process]{
+	return ctx.JSON(http.StatusOK, model.Response[*model.Process]{
 		Data:    data,
 		Message: "success",
 		Code:    0,
@@ -191,7 +192,7 @@ func (p *procApi) ProcessCreateShare(ctx *echo.Context) error {
 	}); err != nil {
 		return err
 	}
-	return ctx.JSON(200, model.Response[map[string]any]{
+	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
 		Data: map[string]any{
 			"token": token,
 		},

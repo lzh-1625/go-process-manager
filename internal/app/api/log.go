@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"net/http"
 	"slices"
 
 	"github.com/labstack/echo/v5"
@@ -21,7 +22,7 @@ func (a *logApi) GetLog(ctx *echo.Context) error {
 		return err
 	}
 	if isAdmin(ctx) {
-		return ctx.JSON(200, model.Response[model.LogResp]{
+		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
 			Data:    logic.LogLogicImpl.Search(req, req.FilterName...),
 			Message: "success",
 			Code:    0,
@@ -37,7 +38,7 @@ func (a *logApi) GetLog(ctx *echo.Context) error {
 		if len(filterName) == 0 {
 			return errors.New("no information found")
 		}
-		return ctx.JSON(200, model.Response[model.LogResp]{
+		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
 			Data:    logic.LogLogicImpl.Search(req, filterName...),
 			Message: "success",
 			Code:    0,
@@ -46,5 +47,5 @@ func (a *logApi) GetLog(ctx *echo.Context) error {
 }
 
 func (a *logApi) GetRunningLog(ctx *echo.Context) error {
-	return ctx.JSON(200, logic.Loghandler.GetRunning())
+	return ctx.JSON(http.StatusOK, logic.Loghandler.GetRunning())
 }
