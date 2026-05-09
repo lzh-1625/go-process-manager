@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -318,4 +319,59 @@ func (p *ProcessBase) Kill() error {
 			return p.op.Kill()
 		}
 	}
+}
+
+type ProcessOptions func(*ProcessBase)
+
+// state change hook
+func SetStateHook(fn func(p *ProcessBase, state eum.ProcessState)) ProcessOptions {
+	return func(p *ProcessBase) {
+		p.StateHook = fn
+	}
+}
+
+// ws connect hook
+func SetAddCoonHook(fn func(p *ProcessBase, user string, c ConnectInstance)) ProcessOptions {
+	return func(p *ProcessBase) {
+		p.AddCoonHook = fn
+	}
+}
+
+// ws disconnect hook
+func SetDelCoonHook(fn func(p *ProcessBase, user string)) ProcessOptions {
+	return func(p *ProcessBase) {
+		p.DelCoonHook = fn
+	}
+}
+
+// log handle hook
+func SetLogHandle(fn func(p *ProcessBase, log string)) ProcessOptions {
+	return func(p *ProcessBase) {
+		p.LogHandle = fn
+	}
+}
+
+// push handle hook
+func SetPushHandle(fn func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)) ProcessOptions {
+	return func(p *ProcessBase) {
+		p.PushHandle = fn
+	}
+}
+
+func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty {
+	p := &ProcessPty{
+		ProcessBase: &ProcessBase{
+			Name:         pconfig.Name,
+			StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
+			WorkDir:      pconfig.Cwd,
+			Env:          strings.Split(pconfig.Env, ";"),
+		},
+	}
+
+	for _, option := range options {
+		option(p.ProcessBase)
+	}
+
+	p.setProcessConfig(pconfig)
+	return p
 }
