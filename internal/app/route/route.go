@@ -3,7 +3,6 @@ package route
 import (
 	"net/http"
 	"net/http/pprof"
-	"strings"
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -31,13 +30,10 @@ func Route() {
 	}
 	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		HTML5:      true,
-		Root:       "dist", // because files are located in `assets` directory in `webAssets` fs
+		Root:       "dist",
 		Index:      "index.html",
 		Filesystem: resources.Templates,
-		Skipper: func(c *echo.Context) bool {
-			return strings.HasPrefix(c.Request().URL.Path, "/api")
-		},
-		Browse: true,
+		Browse:     true,
 	}))
 	if config.CF.PprofEnable {
 		pprofInit(r)
@@ -52,19 +48,17 @@ func Route() {
 }
 
 func pprofInit(r *echo.Echo) {
-	if config.CF.PprofEnable {
-		g := r.Group("/api/debug/pprof")
-		g.GET("/", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
-		g.GET("/cmdline", echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
-		g.GET("/profile", echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
-		g.GET("/symbol", echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
-		g.GET("/trace", echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
-		g.GET("/heap", echo.WrapHandler(pprof.Handler("heap")))
-		g.GET("/goroutine", echo.WrapHandler(pprof.Handler("goroutine")))
-		g.GET("/threadcreate", echo.WrapHandler(pprof.Handler("threadcreate")))
-		g.GET("/block", echo.WrapHandler(pprof.Handler("block")))
-		log.Logger.Debug("enable pprof")
-	}
+	g := r.Group("/debug/pprof")
+	g.GET("/", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
+	g.GET("/cmdline", echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
+	g.GET("/profile", echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
+	g.GET("/symbol", echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
+	g.GET("/trace", echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
+	g.GET("/heap", echo.WrapHandler(pprof.Handler("heap")))
+	g.GET("/goroutine", echo.WrapHandler(pprof.Handler("goroutine")))
+	g.GET("/threadcreate", echo.WrapHandler(pprof.Handler("threadcreate")))
+	g.GET("/block", echo.WrapHandler(pprof.Handler("block")))
+	log.Logger.Debug("enable pprof")
 }
 
 func routePathInit(r *echo.Echo) {
