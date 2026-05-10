@@ -4,19 +4,22 @@
 -->
 <script setup lang="ts">
 import { ref, onMounted, computed, Ref } from "vue";
+import { useI18n } from "vue-i18n";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
 import { getLogMetric, LogStatsticMetric } from "@/api/metric";
+
+const { t } = useI18n();
 
 const loading = ref(true);
 const logData = ref<LogStatsticMetric | null>(null);
 const dateType = ref(1); // 1: 日, 2: 周, 3: 月
 
-const dateTypes = [
-  { value: 1, title: "日" },
-  { value: 2, title: "周" },
-  { value: 3, title: "月" },
-];
+const dateTypes = computed(() => [
+  { value: 1, title: t("dashboardPage.day") },
+  { value: 2, title: t("dashboardPage.week") },
+  { value: 3, title: t("dashboardPage.month") },
+]);
 
 const chartEl = ref<HTMLDivElement | null>(null);
 
@@ -30,8 +33,8 @@ const chartOption = computed<EChartsOption>(() => {
 
   return {
     title: {
-      text: `日志统计 (${
-        dateTypes.find((t) => t.value === dateType.value)?.title
+      text: `${t("dashboardPage.logStatistics")} (${
+        dateTypes.value.find((type) => type.value === dateType.value)?.title
       })`,
       left: "center",
       top: 10,
@@ -39,7 +42,7 @@ const chartOption = computed<EChartsOption>(() => {
         fontSize: 16,
         fontWeight: "bold",
       },
-      subtext: `正在执行: ${logData.value.executing} 个任务`,
+      subtext: `${t("dashboardPage.executing")}: ${logData.value.executing}`,
       subtextStyle: {
         fontSize: 12,
       },
@@ -54,7 +57,7 @@ const chartOption = computed<EChartsOption>(() => {
       },
       formatter: (params: any) => {
         const param = params[0];
-        return `${param.name}<br/>${param.marker}日志数量: ${param.value}`;
+        return `${param.name}<br/>${param.marker}${t("dashboardPage.logCount")}: ${param.value}`;
       },
     },
     grid: {
@@ -75,7 +78,7 @@ const chartOption = computed<EChartsOption>(() => {
     yAxis: [
       {
         type: "value",
-        name: "日志数量",
+        name: t("dashboardPage.logCount"),
         min: 0,
         position: "right",
         axisLine: {
@@ -85,7 +88,7 @@ const chartOption = computed<EChartsOption>(() => {
     ],
     series: [
       {
-        name: "日志数量",
+        name: t("dashboardPage.logCount"),
         type: "line",
         smooth: true,
         symbol: "circle",
@@ -205,7 +208,7 @@ watch(
 <template>
   <div>
     <v-card-title class="d-flex justify-space-between align-center pa-5">
-      <span class="text-h6 font-weight-bold">日志统计趋势</span>
+      <span class="text-h6 font-weight-bold">{{ $t("dashboardPage.logStatistics") }}</span>
       <v-btn-toggle
         v-model="dateType"
         color="primary"
@@ -249,7 +252,7 @@ watch(
           "
         >
           <div style="font-size: 10px; color: #ff9800; font-weight: bold">
-            正在处理
+            {{ $t("dashboardPage.processing") }}
           </div>
           <div
             style="

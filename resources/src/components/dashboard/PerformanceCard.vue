@@ -4,9 +4,12 @@
 -->
 <script setup lang="ts">
 import { ref, onMounted, computed, Ref } from "vue";
+import { useI18n } from "vue-i18n";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
 import { getPerformceUsage, PerformceUsage } from "@/api/metric";
+
+const { t } = useI18n();
 
 const loading = ref(true);
 const performanceData = ref<PerformceUsage | null>(null);
@@ -39,14 +42,13 @@ const cpuOption = computed<EChartsOption>(() => {
   if (otherProcessesCpu > 0.01) {
     data.push({
       value: parseFloat(otherProcessesCpu.toFixed(2)),
-      name: "其他进程",
+      name: t("dashboardPage.otherProcesses"),
     });
   }
 
-  // 添加空闲项
   data.push({
     value: parseFloat(performanceData.value.cpuFree.toFixed(2)),
-    name: "空闲",
+    name: t("dashboardPage.idle"),
   });
 
   return {
@@ -55,7 +57,7 @@ const cpuOption = computed<EChartsOption>(() => {
       formatter: "{a} ---<br/>{b}: {c}% ({d}%)",
     },
     title: {
-      text: "CPU使用率",
+      text: t("dashboardPage.cpuUsage"),
       left: "center",
       top: 10,
       textStyle: {
@@ -73,8 +75,8 @@ const cpuOption = computed<EChartsOption>(() => {
       type: "scroll",
     },
     series: [
-      {
-        name: "CPU",
+        {
+          name: t("dashboardPage.cpuUsage"),
         type: "pie",
         radius: ["40%", "70%"],
         center: ["60%", "55%"],
@@ -128,7 +130,7 @@ const memOption = computed<EChartsOption>(() => {
     // 添加空闲项
     {
       value: parseFloat((performanceData.value.memFree / 1024).toFixed(2)),
-      name: "空闲",
+      name: t("dashboardPage.idle"),
       itemStyle: { color: "#2196f3" },
     },
   ];
@@ -139,7 +141,7 @@ const memOption = computed<EChartsOption>(() => {
       formatter: "{a} <br/>{b}: {c}MB ({d}%)",
     },
     title: {
-      text: "内存使用率",
+      text: t("dashboardPage.memoryUsage"),
       left: "center",
       top: 10,
       textStyle: {
@@ -158,7 +160,7 @@ const memOption = computed<EChartsOption>(() => {
     },
     series: [
       {
-        name: "内存",
+        name: t("dashboardPage.memoryUsage"),
         type: "pie",
         radius: ["40%", "70%"],
         center: ["60%", "55%"],
@@ -291,7 +293,7 @@ watch(
 <template>
   <div>
     <v-card-title class="text-h6 font-weight-bold pa-5">
-      系统性能监控
+      {{ $t("dashboardPage.systemPerformance") }}
     </v-card-title>
     <v-card-text>
       <div

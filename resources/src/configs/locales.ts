@@ -16,7 +16,7 @@ export default {
   locale,
 
   // when translation is not available fallback to that locale
-  fallbackLocale: "zhHans",
+  fallbackLocale: "en",
 
   // availabled locales for user selection
   availableLocales: [

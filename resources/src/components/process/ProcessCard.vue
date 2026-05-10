@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ProcessItem } from "~/src/types/process/process";
+import { useI18n } from "vue-i18n";
 import echarts from "@/plugins/echarts";
 import TerminalPty from "./TerminalPty.vue";
 import {
@@ -11,6 +12,8 @@ import {
 } from "~/src/api/process";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
+
+const { t } = useI18n();
 let chartInstance;
 
 const snackbarStore = useSnackbarStore();
@@ -59,7 +62,7 @@ const initEChart = () => {
       },
       {
         type: "value",
-        name: Memery(" + (mem / 1024).toFixed(2) + "MB)",
+        name: "Memery(" + (mem / 1024).toFixed(2) + "MB)",
         max: parseFloat((props.data.usage.memCapacity / 1024).toFixed(2)),
         axisLine: { show: false },
         axisTick: { show: false },
@@ -100,7 +103,7 @@ const initEChart = () => {
   if (props.data.cgroupEnable) {
     if (props.data.cpuLimit) {
       (option.series as any).push({
-        name: "CPU限制（%）",
+        name: t("processCardPage.cpuLimit"),
         type: "line",
         yAxisIndex: 0,
         data: new Array(props.data.usage.time?.length ?? 0).fill(
@@ -115,7 +118,7 @@ const initEChart = () => {
     }
     if (props.data.memoryLimit) {
       (option.series as any).push({
-        name: "内存限制（MB）",
+        name: t("processCardPage.memoryLimit"),
         type: "line",
         yAxisIndex: 1,
         data: new Array(props.data.usage.time?.length ?? 0).fill(
@@ -146,7 +149,7 @@ const processConfigComponent = ref<ConfigHandle | null>(null);
 const handleStart = () => {
   startProcess(props.data.uuid).then((e) => {
     if (e.code === 0) {
-      snackbarStore.showSuccessMessage("success");
+      snackbarStore.showSuccessMessage(t("processCardPage.startSuccess"));
     }
   });
 };
@@ -154,7 +157,7 @@ const handleStart = () => {
 const handleStop = () => {
   killProcess(props.data.uuid).then((e) => {
     if (e.code === 0) {
-      snackbarStore.showSuccessMessage("success");
+      snackbarStore.showSuccessMessage(t("processCardPage.stopSuccess"));
     }
   });
 };
@@ -198,7 +201,7 @@ const props = defineProps<{
 const control = () => {
   getContorl(props.data.uuid).then((e) => {
     if (e.code === 0) {
-      snackbarStore.showSuccessMessage("sucess");
+      snackbarStore.showSuccessMessage(t("processCardPage.controlSuccess"));
     }
   });
 };
@@ -206,7 +209,7 @@ const control = () => {
 const del = () => {
   deleteProcessConfig(props.data.uuid).then((e) => {
     if (e.code === 0) {
-      snackbarStore.showSuccessMessage("sucess");
+      snackbarStore.showSuccessMessage(t("processCardPage.deleteSuccess"));
     }
   });
 };
@@ -239,20 +242,20 @@ const generateShareLink = () => {
     if (e.code === 0 && e.data) {
       shareToken.value = e.data.token;
       shareUrl.value = `${window.location.origin}/share?token=${e.data.token}`;
-      snackbarStore.showSuccessMessage("分享链接创建成功");
+      snackbarStore.showSuccessMessage(t("processCardPage.createSuccess"));
     }
   });
 };
 
 const copyShareLink = () => {
   navigator.clipboard.writeText(shareUrl.value).then(() => {
-    snackbarStore.showSuccessMessage("链接已复制到剪贴板");
+    snackbarStore.showSuccessMessage(t("processCardPage.copySuccess"));
   });
 };
 
 const copyToken = () => {
   navigator.clipboard.writeText(shareToken.value).then(() => {
-    snackbarStore.showSuccessMessage("Token已复制");
+    snackbarStore.showSuccessMessage(t("processCardPage.tokenCopySuccess"));
   });
 };
 </script>
@@ -315,9 +318,9 @@ const copyToken = () => {
           </template>
 
           <v-list nav dense>
-            <v-list-item @click="control"> 获取控制权 </v-list-item>
-            <v-list-item @click="del"> 删除进程 </v-list-item>
-            <v-list-item @click="openShareDialog"> 创建分享链接 </v-list-item>
+            <v-list-item @click="control"> {{ $t("processCardPage.control") }} </v-list-item>
+            <v-list-item @click="del"> {{ $t("processCardPage.delete") }} </v-list-item>
+            <v-list-item @click="openShareDialog"> {{ $t("processCardPage.createShareLink") }} </v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -382,7 +385,7 @@ const copyToken = () => {
       <v-card class="rounded-xl">
         <v-card-title class="text-h6 font-weight-medium">
           <v-icon color="primary" class="mr-2">mdi-share-variant</v-icon>
-          <span>创建分享链接</span>
+          <span>{{ $t("processCardPage.shareDialogTitle") }}</span>
         </v-card-title>
 
         <v-divider></v-divider>
@@ -394,20 +397,20 @@ const copyToken = () => {
                 <v-text-field
                   v-model.number="shareForm.minutes"
                   type="number"
-                  label="有效时长（分钟）"
+                  :label="$t('processCardPage.validDuration')"
                   variant="outlined"
                   density="comfortable"
-                  hint="链接的有效期，单位为分钟"
+                  :hint="$t('processCardPage.validDurationHint')"
                   persistent-hint
-                  :rules="[(v) => v > 0 || '时长必须大于0']"
+                  :rules="[(v) => v > 0 || $t('processCardPage.validDurationRule')]"
                 ></v-text-field>
               </v-col>
               <v-col cols="12">
                 <div class="d-flex align-center justify-space-between">
                   <div>
-                    <div class="font-weight-medium">允许写入权限</div>
+                    <div class="font-weight-medium">{{ $t("processCardPage.allowWrite") }}</div>
                     <div class="text-caption text-grey">
-                      是否允许通过分享链接进行终端输入操作
+                      {{ $t("processCardPage.allowWriteHint") }}
                     </div>
                   </div>
                   <v-switch
@@ -425,18 +428,18 @@ const copyToken = () => {
             <v-row dense>
               <v-col cols="12">
                 <v-alert type="success" variant="tonal" class="mb-4">
-                  <div class="text-subtitle-2 mb-2">分享链接已生成</div>
+                  <div class="text-subtitle-2 mb-2">{{ $t("processCardPage.shareLinkGenerated") }}</div>
                   <div class="text-caption">
-                    有效期：{{ shareForm.minutes }} 分钟
-                    <span v-if="shareForm.write" class="ml-2">• 可写入</span>
-                    <span v-else class="ml-2">• 只读</span>
+                    {{ $t("processCardPage.validity") }}：{{ shareForm.minutes }} {{ $t("processCardPage.minutes") }}
+                    <span v-if="shareForm.write" class="ml-2">• {{ $t("processCardPage.writable") }}</span>
+                    <span v-else class="ml-2">• {{ $t("processCardPage.readonly") }}</span>
                   </div>
                 </v-alert>
               </v-col>
               <v-col cols="12">
                 <v-text-field
                   :model-value="shareUrl"
-                  label="分享链接"
+                  :label="$t('processCardPage.shareLinkLabel')"
                   variant="outlined"
                   density="comfortable"
                   readonly
@@ -447,7 +450,7 @@ const copyToken = () => {
               <v-col cols="12">
                 <v-text-field
                   :model-value="shareToken"
-                  label="Token"
+                  :label="$t('processCardPage.tokenLabel')"
                   variant="outlined"
                   density="comfortable"
                   readonly
@@ -463,7 +466,7 @@ const copyToken = () => {
 
         <v-card-actions class="justify-end pa-4">
           <v-btn text @click="shareDialog = false">
-            {{ shareToken ? "关闭" : "取消" }}
+            {{ shareToken ? $t("processCardPage.close") : $t("processCardPage.cancel") }}
           </v-btn>
           <v-btn
             v-if="!shareToken"
@@ -471,11 +474,11 @@ const copyToken = () => {
             @click="generateShareLink"
             :disabled="shareForm.minutes <= 0"
           >
-            生成链接
+            {{ $t("processCardPage.generateLink") }}
           </v-btn>
           <v-btn v-else color="primary" @click="copyShareLink">
             <v-icon left>mdi-content-copy</v-icon>
-            复制链接
+            {{ $t("processCardPage.copyLink") }}
           </v-btn>
         </v-card-actions>
       </v-card>
