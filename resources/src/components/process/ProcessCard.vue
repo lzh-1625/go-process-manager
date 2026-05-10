@@ -29,7 +29,7 @@ const initEChart = () => {
       trigger: "axis",
     },
     legend: {
-      data: ["CPU", "内存"],
+      data: ["CPU", "Memery"],
     },
     animationDuration: 2000,
     grid: {
@@ -59,7 +59,7 @@ const initEChart = () => {
       },
       {
         type: "value",
-        name: "内存(" + (mem / 1024).toFixed(2) + "MB)",
+        name: Memery(" + (mem / 1024).toFixed(2) + "MB)",
         max: parseFloat((props.data.usage.memCapacity / 1024).toFixed(2)),
         axisLine: { show: false },
         axisTick: { show: false },
@@ -81,7 +81,7 @@ const initEChart = () => {
         },
       },
       {
-        name: "内存",
+        name: "Memery",
         type: "line",
         data: props.data.usage.mem.map((num) =>
           parseFloat((num / 1024).toFixed(2))

@@ -17,7 +17,7 @@
         <!-- 标题栏 -->
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
-          <span class="flex-fill">日志查看</span>
+          <span class="flex-fill">{{ $t('logPage.title') }}</span>
           <v-btn
             icon
             variant="text"
@@ -47,7 +47,7 @@
               <!-- 进程名筛选 -->
               <v-col cols="12" sm="6" md="3">
                 <v-autocomplete
-                  label="进程名"
+                  :label="$t('logPage.processName')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.name"
@@ -62,7 +62,7 @@
               <!-- 日志内容搜索 -->
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="日志内容"
+                  :label="$t('logPage.logContent')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.log"
@@ -74,7 +74,7 @@
               <!-- 使用类型 -->
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="使用者"
+                  :label="$t('logPage.user')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.using"
@@ -86,7 +86,7 @@
               <!-- 排序选择 -->
               <v-col cols="12" sm="6" md="3">
                 <v-select
-                  label="排序方式"
+                  :label="$t('logPage.sortBy')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.sort"
@@ -100,7 +100,7 @@
               <!-- 开始时间 -->
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="开始时间"
+                  :label="$t('common.startTime')"
                   variant="outlined"
                   density="compact"
                   type="datetime-local"
@@ -113,7 +113,7 @@
               <!-- 结束时间 -->
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="结束时间"
+                  :label="$t('common.endTime')"
                   variant="outlined"
                   density="compact"
                   type="datetime-local"
@@ -132,10 +132,10 @@
                   variant="elevated"
                   @click="searchLogs"
                 >
-                  搜索
+                  {{ $t('common.search') }}
                 </v-btn>
                 <v-btn size="small" variant="tonal" @click="resetSearch">
-                  重置
+                  {{ $t('common.reset') }}
                 </v-btn>
               </v-col>
             </v-row>
@@ -189,7 +189,7 @@
             </tr>
             <tr v-if="logData.length === 0">
               <td colspan="5" class="text-center text-secondary pa-8">
-                暂无数据
+                {{ $t('common.noData') }}
               </td>
             </tr>
           </tbody>
@@ -205,7 +205,7 @@
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
-            共 {{ totalLogs }} 条日志
+            {{ $t('logPage.totalLogs', { n: totalLogs }) }}
           </div>
         </div>
       </div>
@@ -222,6 +222,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { getLog } from "~/src/api/log";
 import type { GetLogReq, ProcessLog } from "~/src/types/log/log";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
@@ -229,19 +230,18 @@ import { AnsiUp } from "ansi_up";
 import LogTerminal from "~/src/components/log/LogTerminal.vue";
 import { getProcessList } from "~/src/api/process";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const logTerminalRef = ref<InstanceType<typeof LogTerminal> | null>(null);
 const ansiConverter = new AnsiUp();
 
-// 进程列表
 const processList = ref<string[]>([]);
 
-// 排序选项
-const sortOptions = [
-  { label: "自动", value: "" },
-  { label: "时间正序", value: "asc" },
-  { label: "时间倒序", value: "desc" },
-];
+const sortOptions = computed(() => [
+  { label: t("logPage.auto"), value: "" },
+  { label: t("logPage.timeAsc"), value: "asc" },
+  { label: t("logPage.timeDesc"), value: "desc" },
+]);
 
 const formatDatetimeLocal = (date: Date) => {
   const pad = (value: number) => String(value).padStart(2, "0");
@@ -256,14 +256,13 @@ const getDefaultStartTime = () => {
   return formatDatetimeLocal(date);
 };
 
-// 表头定义 - 日志内容放在最左边
-const headers = [
-  { title: "日志内容", key: "log", sortable: false },
-  { title: "上下文", key: "actions", width: "100px", sortable: false },
-  { title: "时间", key: "time", width: "150px" },
-  { title: "进程名", key: "name", width: "30px" },
-  { title: "使用者", key: "using", width: "30px" },
-];
+const headers = computed(() => [
+  { title: t("logPage.logContent"), key: "log", sortable: false },
+  { title: t("logPage.context"), key: "actions", width: "100px", sortable: false },
+  { title: t("common.time"), key: "time", width: "150px" },
+  { title: t("logPage.processName"), key: "name", width: "30px" },
+  { title: t("logPage.user"), key: "using", width: "30px" },
+]);
 
 // 数据
 const logData = ref<ProcessLog[]>([]);
@@ -364,11 +363,11 @@ const loadLogs = async () => {
       logData.value = response.data.data || [];
       totalLogs.value = response.data.total || 0;
     } else {
-      snackbarStore.showErrorMessage("加载日志失败");
+      snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
     }
   } catch (error) {
     console.error("加载日志错误:", error);
-    snackbarStore.showWarningMessage("未获取到日志");
+    snackbarStore.showWarningMessage(t("logPage.noLogsRetrieved"));
   } finally {
     loading.value = false;
   }

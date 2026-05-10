@@ -31,17 +31,12 @@ func InitLog() {
 		level = zap.DebugLevel
 	}
 	atom := zap.NewAtomicLevelAt(level)
-	zap.NewDevelopmentConfig()
-	var outputPaths []string = []string{"info.log"}
-	if !config.CF.Tui { // not use tui then print log to stdout
-		outputPaths = append(outputPaths, "stdout")
-	}
 	config := zap.Config{
 		Level:            atom,
 		Development:      true,
 		Encoding:         "console",
 		EncoderConfig:    encoderConfig,
-		OutputPaths:      outputPaths,
+		OutputPaths:      []string{"stdout", "info.log"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
 	log, _ := config.Build()

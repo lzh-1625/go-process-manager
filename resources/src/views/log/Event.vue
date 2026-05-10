@@ -17,7 +17,7 @@
         <!-- 标题栏 -->
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
-          <span class="flex-fill">系统事件</span>
+          <span class="flex-fill">{{ $t('eventPage.title') }}</span>
           <v-btn
             icon
             variant="text"
@@ -42,7 +42,7 @@
             <v-row dense>
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="名称"
+                  :label="$t('common.name')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.name"
@@ -52,7 +52,7 @@
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-select
-                  label="事件类型"
+                  :label="$t('eventPage.eventType')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.type"
@@ -65,7 +65,7 @@
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="开始时间"
+                  :label="$t('common.startTime')"
                   variant="outlined"
                   density="compact"
                   type="datetime-local"
@@ -76,7 +76,7 @@
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  label="结束时间"
+                  :label="$t('common.endTime')"
                   variant="outlined"
                   density="compact"
                   type="datetime-local"
@@ -93,10 +93,10 @@
                   variant="elevated"
                   @click="searchEvents"
                 >
-                  搜索
+                  {{ $t('common.search') }}
                 </v-btn>
                 <v-btn size="small" variant="tonal" @click="resetSearch">
-                  重置
+                  {{ $t('common.reset') }}
                 </v-btn>
               </v-col>
             </v-row>
@@ -148,7 +148,7 @@
             </tr>
             <tr v-if="eventData.length === 0">
               <td colspan="4" class="text-center text-secondary pa-8">
-                暂无数据
+                {{ $t('common.noData') }}
               </td>
             </tr>
           </tbody>
@@ -164,7 +164,7 @@
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
-            共 {{ totalEvents }} 条事件
+            {{ $t('eventPage.totalEvents', { n: totalEvents }) }}
           </div>
         </div>
       </div>
@@ -174,29 +174,29 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { getEventList } from "~/src/api/event";
 import type { Event, EventListReq, EventType } from "~/src/types/event/event";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 
-// 表头定义
-const headers = [
-  { text: "事件类型", align: "start", value: "type" },
-  { text: "名称", sortable: false, value: "name" },
-  { text: "附加信息", sortable: false, value: "additional" },
-  { text: "时间", value: "createdTime" },
-];
+const headers = computed(() => [
+  { text: t("eventPage.eventType"), align: "start", value: "type" },
+  { text: t("common.name"), sortable: false, value: "name" },
+  { text: t("eventPage.additionalInfo"), sortable: false, value: "additional" },
+  { text: t("common.time"), value: "createdTime" },
+]);
 
-// 事件类型选项
-const eventTypes = [
-  { label: "进程启动", value: "ProcessStart" },
-  { label: "进程停止", value: "ProcessStop" },
-  { label: "API请求", value: "ApiRequest" },
-  { label: "进程警告", value: "ProcessWarning" },
-  { label: "任务启动", value: "TaskStart" },
-  { label: "任务停止", value: "TaskStop" },
-];
+const eventTypes = computed(() => [
+  { label: t("eventPage.processStart"), value: "ProcessStart" },
+  { label: t("eventPage.processStop"), value: "ProcessStop" },
+  { label: t("eventPage.apiRequest"), value: "ApiRequest" },
+  { label: t("eventPage.processWarning"), value: "ProcessWarning" },
+  { label: t("eventPage.taskStart"), value: "TaskStart" },
+  { label: t("eventPage.taskStop"), value: "TaskStop" },
+]);
 
 // 数据
 const eventData = ref<Event[]>([]);
@@ -249,14 +249,14 @@ const getEventTypeIcon = (type: EventType) => {
 
 // 获取事件类型标签
 const getEventTypeLabel = (type: EventType) => {
-  const labelMap: Record<EventType, string> = {
-    ProcessStart: "进程启动",
-    ProcessStop: "进程停止",
-    ProcessWarning: "进程警告",
-    ApiRequest: "API请求",
-    ProcessConnect: "进程连接",
-    TaskStart: "任务启动",
-    TaskStop: "任务停止",
+  const labelMap: Record<string, string> = {
+    ProcessStart: t("eventPage.processStart"),
+    ProcessStop: t("eventPage.processStop"),
+    ProcessWarning: t("eventPage.processWarning"),
+    ApiRequest: t("eventPage.apiRequest"),
+    ProcessConnect: t("eventPage.processConnect"),
+    TaskStart: t("eventPage.taskStart"),
+    TaskStop: t("eventPage.taskStop"),
   };
   return labelMap[type] || type;
 };
@@ -321,11 +321,11 @@ const loadEvents = async () => {
       eventData.value = response.data.data || [];
       totalEvents.value = response.data.total || 0;
     } else {
-      snackbarStore.showErrorMessage("加载事件失败");
+      snackbarStore.showErrorMessage(t("eventPage.loadEventsFailed"));
     }
   } catch (error) {
     console.error("加载事件错误:", error);
-    snackbarStore.showErrorMessage("加载事件出错");
+    snackbarStore.showErrorMessage(t("eventPage.loadEventsError"));
   } finally {
     loading.value = false;
   }

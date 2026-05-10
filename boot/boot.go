@@ -22,10 +22,8 @@ func Boot() {
 	initDb()
 	initResetConfig()
 	initConfiguration()
-	initArgs()
-	initLogHandle()
-	initLog()
-	initLogHanler()
+	initLogger()
+	initLogHandler()
 	initProcess()
 	initJwtSecret()
 	InitTask()
@@ -80,16 +78,6 @@ func initConfiguration() {
 	}
 }
 
-func initArgs() {
-	if len(os.Args) >= 2 && os.Args[1] == "tui" {
-		config.CF.Tui = true
-	}
-}
-
-func initLog() {
-	logger.InitLog()
-}
-
 func initProcess() {
 	logic.ProcessCtlLogic.ProcessInit()
 }
@@ -104,8 +92,13 @@ func initJwtSecret() {
 	utils.SetSecret([]byte(secret))
 }
 
-func initLogHanler() {
+func initLogHandler() {
 	logic.InitLog()
+	logic.InitLogHandle()
+}
+
+func initLogger() {
+	logger.InitLog()
 }
 
 func InitTask() {
@@ -128,15 +121,11 @@ func initListenKillSignal() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
-		logger.Logger.Info("进程正在退出,等待全部进程停止")
+		logger.Logger.Info("process is exiting, waiting for all processes to stop")
 		logic.ProcessCtlLogic.KillAllProcess()
-		log.Print("已停止所有进程")
+		log.Print("all processes have been stopped")
 		os.Exit(0)
 	}()
-}
-
-func initLogHandle() {
-	logic.InitLogHandle()
 }
 
 func InitEventCleanCronJob() {
@@ -145,7 +134,7 @@ func InitEventCleanCronJob() {
 	}
 	c := cron.New()
 	c.AddFunc("0 3 * * *", func() {
-		logger.Logger.Infow("事件清理执行")
+		logger.Logger.Infow("event cleaning execution")
 		logic.EventLogic.Clean(time.Duration(config.CF.EventStorageTime) * time.Hour * 24)
 	})
 	c.Start()

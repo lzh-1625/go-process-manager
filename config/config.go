@@ -33,5 +33,4 @@ type Configuration struct {
 	CondWaitTime              int     `default:"30" describe:"long polling wait time (seconds)"`
 	EventStorageTime          int     `default:"1" describe:"event storage time (days)"`
 	GZipEnable                bool    `default:"false" describe:"enable gzip compression"`
-	Tui                       bool    `default:"-"`
 }

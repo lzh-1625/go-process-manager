@@ -1,7 +1,6 @@
 <template>
   <v-container fluid class="py-6 px-8">
     <v-card class="rounded-lg">
-      <!-- loading spinner -->
       <div
         v-if="loading"
         class="h-full d-flex flex-grow-1 align-center justify-center"
@@ -14,10 +13,9 @@
       </div>
 
       <div v-else>
-        <!-- 标题栏 -->
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
-          <span class="flex-fill">推送管理</span>
+          <span class="flex-fill">{{ $t('pushPage.title') }}</span>
           <v-btn
             icon
             variant="text"
@@ -33,11 +31,10 @@
             @click="openAddDialog"
           >
             <v-icon left>mdi-plus</v-icon>
-            新增推送
+            {{ $t('pushPage.addPush') }}
           </v-btn>
         </h6>
 
-        <!-- 推送列表 -->
         <v-table class="pa-3">
           <thead>
             <tr>
@@ -92,13 +89,12 @@
             </tr>
             <tr v-if="pushList.length === 0">
               <td colspan="6" class="text-center text-secondary pa-8">
-                暂无数据
+                {{ $t('common.noData') }}
               </td>
             </tr>
           </tbody>
         </v-table>
 
-        <!-- 分页 -->
         <div class="text-center pa-4">
           <v-pagination
             v-model="currentPage"
@@ -108,17 +104,16 @@
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
-            共 {{ pushList.length }} 条推送配置
+            {{ $t('pushPage.totalPushes', { n: pushList.length }) }}
           </div>
         </div>
       </div>
     </v-card>
 
-    <!-- 新增/编辑对话框 -->
     <v-dialog v-model="dialog" max-width="600px">
       <v-card class="rounded-xl">
         <v-card-title class="text-h6 font-weight-medium">
-          {{ isEdit ? '编辑推送' : '新增推送' }}
+          {{ isEdit ? $t('pushPage.editPush') : $t('pushPage.addPush') }}
         </v-card-title>
 
         <v-divider></v-divider>
@@ -130,7 +125,7 @@
                 <v-col cols="12" sm="4">
                   <v-select
                     v-model="form.method"
-                    label="HTTP方法"
+                    :label="$t('pushPage.httpMethod')"
                     :items="methodOptions"
                     variant="outlined"
                     density="comfortable"
@@ -140,7 +135,7 @@
                 <v-col cols="12" sm="8">
                   <v-text-field
                     v-model="form.url"
-                    label="推送URL"
+                    :label="$t('pushPage.pushUrl')"
                     variant="outlined"
                     density="comfortable"
                     :rules="[rules.required, rules.url]"
@@ -150,28 +145,28 @@
                 <v-col cols="12">
                   <v-textarea
                     v-model="form.body"
-                    label="请求体 (Body)"
+                    :label="$t('pushPage.requestBody')"
                     variant="outlined"
                     density="comfortable"
                     rows="4"
                     placeholder='{"message": "{$message}", "user": "{$user}"}'
-                    hint="占位符：{$name}进程名称 {$user}使用者 {$message}消息内容 {$status}进程状态"
+                    :hint="$t('pushPage.placeholderHint')"
                     persistent-hint
                   ></v-textarea>
                 </v-col>
                 <v-col cols="12">
                   <v-text-field
                     v-model="form.remark"
-                    label="备注"
+                    :label="$t('common.remark')"
                     variant="outlined"
                     density="comfortable"
-                    placeholder="推送配置描述"
+                    :placeholder="$t('pushPage.pushConfigDesc')"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12">
                   <v-switch
                     v-model="form.enable"
-                    label="启用推送"
+                    :label="$t('pushPage.enablePush')"
                     color="primary"
                     hide-details
                   ></v-switch>
@@ -184,43 +179,42 @@
         <v-divider></v-divider>
 
         <v-card-actions class="justify-end pa-4">
-          <v-btn text @click="closeDialog">取消</v-btn>
+          <v-btn text @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
           <v-btn
             color="primary"
             @click="submitForm"
             :loading="submitLoading"
             :disabled="!formValid"
           >
-            {{ isEdit ? '保存' : '创建' }}
+            {{ isEdit ? $t('common.save') : $t('common.create') }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- 删除确认对话框 -->
     <v-dialog v-model="deleteDialog" max-width="480">
       <v-card class="rounded-xl">
-        <v-card-title class="text-h6 font-weight-medium">确认删除</v-card-title>
+        <v-card-title class="text-h6 font-weight-medium">{{ $t('pushPage.confirmDelete') }}</v-card-title>
 
         <v-divider></v-divider>
 
         <v-card-text class="pt-6">
-          确定要删除这个推送配置吗？
+          {{ $t('pushPage.confirmDeleteMsg') }}
           <div class="text-caption text-secondary mt-2">
-            备注: {{ deleteItem?.remark || '无备注' }}
+            {{ $t('common.remark') }}: {{ deleteItem?.remark || $t('common.none') }}
           </div>
         </v-card-text>
 
         <v-divider></v-divider>
 
         <v-card-actions class="justify-end pa-4">
-          <v-btn text @click="deleteDialog = false">取消</v-btn>
+          <v-btn text @click="deleteDialog = false">{{ $t('common.cancel') }}</v-btn>
           <v-btn
             color="error"
             @click="handleDelete"
             :loading="deleteLoading"
           >
-            删除
+            {{ $t('common.delete') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -230,36 +224,32 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { getPushList, createPush, editPush, deletePush } from "~/src/api/push";
 import type { PushItem } from "~/src/types/push/push";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 
-// 数据状态
 const loading = ref(false);
 const pushList = ref<PushItem[]>([]);
 
-// 对话框状态
 const dialog = ref(false);
 const isEdit = ref(false);
 const formRef = ref();
 const formValid = ref(false);
 const submitLoading = ref(false);
 
-// 删除对话框状态
 const deleteDialog = ref(false);
 const deleteItem = ref<PushItem | null>(null);
 const deleteLoading = ref(false);
 
-// 分页
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-// HTTP方法选项
 const methodOptions = ["GET", "POST"];
 
-// 表单数据
 const defaultForm = {
   id: 0,
   method: "POST",
@@ -270,48 +260,42 @@ const defaultForm = {
 };
 const form = ref({ ...defaultForm });
 
-// 表格列定义
-const headers = [
-  { title: "HTTP方法", key: "method" },
-  { title: "推送URL", key: "url" },
-  { title: "请求体", key: "body" },
-  { title: "备注", key: "remark" },
-  { title: "启用", key: "enable" },
-  { title: "操作", key: "actions" },
-];
+const headers = computed(() => [
+  { title: t("pushPage.httpMethod"), key: "method" },
+  { title: t("pushPage.pushUrl"), key: "url" },
+  { title: t("pushPage.requestBody"), key: "body" },
+  { title: t("common.remark"), key: "remark" },
+  { title: t("common.enable"), key: "enable" },
+  { title: t("common.operation"), key: "actions" },
+]);
 
-// 验证规则
 const rules = {
-  required: (v: string) => !!v || "必填项",
+  required: (v: string) => !!v || t("common.required"),
   url: (v: string) => {
     if (!v) return true;
     try {
       new URL(v);
       return true;
     } catch {
-      return "请输入有效的URL";
+      return t("pushPage.invalidUrl");
     }
   },
 };
 
-// 计算总页数
 const totalPages = computed(() => {
   return Math.ceil(pushList.value.length / pageSize.value);
 });
 
-// 计算当前页数据
 const paginatedPushList = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return pushList.value.slice(start, end);
 });
 
-// 处理页码变化
 const handlePageChange = (page: number) => {
   currentPage.value = page;
 };
 
-// 获取HTTP方法颜色
 const getMethodColor = (method: string) => {
   const colors: Record<string, string> = {
     GET: "success",
@@ -322,7 +306,6 @@ const getMethodColor = (method: string) => {
   return colors[method] || "grey";
 };
 
-// 加载推送列表
 const loadPushList = async () => {
   loading.value = true;
   try {
@@ -332,38 +315,33 @@ const loadPushList = async () => {
     }
   } catch (error) {
     console.error("加载推送列表失败:", error);
-    snackbarStore.showErrorMessage("加载推送列表失败");
+    snackbarStore.showErrorMessage(t("pushPage.loadPushListFailed"));
   } finally {
     loading.value = false;
   }
 };
 
-// 刷新推送列表
 const refreshPushList = () => {
   loadPushList();
 };
 
-// 打开新增对话框
 const openAddDialog = () => {
   isEdit.value = false;
   form.value = { ...defaultForm };
   dialog.value = true;
 };
 
-// 打开编辑对话框
 const openEditDialog = (item: PushItem) => {
   isEdit.value = true;
   form.value = { ...item };
   dialog.value = true;
 };
 
-// 关闭对话框
 const closeDialog = () => {
   dialog.value = false;
   form.value = { ...defaultForm };
 };
 
-// 提交表单
 const submitForm = async () => {
   if (!formValid.value) return;
 
@@ -386,19 +364,18 @@ const submitForm = async () => {
     }
 
     if (res.code === 0) {
-      snackbarStore.showSuccessMessage(isEdit.value ? "保存成功" : "创建成功");
+      snackbarStore.showSuccessMessage(isEdit.value ? t("common.saveSuccess") : t("common.createSuccess"));
       closeDialog();
       loadPushList();
     }
   } catch (error) {
     console.error("提交失败:", error);
-    snackbarStore.showErrorMessage(isEdit.value ? "保存失败" : "创建失败");
+    snackbarStore.showErrorMessage(isEdit.value ? t("pushPage.saveFailed") : t("pushPage.createFailed"));
   } finally {
     submitLoading.value = false;
   }
 };
 
-// 切换启用状态
 const toggleEnable = async (item: PushItem) => {
   try {
     const res = await editPush({
@@ -406,22 +383,20 @@ const toggleEnable = async (item: PushItem) => {
       enable: !item.enable,
     });
     if (res.code === 0) {
-      snackbarStore.showSuccessMessage(item.enable ? "已禁用" : "已启用");
+      snackbarStore.showSuccessMessage(item.enable ? t("pushPage.disabled") : t("pushPage.enabled"));
       loadPushList();
     }
   } catch (error) {
     console.error("切换状态失败:", error);
-    snackbarStore.showErrorMessage("操作失败");
+    snackbarStore.showErrorMessage(t("pushPage.operationFailed"));
   }
 };
 
-// 确认删除
 const confirmDelete = (item: PushItem) => {
   deleteItem.value = item;
   deleteDialog.value = true;
 };
 
-// 执行删除
 const handleDelete = async () => {
   if (!deleteItem.value) return;
 
@@ -429,20 +404,19 @@ const handleDelete = async () => {
   try {
     const res = await deletePush(deleteItem.value.id);
     if (res.code === 0) {
-      snackbarStore.showSuccessMessage("删除成功");
+      snackbarStore.showSuccessMessage(t("common.deleteSuccess"));
       deleteDialog.value = false;
       deleteItem.value = null;
       loadPushList();
     }
   } catch (error) {
     console.error("删除失败:", error);
-    snackbarStore.showErrorMessage("删除失败");
+    snackbarStore.showErrorMessage(t("pushPage.deleteFailed"));
   } finally {
     deleteLoading.value = false;
   }
 };
 
-// 初始化
 onMounted(() => {
   loadPushList();
 });

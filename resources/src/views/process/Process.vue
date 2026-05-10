@@ -25,9 +25,9 @@
           mdi-application-outline
         </v-icon>
         <h3 class="text-h5 font-weight-medium text-grey-darken-1 mb-3">
-          暂无进程
+          {{ $t('processPage.noProcess') }}
         </h3>
-        <p v-permission="1" class="text-body-1 text-grey mb-8">先创建你的第一个进程</p>
+        <p v-permission="1" class="text-body-1 text-grey mb-8">{{ $t('processPage.createFirst') }}</p>
         <v-btn v-permission="1"
 
           size="large"
@@ -38,7 +38,7 @@
           @click="processCreateComponent?.createProcessDialog()"
         >
           <v-icon start size="large" v-permission="1">mdi-plus-circle</v-icon>
-          创建进程
+          {{ $t('processPage.createProcess') }}
         </v-btn>
       </div>
     </v-card>
@@ -67,7 +67,7 @@
         </v-btn>
       </template>
 
-      <v-tooltip location="start" text="创建进程">
+      <v-tooltip location="start" :text="$t('processPage.createProcess')">
         <template v-slot:activator="{ props: tooltipProps }">
           <v-btn
             v-permission="1"
@@ -84,7 +84,7 @@
         </template>
       </v-tooltip>
 
-      <v-tooltip location="start" text="全部启动">
+      <v-tooltip location="start" :text="$t('processPage.startAll')">
         <template v-slot:activator="{ props: tooltipProps }">
           <v-btn
             v-bind="tooltipProps"
@@ -102,7 +102,7 @@
         </template>
       </v-tooltip>
 
-      <v-tooltip location="start" text="全部停止">
+      <v-tooltip location="start" :text="$t('processPage.stopAll')">
         <template v-slot:activator="{ props: tooltipProps }">
           <v-btn
             v-bind="tooltipProps"
@@ -129,23 +129,23 @@
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium d-flex align-center">
         <v-icon color="success" class="mr-2">mdi-play-circle</v-icon>
-        确认全部启动
+        {{ $t('processPage.confirmStartAll') }}
       </v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pt-6">
-        <div class="text-body-1 mb-3">确定要启动所有进程吗？</div>
+        <div class="text-body-1 mb-3">{{ $t('processPage.confirmStartAllMsg') }}</div>
         <div class="text-caption text-secondary">
-          共 {{ processData?.length || 0 }} 个进程将被启动
+          {{ $t('processPage.totalWillStart', { n: processData?.length || 0 }) }}
         </div>
       </v-card-text>
 
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="startAllDialog = false">取消</v-btn>
-        <v-btn color="success" @click="executeStartAll">确认启动</v-btn>
+        <v-btn text @click="startAllDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="success" @click="executeStartAll">{{ $t('processPage.confirmStart') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -155,31 +155,32 @@
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium d-flex align-center">
         <v-icon color="error" class="mr-2">mdi-stop-circle</v-icon>
-        确认全部停止
+        {{ $t('processPage.confirmStopAll') }}
       </v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pt-6">
         <div class="text-body-1 mb-3">
-          确定要停止所有进程吗？此操作将强制终止所有正在运行的进程。
+          {{ $t('processPage.confirmStopAllMsg') }}
         </div>
         <div class="text-caption text-error">
-          共 {{ processData?.length || 0 }} 个进程将被停止
+          {{ $t('processPage.totalWillStop', { n: processData?.length || 0 }) }}
         </div>
       </v-card-text>
 
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="killAllDialog = false">取消</v-btn>
-        <v-btn color="error" @click="executeKillAll">确认停止</v-btn>
+        <v-btn text @click="killAllDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="error" @click="executeKillAll">{{ $t('processPage.confirmStop') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import ProcessCard from "@/components/process/ProcessCard.vue";
 import axios from "axios";
 import {
@@ -197,6 +198,7 @@ type CreateHandle = {
 const processCreateComponent = ref<CreateHandle | null>(null);
 const processData = ref<ProcessItem[]>();
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const startingAll = ref(false);
 const killingAll = ref(false);
@@ -242,13 +244,13 @@ const executeStartAll = () => {
   startProcessAll()
     .then((e) => {
       if (e.code === 0) {
-        snackbarStore.showSuccessMessage("全部进程启动成功");
+        snackbarStore.showSuccessMessage(t("processPage.startAllSuccess"));
       } else {
-        snackbarStore.showErrorMessage("启动失败");
+        snackbarStore.showErrorMessage(t("processPage.startFailed"));
       }
     })
     .catch(() => {
-      snackbarStore.showErrorMessage("启动出错");
+      snackbarStore.showErrorMessage(t("processPage.startError"));
     })
     .finally(() => {
       startingAll.value = false;
@@ -262,13 +264,13 @@ const executeKillAll = () => {
   killProcessAll()
     .then((e) => {
       if (e.code === 0) {
-        snackbarStore.showSuccessMessage("全部进程已停止");
+        snackbarStore.showSuccessMessage(t("processPage.stopAllSuccess"));
       } else {
-        snackbarStore.showErrorMessage("停止失败");
+        snackbarStore.showErrorMessage(t("processPage.stopFailed"));
       }
     })
     .catch(() => {
-      snackbarStore.showErrorMessage("停止出错");
+      snackbarStore.showErrorMessage(t("processPage.stopError"));
     })
     .finally(() => {
       killingAll.value = false;

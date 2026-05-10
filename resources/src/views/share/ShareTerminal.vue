@@ -6,6 +6,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
@@ -13,6 +14,7 @@ import { AttachAddon } from "xterm-addon-attach";
 import { CanvasAddon } from "@xterm/addon-canvas";
 import "xterm/css/xterm.css";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const xtermEl = ref(null);
 
@@ -25,7 +27,7 @@ onMounted(() => {
   const token = urlParams.get("token");
 
   if (!token) {
-    snackbarStore.showErrorMessage("缺少访问令牌");
+    snackbarStore.showErrorMessage(t("shareTerminal.missingToken"));
     return;
   }
 
@@ -34,11 +36,10 @@ onMounted(() => {
 
 const initWebSocketPty = (token) => {
   if (!xtermEl.value) {
-    snackbarStore.showErrorMessage("终端容器初始化失败");
+    snackbarStore.showErrorMessage(t("shareTerminal.terminalInitFailed"));
     return;
   }
 
-  // 计算初始尺寸
   const initialCols = Math.floor(window.innerWidth / 9);
   const initialRows = Math.floor(window.innerHeight / 19);
 
@@ -52,17 +53,16 @@ const initSocket = (url) => {
   socket = new WebSocket(url);
 
   socket.onopen = () => {
-    // WebSocket 连接成功后，初始化 Terminal
     initTerm();
   };
 
   socket.onclose = () => {
-    snackbarStore.showErrorMessage("终端连接已断开");
+    snackbarStore.showErrorMessage(t("shareTerminal.connectionClosed"));
     cleanup();
   };
 
   socket.onerror = (err) => {
-    snackbarStore.showErrorMessage("终端连接发生错误");
+    snackbarStore.showErrorMessage(t("shareTerminal.connectionError"));
     console.error("WebSocket Error:", err);
   };
 };
@@ -91,7 +91,6 @@ const initTerm = () => {
 
   term.open(xtermEl.value);
 
-  // 在打开后执行 fit() 来适配尺寸
   fitAddon.fit();
   term.focus();
 
@@ -124,7 +123,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 确保终端填充整个容器 */
 :deep(.xterm) {
   height: 100% !important;
   width: 100% !important;

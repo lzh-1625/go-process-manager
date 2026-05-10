@@ -6,13 +6,18 @@
   >
     <div>
       <img src="@/assets/images/500.svg" max-width="500" alt="500" />
-      <h1 class="text-h1 pt-3">Opps!!!</h1>
+      <h1 class="text-h1 pt-3">{{ t("errorPage.oops") }}</h1>
       <h4 class="text-h4 my-8">
-        This page you are looking for could not be found.
+        {{ t("errorPage.notFound") }}
       </h4>
       <v-btn flat color="#705CF6" class="mb-4 text-white" to="/"
-        >Go Back to Home</v-btn
+        >{{ t("common.backToHome") }}</v-btn
       >
     </div>
   </v-card>
 </template>
+
+<script setup lang="ts">
+import { useI18n } from "vue-i18n";
+const { t } = useI18n();
+</script>

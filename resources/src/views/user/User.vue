@@ -1,7 +1,6 @@
 <template>
   <v-container fluid class="py-6 px-8">
     <v-card class="rounded-lg">
-      <!-- loading spinner -->
       <div
         v-if="loading"
         class="h-full d-flex flex-grow-1 align-center justify-center"
@@ -14,10 +13,9 @@
       </div>
 
       <div v-else>
-        <!-- 标题栏 -->
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-account-multiple</v-icon>
-          <span class="flex-fill">用户管理</span>
+          <span class="flex-fill">{{ $t('userPage.title') }}</span>
           <v-btn icon variant="text" size="small" @click="refreshUsers">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -28,11 +26,10 @@
             @click="addDialog = true"
           >
             <v-icon left>mdi-plus</v-icon>
-            添加用户
+            {{ $t('userPage.addUser') }}
           </v-btn>
         </h6>
 
-        <!-- 用户列表 -->
         <v-table class="pa-3">
           <thead>
             <tr>
@@ -97,13 +94,12 @@
             </tr>
             <tr v-if="desserts.length === 0">
               <td colspan="5" class="text-center text-secondary pa-8">
-                暂无数据
+                {{ $t('common.noData') }}
               </td>
             </tr>
           </tbody>
         </v-table>
 
-        <!-- 分页 -->
         <div class="text-center pa-4">
           <v-pagination
             v-model="currentPage"
@@ -113,17 +109,16 @@
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
-            共 {{ desserts.length }} 个用户
+            {{ $t('userPage.totalUsers', { n: desserts.length }) }}
           </div>
         </div>
       </div>
     </v-card>
   </v-container>
 
-  <!-- 修改密码对话框 -->
   <v-dialog v-model="dialog" max-width="520">
     <v-card class="rounded-xl">
-      <v-card-title class="text-h6 font-weight-medium">修改用户</v-card-title>
+      <v-card-title class="text-h6 font-weight-medium">{{ $t('userPage.editUser') }}</v-card-title>
 
       <v-divider></v-divider>
 
@@ -135,7 +130,7 @@
                 v-model="userForm.role"
                 :items="items"
                 item-title="label"
-                label="选择用户角色"
+                :label="$t('userPage.selectRole')"
                 variant="outlined"
                 density="comfortable"
               ></v-select>
@@ -145,8 +140,8 @@
                 v-model="userForm.password"
                 :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
                 :type="show1 ? 'text' : 'password'"
-                label="新密码"
-                hint="长度不能小于4"
+                :label="$t('userPage.newPassword')"
+                :hint="$t('userPage.passwordHint')"
                 variant="outlined"
                 density="comfortable"
                 @click:append-inner="show1 = !show1"
@@ -155,7 +150,7 @@
             <v-col cols="12">
               <v-text-field
                 v-model="userForm.remark"
-                label="备注"
+                :label="$t('common.remark')"
                 variant="outlined"
                 density="comfortable"
               ></v-text-field>
@@ -167,36 +162,34 @@
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="close">取消</v-btn>
-        <v-btn color="primary" @click="save">确认</v-btn>
+        <v-btn text @click="close">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" @click="save">{{ $t('common.confirm') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
-  <!-- 删除确认对话框 -->
   <v-dialog v-model="dialogDelete" max-width="480">
     <v-card class="rounded-xl">
-      <v-card-title class="text-h6 font-weight-medium">确认删除</v-card-title>
+      <v-card-title class="text-h6 font-weight-medium">{{ $t('userPage.confirmDelete') }}</v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pt-6">
-        确认删除该用户吗？此操作无法撤销。
+        {{ $t('userPage.deleteConfirmMessage') }}
       </v-card-text>
 
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="closeDelete">取消</v-btn>
-        <v-btn color="error" @click="deleteItemConfirm">确认删除</v-btn>
+        <v-btn text @click="closeDelete">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="error" @click="deleteItemConfirm">{{ $t('userPage.deleteConfirm') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
-  <!-- 添加用户对话框 -->
   <v-dialog v-model="addDialog" max-width="520">
     <v-card class="rounded-xl">
-      <v-card-title class="text-h6 font-weight-medium">添加新用户</v-card-title>
+      <v-card-title class="text-h6 font-weight-medium">{{ $t('userPage.addNewUser') }}</v-card-title>
 
       <v-divider></v-divider>
 
@@ -206,7 +199,7 @@
             <v-col cols="12">
               <v-text-field
                 v-model="addUserForm.account"
-                label="用户名"
+                :label="$t('userPage.username')"
                 variant="outlined"
                 density="comfortable"
               ></v-text-field>
@@ -216,7 +209,7 @@
                 v-model="addUserForm.password"
                 :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
                 :type="show1 ? 'text' : 'password'"
-                label="密码"
+                :label="$t('userPage.password')"
                 variant="outlined"
                 density="comfortable"
                 @click:append-inner="show1 = !show1"
@@ -227,7 +220,7 @@
                 v-model="addUserForm.role"
                 :items="items"
                 item-title="label"
-                label="选择用户角色"
+                :label="$t('userPage.selectRole')"
                 variant="outlined"
                 density="comfortable"
               ></v-select>
@@ -235,7 +228,7 @@
             <v-col cols="12">
               <v-text-field
                 v-model="addUserForm.remark"
-                label="备注"
+                :label="$t('common.remark')"
                 variant="outlined"
                 density="comfortable"
               ></v-text-field>
@@ -247,18 +240,17 @@
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="addDialog = false">取消</v-btn>
-        <v-btn color="primary" @click="add">确认</v-btn>
+        <v-btn text @click="addDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" @click="add">{{ $t('common.confirm') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
-  <!-- ✅ 操作权限对话框 -->
   <v-dialog v-model="oprEditdialog" max-width="900">
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium">
         <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
-        <span>修改权限</span>
+        <span>{{ $t('userPage.permissions') }}</span>
       </v-card-title>
 
       <v-divider></v-divider>
@@ -297,12 +289,11 @@
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="oprEditdialog = false">关闭</v-btn>
+        <v-btn text @click="oprEditdialog = false">{{ $t('common.close') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
-  <!-- ✅ 修改权限对话框 -->
   <v-dialog
     v-model="oprEditdiaFormDialog"
     max-width="520"
@@ -311,7 +302,7 @@
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium">
         <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
-        <span>修改权限</span>
+        <span>{{ $t('userPage.editPermission') }}</span>
       </v-card-title>
 
       <v-divider></v-divider>
@@ -321,7 +312,7 @@
           <v-row dense>
             <v-col cols="12" v-for="(label, key) in switchLabels" :key="key">
               <div class="d-flex align-center justify-space-between py-2">
-                <span class="font-weight-medium text-body-1">{{ label }}</span>
+                <span class="font-weight-medium text-body-1">{{ $t(label) }}</span>
                 <v-switch
                   color="primary"
                   inset
@@ -338,8 +329,8 @@
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="oprEditdiaFormDialog = false">取消</v-btn>
-        <v-btn color="primary" @click="submit">确认</v-btn>
+        <v-btn text @click="oprEditdiaFormDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" @click="submit">{{ $t('common.confirm') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -347,6 +338,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   login,
   createUser,
@@ -358,6 +350,8 @@ import {
   editPermission,
 } from "~/src/api/user";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
+
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 
 const loading = ref(false);
@@ -371,61 +365,57 @@ const oprEditdialog = ref(false);
 const permissionEditForm = ref({});
 const oprEditdiaFormDialog = ref(false);
 
-// 分页
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-const headers = [
-  { title: "用户名", key: "account" },
-  { title: "角色", key: "role" },
-  { title: "创建时间", key: "createTime" },
-  { title: "备注", key: "remark" },
-  { title: "操作", key: "actions", sortable: false },
-];
-const permissionHeaders = [
-  { title: "进程id", key: "pid", sortable: true },
+const headers = computed(() => [
+  { title: t("userPage.username"), key: "account" },
+  { title: t("userPage.role"), key: "role" },
+  { title: t("userPage.createTime"), key: "createTime" },
+  { title: t("common.remark"), key: "remark" },
+  { title: t("common.operation"), key: "actions", sortable: false },
+]);
+const permissionHeaders = computed(() => [
+  { title: t("userPage.processId"), key: "pid", sortable: true },
   {
-    title: "进程名",
+    title: t("userPage.processName"),
     sortable: true,
     key: "name",
   },
-  { title: "拥有", key: "owned", sortable: false },
-  { title: "启动", key: "start", sortable: false },
-  { title: "停止", key: "stop", sortable: false },
-  { title: "终端", key: "terminal", sortable: false },
-  { title: "写入", key: "write", sortable: false },
-  { title: "日志", key: "log", sortable: false },
-];
+  { title: t("userPage.owned"), key: "owned", sortable: false },
+  { title: t("userPage.start"), key: "start", sortable: false },
+  { title: t("userPage.stop"), key: "stop", sortable: false },
+  { title: t("userPage.terminal"), key: "terminal", sortable: false },
+  { title: t("userPage.write"), key: "write", sortable: false },
+  { title: t("userPage.log"), key: "log", sortable: false },
+]);
 const desserts = ref([]);
 const search = ref("");
 const oprList = ref([]);
 const switchLabels = {
-  owned: "拥有",
-  start: "启动",
-  stop: "停止",
-  terminal: "终端",
-  write: "写入",
-  log: "日志",
+  owned: "userPage.owned",
+  start: "userPage.start",
+  stop: "userPage.stop",
+  terminal: "userPage.terminal",
+  write: "userPage.write",
+  log: "userPage.log",
 };
 
 const rules = {
-  required: (v) => !!v || "必填项",
-  min: (v) => v.length >= 4 || "至少4个字符",
+  required: (v) => !!v || t("common.required"),
+  min: (v) => v.length >= 4 || t("userPage.passwordMinLength"),
 };
 
-// 计算总页数
 const totalPages = computed(() => {
   return Math.ceil(desserts.value.length / pageSize.value);
 });
 
-// 计算当前页数据
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return desserts.value.slice(start, end);
 });
 
-// 处理页码变化
 const handlePageChange = (page) => {
   currentPage.value = page;
 };
@@ -435,10 +425,10 @@ onMounted(() => {
 });
 const addUserForm = ref({ account: "", password: "", role: null, remark: "" });
 const userForm = ref({ account: "", password: "" });
-const items = [
-  { label: "管理员", value: 1 },
-  { label: "普通用户", value: 2 },
-];
+const items = computed(() => [
+  { label: t("userPage.admin"), value: 1 },
+  { label: t("userPage.normalUser"), value: 2 },
+]);
 
 const timeHanlder = (t) => new Date(t).toLocaleString();
 
@@ -456,7 +446,7 @@ const save = () => {
   editUser(userForm.value).then((resp) => {
     if (resp.code == 0) {
       initialize();
-      snackbarStore.showSuccessMessage("操作成功");
+      snackbarStore.showSuccessMessage(t("common.operationSuccess"));
     }
   });
 };
@@ -465,7 +455,7 @@ const add = () => {
   createUser(addUserForm.value).then((resp) => {
     if (resp.code == 0) {
       initialize();
-      snackbarStore.showSuccessMessage("操作成功");
+      snackbarStore.showSuccessMessage(t("common.operationSuccess"));
     }
   });
 };
@@ -478,7 +468,7 @@ const deleteItemConfirm = () => {
   deleteUser(account.value).then((resp) => {
     if (resp.code === 0) {
       initialize();
-      snackbarStore.showSuccessMessage("操作成功");
+      snackbarStore.showSuccessMessage(t("common.operationSuccess"));
     }
   });
 };
@@ -498,10 +488,10 @@ const refreshUsers = () => {
 const editItem = (item) => {
   userForm.value = {
     account: item.account,
+    password: "",
+    role: item.role,
+    remark: item.remark,
   };
-  userForm.value.password = "";
-  userForm.value.role = item.role;
-  userForm.value.remark = item.remark;
   dialog.value = true;
 };
 
@@ -527,7 +517,7 @@ const submit = () => {
   permissionEditForm.value.account = account.value;
   editPermission(permissionEditForm.value).then((resp) => {
     if (resp.code == 0) {
-      snackbarStore.showSuccessMessage("操作成功");
+      snackbarStore.showSuccessMessage(t("common.operationSuccess"));
       oprEdit({
         account: account.value,
         uuid: uuid.value,
@@ -544,11 +534,9 @@ const updatePermission = (item, field, newValue) => {
   };
   editPermission(updatedPermission).then((resp) => {
     if (resp.code == 0) {
-      snackbarStore.showSuccessMessage("权限修改成功");
-      // 更新本地数据
+      snackbarStore.showSuccessMessage(t("userPage.permissionUpdateSuccess"));
       item[field] = newValue;
     } else {
-      // 如果失败，刷新数据恢复原状
       oprEdit({
         account: account.value,
         uuid: uuid.value,

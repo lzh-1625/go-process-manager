@@ -1,7 +1,6 @@
 <template>
   <v-container fluid class="py-6 px-8">
     <v-card class="rounded-lg">
-      <!-- loading spinner -->
       <div
         v-if="loading"
         class="h-full d-flex flex-grow-1 align-center justify-center"
@@ -14,16 +13,14 @@
       </div>
 
       <div v-else>
-        <!-- 标题栏 -->
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-share-variant</v-icon>
-          <span class="flex-fill">分享链接管理</span>
+          <span class="flex-fill">{{ $t('sharePage.title') }}</span>
           <v-btn icon variant="text" size="small" @click="refreshList">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
         </h6>
 
-        <!-- 分享链接列表 -->
         <v-table class="pa-3">
           <thead>
             <tr>
@@ -56,7 +53,7 @@
                   size="small"
                   class="font-weight-bold"
                 >
-                  {{ isExpired(item.expireTime) ? '已过期' : timeHandler(item.expireTime) }}
+                  {{ isExpired(item.expireTime) ? $t('sharePage.expired') : timeHandler(item.expireTime) }}
                 </v-chip>
               </td>
               <td>{{ item.createBy }}</td>
@@ -66,11 +63,11 @@
                   size="small"
                   class="font-weight-bold"
                 >
-                  {{ item.write ? '可写' : '只读' }}
+                  {{ item.write ? $t('sharePage.writable') : $t('sharePage.readonly') }}
                 </v-chip>
               </td>
               <td>
-                <v-tooltip text="复制分享链接">
+                <v-tooltip :text="$t('sharePage.copyLink')">
                   <template v-slot:activator="{ props }">
                     <v-btn
                       v-bind="props"
@@ -83,7 +80,7 @@
                     </v-btn>
                   </template>
                 </v-tooltip>
-                <v-tooltip text="删除分享">
+                <v-tooltip :text="$t('sharePage.deleteShare')">
                   <template v-slot:activator="{ props }">
                     <v-btn
                       v-bind="props"
@@ -100,13 +97,12 @@
             </tr>
             <tr v-if="shareList.length === 0">
               <td colspan="7" class="text-center text-secondary pa-8">
-                暂无分享链接
+                {{ $t('sharePage.noShares') }}
               </td>
             </tr>
           </tbody>
         </v-table>
 
-        <!-- 分页 -->
         <div class="text-center pa-4">
           <v-pagination
             v-model="currentPage"
@@ -116,29 +112,28 @@
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
-            共 {{ shareList.length }} 个分享链接
+            {{ $t('sharePage.totalShares', { n: shareList.length }) }}
           </div>
         </div>
       </div>
     </v-card>
   </v-container>
 
-  <!-- 删除确认对话框 -->
   <v-dialog v-model="dialogDelete" max-width="480">
     <v-card class="rounded-xl">
-      <v-card-title class="text-h6 font-weight-medium">确认删除</v-card-title>
+      <v-card-title class="text-h6 font-weight-medium">{{ $t('sharePage.confirmDelete') }}</v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pt-6">
-        确认删除该分享链接吗？此操作无法撤销。
+        {{ $t('sharePage.confirmDeleteMsg') }}
       </v-card-text>
 
       <v-divider></v-divider>
 
       <v-card-actions class="justify-end pa-4">
-        <v-btn text @click="closeDelete">取消</v-btn>
-        <v-btn color="error" @click="deleteItemConfirm">确认删除</v-btn>
+        <v-btn text @click="closeDelete">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="error" @click="deleteItemConfirm">{{ $t('sharePage.confirmDeleteBtn') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -146,10 +141,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { getShareList, deleteShare } from "~/src/api/share";
 import { getProcessList } from "~/src/api/process";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 
 const loading = ref(false);
@@ -158,39 +155,34 @@ const shareList = ref([]);
 const processList = ref([]);
 const deleteId = ref(0);
 
-// 分页
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-const headers = [
+const headers = computed(() => [
   { title: "ID", key: "id" },
-  { title: "进程", key: "pid" },
-  { title: "创建时间", key: "createdAt" },
-  { title: "最后使用", key: "lastLink" },
-  { title: "过期时间", key: "expireTime" },
-  { title: "创建者", key: "createBy" },
-  { title: "权限", key: "write" },
-  { title: "操作", key: "actions", sortable: false },
-];
+  { title: t("sharePage.process"), key: "pid" },
+  { title: t("sharePage.createTime"), key: "createdAt" },
+  { title: t("sharePage.lastUsed"), key: "lastLink" },
+  { title: t("sharePage.expireTime"), key: "expireTime" },
+  { title: t("sharePage.creator"), key: "createBy" },
+  { title: t("sharePage.permission"), key: "write" },
+  { title: t("common.operation"), key: "actions", sortable: false },
+]);
 
-// 计算总页数
 const totalPages = computed(() => {
   return Math.ceil(shareList.value.length / pageSize.value);
 });
 
-// 计算当前页数据
 const paginatedShares = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return shareList.value.slice(start, end);
 });
 
-// 处理页码变化
 const handlePageChange = (page) => {
   currentPage.value = page;
 };
 
-// 时间格式化
 const timeHandler = (t) => {
   if (!t) return "-";
   return new Date(t).toLocaleString("zh-CN", {
@@ -204,31 +196,27 @@ const timeHandler = (t) => {
   });
 };
 
-// 判断是否过期
 const isExpired = (expireTime) => {
   return new Date(expireTime) < new Date();
 };
 
-// 根据pid获取进程名称
 const getProcessName = (pid) => {
   const process = processList.value.find((p) => p.uuid === pid);
   return process ? process.name : `PID: ${pid}`;
 };
 
-// 复制分享链接
 const copyShareLink = (token) => {
   const shareUrl = `${window.location.origin}/share?token=${token}`;
   navigator.clipboard.writeText(shareUrl).then(
     () => {
-      snackbarStore.showSuccessMessage("分享链接已复制到剪贴板");
+      snackbarStore.showSuccessMessage(t("sharePage.copySuccess"));
     },
     (err) => {
-      snackbarStore.showErrorMessage("复制失败: " + err);
+      snackbarStore.showErrorMessage(t("sharePage.copyFailed"));
     }
   );
 };
 
-// 删除分享
 const deleteItem = (item) => {
   dialogDelete.value = true;
   deleteId.value = item.id;
@@ -239,7 +227,7 @@ const deleteItemConfirm = () => {
   deleteShare(deleteId.value).then((resp) => {
     if (resp.code === 0) {
       initialize();
-      snackbarStore.showSuccessMessage("删除成功");
+      snackbarStore.showSuccessMessage(t("common.deleteSuccess"));
     }
   });
 };
@@ -249,7 +237,6 @@ const closeDelete = () => (dialogDelete.value = false);
 const initialize = () => {
   loading.value = true;
 
-  // 并行加载进程列表和分享列表
   Promise.all([getProcessList(), getShareList()])
     .then(([processResp, shareResp]) => {
       processList.value = processResp.data || [];
@@ -258,7 +245,7 @@ const initialize = () => {
     })
     .catch((err) => {
       loading.value = false;
-      snackbarStore.showErrorMessage("加载数据失败");
+      snackbarStore.showErrorMessage(t("sharePage.loadFailed"));
     });
 };
 
@@ -307,4 +294,3 @@ onMounted(() => {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 </style>
-
