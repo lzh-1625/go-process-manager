@@ -22,7 +22,7 @@ func (p *pushApi) GetPushList(ctx *echo.Context) error {
 
 func (p *pushApi) GetPushByID(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -52,7 +52,7 @@ func (p *pushApi) UpdatePushConfig(ctx *echo.Context) error {
 
 func (p *pushApi) DeletePushConfig(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err

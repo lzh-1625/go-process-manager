@@ -2,7 +2,7 @@ package model
 
 type Process struct {
 	UUID              int      `gorm:"primaryKey;autoIncrement;column:uuid" json:"uuid"`
-	Name              string   `gorm:"column:name;uniqueIndex;type:text" json:"name" binding:"required"`
+	Name              string   `gorm:"column:name;uniqueIndex;type:text" json:"name"`
 	Cmd               string   `gorm:"column:args" json:"cmd"`
 	Cwd               string   `gorm:"column:cwd" json:"cwd"`
 	AutoRestart       bool     `gorm:"column:auto_restart" json:"autoRestart"`

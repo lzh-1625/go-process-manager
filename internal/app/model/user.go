@@ -19,10 +19,10 @@ func (*User) TableName() string {
 }
 
 type LoginHandlerReq struct {
-	Account  string `json:"account" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Account  string `json:"account"`
+	Password string `json:"password"`
 }
 
 type DeleteUserReq struct {
-	Account string `query:"account" binding:"required"`
+	Account string `query:"account"`
 }

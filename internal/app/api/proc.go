@@ -37,7 +37,7 @@ func (p *procApi) CreateProcess(ctx *echo.Context) error {
 
 func (p *procApi) DeleteProcess(ctx *echo.Context) error {
 	var req struct {
-		UUID int `query:"uuid" binding:"required"`
+		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -50,7 +50,7 @@ func (p *procApi) DeleteProcess(ctx *echo.Context) error {
 
 func (p *procApi) KillProcess(ctx *echo.Context) error {
 	var req struct {
-		UUID int `query:"uuid" binding:"required"`
+		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -68,7 +68,7 @@ func (p *procApi) KillProcess(ctx *echo.Context) error {
 
 func (p *procApi) StartProcess(ctx *echo.Context) error {
 	var req struct {
-		UUID int `json:"uuid" binding:"required"`
+		UUID int `json:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -141,7 +141,7 @@ func (p *procApi) UpdateProcessConfig(ctx *echo.Context) error {
 
 func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
 	var req struct {
-		UUID int `query:"uuid" binding:"required"`
+		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -159,7 +159,7 @@ func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
 
 func (p *procApi) ProcessControl(ctx *echo.Context) error {
 	var req struct {
-		UUID int `query:"uuid" binding:"required"`
+		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err

@@ -22,7 +22,7 @@ func (p *permissionApi) EditPermssion(ctx *echo.Context) error {
 
 func (p *permissionApi) GetPermissionList(ctx *echo.Context) error {
 	var req struct {
-		Account string `query:"account" binding:"required"`
+		Account string `query:"account"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err

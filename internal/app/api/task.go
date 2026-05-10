@@ -23,7 +23,7 @@ func (t *taskApi) CreateTask(ctx *echo.Context) error {
 
 func (t *taskApi) GetTaskByID(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -49,7 +49,7 @@ func (t *taskApi) GetTaskList(ctx *echo.Context) error {
 
 func (t *taskApi) DeleteTaskByID(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -59,7 +59,7 @@ func (t *taskApi) DeleteTaskByID(ctx *echo.Context) error {
 
 func (t *taskApi) StartTask(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -70,7 +70,7 @@ func (t *taskApi) StartTask(ctx *echo.Context) error {
 
 func (t *taskApi) StopTask(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -96,7 +96,7 @@ func (t *taskApi) RunTaskByKey(ctx *echo.Context) error {
 
 func (t *taskApi) CreateTaskApiKey(ctx *echo.Context) error {
 	var req struct {
-		ID int `query:"id" binding:"required"`
+		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
