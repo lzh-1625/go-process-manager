@@ -18,15 +18,6 @@
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
           <span class="flex-fill">{{ $t('logPage.title') }}</span>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="openTerminalView"
-            class="mr-1"
-          >
-            <v-icon>mdi-console</v-icon>
-          </v-btn>
           <v-btn icon variant="text" size="small" @click="refreshLogs">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -164,16 +155,6 @@
                 ></div>
               </td>
               <td>
-                <v-btn
-                  elevation="4"
-                  variant="elevated"
-                  size="small"
-                  @click="viewLogContext(item)"
-                >
-                  <v-icon>mdi-arrow-up-down</v-icon>
-                </v-btn>
-              </td>
-              <td>
                 <span class="text-caption">{{ formatTime(item.time) }}</span>
               </td>
               <td>
@@ -210,13 +191,6 @@
         </div>
       </div>
     </v-card>
-
-    <!-- 终端日志查看器 -->
-    <LogTerminal
-      ref="logTerminalRef"
-      :search-form="searchForm"
-      :process-list="processList"
-    />
   </v-container>
 </template>
 
@@ -227,12 +201,10 @@ import { getLog } from "~/src/api/log";
 import type { GetLogReq, ProcessLog } from "~/src/types/log/log";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { AnsiUp } from "ansi_up";
-import LogTerminal from "~/src/components/log/LogTerminal.vue";
 import { getProcessList } from "~/src/api/process";
 
 const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
-const logTerminalRef = ref<InstanceType<typeof LogTerminal> | null>(null);
 const ansiConverter = new AnsiUp();
 
 const processList = ref<string[]>([]);
@@ -258,7 +230,6 @@ const getDefaultStartTime = () => {
 
 const headers = computed(() => [
   { title: t("logPage.logContent"), key: "log", sortable: false },
-  { title: t("logPage.context"), key: "actions", width: "100px", sortable: false },
   { title: t("common.time"), key: "time", width: "150px" },
   { title: t("logPage.processName"), key: "name", width: "30px" },
   { title: t("logPage.user"), key: "using", width: "30px" },
@@ -402,20 +373,6 @@ const refreshLogs = () => {
 const handlePageChange = (page: number) => {
   currentPage.value = page;
   loadLogs();
-};
-
-// 打开终端视图
-const openTerminalView = () => {
-  if (logTerminalRef.value) {
-    logTerminalRef.value.open();
-  }
-};
-
-// 查看日志上下文
-const viewLogContext = (log: ProcessLog) => {
-  if (logTerminalRef.value) {
-    logTerminalRef.value.openWithContext(log.time, log.name);
-  }
 };
 
 // 加载进程列表
