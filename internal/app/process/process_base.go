@@ -79,7 +79,6 @@ type ProcessBase struct {
 }
 type ConnectInstance interface {
 	Write([]byte)
-	WriteString(string)
 	Cancel()
 }
 

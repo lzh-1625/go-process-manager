@@ -32,14 +32,9 @@ type WsConnetInstance struct {
 func (w *WsConnetInstance) Write(b []byte) {
 	w.wsLock.Lock()
 	defer w.wsLock.Unlock()
-	w.WsConnect.WriteMessage(websocket.BinaryMessage, b)
+	w.WsConnect.WriteMessage(websocket.TextMessage, b)
 }
 
-func (w *WsConnetInstance) WriteString(s string) {
-	w.wsLock.Lock()
-	defer w.wsLock.Unlock()
-	w.WsConnect.WriteMessage(websocket.TextMessage, []byte(s))
-}
 func (w *WsConnetInstance) Cancel() {
 	w.CancelFunc()
 }
