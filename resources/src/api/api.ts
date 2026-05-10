@@ -47,7 +47,7 @@ class RequestHttp {
       (error: AxiosError) => {
         snackbarStore.showErrorMessage(error);
         return Promise.reject(error);
-      }
+      },
     );
 
     /**
@@ -57,9 +57,12 @@ class RequestHttp {
     this.service.interceptors.response.use(
       (response: AxiosResponse) => {
         const { data } = response; // 解构
-        if (data.code !== 0) {
+        if (data.code < 0) {
           snackbarStore.showErrorMessage(data.message);
           return Promise.reject(data);
+        }
+        if (data.code > 0) {
+          snackbarStore.showSuccessMessage(data.message);
         }
         return data;
       },
@@ -70,7 +73,7 @@ class RequestHttp {
         }
         //@ts-ignore
         snackbarStore.showErrorMessage(response.data.message);
-      }
+      },
     );
   }
   handleCode(code: number): void {
