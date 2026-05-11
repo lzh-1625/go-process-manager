@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
+	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
@@ -48,7 +49,7 @@ var rootCmd = &cobra.Command{
 	Long:  `Go Process Manager is a tool for managing processes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
-			Module,
+			app.Module,
 			// register sqlite implement search engine
 			fx.Invoke(func(logRepository *repository.LogRepository) {
 				search.Register("sqlite", sqlite.NewSqliteSearch(logRepository))

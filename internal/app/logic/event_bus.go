@@ -3,6 +3,7 @@ package logic
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
+	"github.com/lzh-1625/go_process_manager/log"
 )
 
 type Event struct {
@@ -17,12 +18,16 @@ type EventBus struct {
 
 func NewEventBus() *EventBus {
 	return &EventBus{
-		events: make(chan Event),
+		events: make(chan Event, 32),
 	}
 }
 
 func (e *EventBus) Publish(event Event) {
-	e.events <- event
+	select {
+	case e.events <- event:
+	default:
+		log.Logger.Warnw("event bus is full", "event", event)
+	}
 }
 
 func (e *EventBus) Subscribe() <-chan Event {

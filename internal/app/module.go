@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
