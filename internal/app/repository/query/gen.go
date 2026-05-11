@@ -17,7 +17,6 @@ import (
 
 var (
 	Q          = new(Query)
-	Config     *config
 	Event      *event
 	Permission *permission
 	Process    *process
@@ -30,7 +29,6 @@ var (
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
-	Config = &Q.Config
 	Event = &Q.Event
 	Permission = &Q.Permission
 	Process = &Q.Process
@@ -44,7 +42,6 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:         db,
-		Config:     newConfig(db, opts...),
 		Event:      newEvent(db, opts...),
 		Permission: newPermission(db, opts...),
 		Process:    newProcess(db, opts...),
@@ -59,7 +56,6 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 type Query struct {
 	db *gorm.DB
 
-	Config     config
 	Event      event
 	Permission permission
 	Process    process
@@ -75,7 +71,6 @@ func (q *Query) Available() bool { return q.db != nil }
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:         db,
-		Config:     q.Config.clone(db),
 		Event:      q.Event.clone(db),
 		Permission: q.Permission.clone(db),
 		Process:    q.Process.clone(db),
@@ -98,7 +93,6 @@ func (q *Query) WriteDB() *Query {
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:         db,
-		Config:     q.Config.replaceDB(db),
 		Event:      q.Event.replaceDB(db),
 		Permission: q.Permission.replaceDB(db),
 		Process:    q.Process.replaceDB(db),
@@ -111,7 +105,6 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 }
 
 type queryCtx struct {
-	Config     IConfigDo
 	Event      IEventDo
 	Permission IPermissionDo
 	Process    IProcessDo
@@ -124,7 +117,6 @@ type queryCtx struct {
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		Config:     q.Config.WithContext(ctx),
 		Event:      q.Event.WithContext(ctx),
 		Permission: q.Permission.WithContext(ctx),
 		Process:    q.Process.WithContext(ctx),

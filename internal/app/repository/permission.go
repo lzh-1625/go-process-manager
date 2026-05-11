@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewPermissionRepository() *PermissionRepository {
+func NewPermissionRepository(query *query.Query) *PermissionRepository {
 	return &PermissionRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 
@@ -22,7 +22,7 @@ type PermissionRepository struct {
 
 func (p *PermissionRepository) GetPermssionList(account string) []model.PermissionPo {
 	result := []model.PermissionPo{}
-	if err := p.query.Config.UnderlyingDB().Raw(`SELECT
+	if err := p.query.Permission.UnderlyingDB().Raw(`SELECT
 	p.name ,
 	p.uuid as pid,
 	p2.owned ,

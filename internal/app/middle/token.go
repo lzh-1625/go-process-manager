@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -46,7 +47,7 @@ func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 				token = c.QueryParam("token")
 			}
 
-			mc, err := utils.VerifyToken(token)
+			mc, err := utils.VerifyToken(token, config.CF.SecretKey)
 			if err != nil {
 				return c.JSON(401, model.Response[struct{}]{
 					Code:    -1,

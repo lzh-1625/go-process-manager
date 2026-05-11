@@ -5,9 +5,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-func NewPushRepository() *PushRepository {
+func NewPushRepository(query *query.Query) *PushRepository {
 	return &PushRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 

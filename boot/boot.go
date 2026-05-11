@@ -1,48 +1,10 @@
 package boot
 
-import (
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-	logger "github.com/lzh-1625/go_process_manager/log"
-	"github.com/lzh-1625/go_process_manager/utils"
-)
-
-func Boot() {
-	initDb()
-	initResetConfig()
-	initConfiguration()
-	initLogger()
-	initLogHandler()
-	initProcess()
-	initJwtSecret()
-	InitTask()
-	InitEventCleanCronJob()
-	initListenKillSignal()
-}
-
-func initDb() {
-	repository.InitDb()
-}
-
 func initConfiguration() {
 
 }
 
 func initProcess() {
-}
-
-func initJwtSecret() {
-	if secret, err := repository.ConfigRepository.GetConfigValue(eum.SecretKey); err == nil {
-		utils.SetSecret([]byte(secret))
-		return
-	}
-	secret := utils.RandString(32)
-	repository.ConfigRepository.SetConfigValue(eum.SecretKey, secret)
-	utils.SetSecret([]byte(secret))
-}
-
-func initLogger() {
-	logger.InitLog()
 }
 
 func InitTask() {

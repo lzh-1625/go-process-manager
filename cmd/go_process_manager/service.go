@@ -13,6 +13,10 @@ import (
 )
 
 func init() {
+	rootCmd.AddCommand(serviceCmd)
+}
+
+func init() {
 	serviceCmd.AddCommand(
 		serviceInstallCmd,
 		serviceUninstallCmd,

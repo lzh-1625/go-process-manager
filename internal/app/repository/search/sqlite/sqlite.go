@@ -10,10 +10,6 @@ import (
 	logger "github.com/lzh-1625/go_process_manager/log"
 )
 
-func init() {
-	search.Register("sqlite", NewSqliteSearch(nil))
-}
-
 type sqliteSearch struct {
 	logRepository *repository.LogRepository
 }

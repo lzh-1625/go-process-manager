@@ -11,7 +11,7 @@ import (
 
 var Logger *zap.SugaredLogger
 
-func InitLog() {
+func init() {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "time",
 		LevelKey:       "level",

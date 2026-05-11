@@ -29,9 +29,9 @@ func newTask(db *gorm.DB, opts ...gen.DOOption) task {
 	_task.ALL = field.NewAsterisk(tableName)
 	_task.ID = field.NewInt(tableName, "id")
 	_task.Name = field.NewString(tableName, "name")
-	_task.Process = field.NewInt(tableName, "process_id")
+	_task.ProcessID = field.NewInt(tableName, "process_id")
 	_task.Condition = field.NewInt(tableName, "condition")
-	_task.Next = field.NewInt(tableName, "next_id")
+	_task.NextID = field.NewInt(tableName, "next_id")
 	_task.Operation = field.NewInt(tableName, "operation")
 	_task.TriggerEvent = field.NewInt32(tableName, "trigger_event")
 	_task.TriggerTarget = field.NewInt(tableName, "trigger_target")
@@ -52,9 +52,9 @@ type task struct {
 	ALL             field.Asterisk
 	ID              field.Int
 	Name            field.String
-	Process         field.Int
+	ProcessID       field.Int
 	Condition       field.Int
-	Next            field.Int
+	NextID          field.Int
 	Operation       field.Int
 	TriggerEvent    field.Int32
 	TriggerTarget   field.Int
@@ -81,9 +81,9 @@ func (t *task) updateTableName(table string) *task {
 	t.ALL = field.NewAsterisk(table)
 	t.ID = field.NewInt(table, "id")
 	t.Name = field.NewString(table, "name")
-	t.Process = field.NewInt(table, "process_id")
+	t.ProcessID = field.NewInt(table, "process_id")
 	t.Condition = field.NewInt(table, "condition")
-	t.Next = field.NewInt(table, "next_id")
+	t.NextID = field.NewInt(table, "next_id")
 	t.Operation = field.NewInt(table, "operation")
 	t.TriggerEvent = field.NewInt32(table, "trigger_event")
 	t.TriggerTarget = field.NewInt(table, "trigger_target")
@@ -111,9 +111,9 @@ func (t *task) fillFieldMap() {
 	t.fieldMap = make(map[string]field.Expr, 13)
 	t.fieldMap["id"] = t.ID
 	t.fieldMap["name"] = t.Name
-	t.fieldMap["process_id"] = t.Process
+	t.fieldMap["process_id"] = t.ProcessID
 	t.fieldMap["condition"] = t.Condition
-	t.fieldMap["next_id"] = t.Next
+	t.fieldMap["next_id"] = t.NextID
 	t.fieldMap["operation"] = t.Operation
 	t.fieldMap["trigger_event"] = t.TriggerEvent
 	t.fieldMap["trigger_target"] = t.TriggerTarget

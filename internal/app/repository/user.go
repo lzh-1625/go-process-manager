@@ -8,9 +8,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-func NewUserRepository() *UserRepository {
+func NewUserRepository(query *query.Query) *UserRepository {
 	return &UserRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 

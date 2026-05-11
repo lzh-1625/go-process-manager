@@ -6,9 +6,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
-func NewProcessRepository() *ProcessRepository {
+func NewProcessRepository(query *query.Query) *ProcessRepository {
 	return &ProcessRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 

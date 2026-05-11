@@ -18,16 +18,14 @@ type TaskLogic struct {
 	taskJobMap      sync.Map
 	eventLogic      *EventLogic
 	processCtlLogic *ProcessCtlLogic
-	taskLogic       *TaskLogic
 }
 
-func NewTaskLogic(taskRepository *repository.TaskRepository, eventLogic *EventLogic, processCtlLogic *ProcessCtlLogic, taskLogic *TaskLogic) *TaskLogic {
+func NewTaskLogic(taskRepository *repository.TaskRepository, eventLogic *EventLogic, processCtlLogic *ProcessCtlLogic) *TaskLogic {
 	t := &TaskLogic{
 		taskRepository:  taskRepository,
 		taskJobMap:      sync.Map{},
 		eventLogic:      eventLogic,
 		processCtlLogic: processCtlLogic,
-		taskLogic:       taskLogic,
 	}
 	t.InitTaskJob()
 	return t
@@ -43,7 +41,7 @@ func (t *TaskLogic) getTaskJob(id int) (*TaskJob, error) {
 
 func (t *TaskLogic) InitTaskJob() {
 	for _, v := range t.taskRepository.GetAllTask() {
-		tj, err := NewTaskJob(v, t.eventLogic, t.processCtlLogic, t.taskLogic)
+		tj, err := NewTaskJob(v, t.eventLogic, t.processCtlLogic, t)
 		if err != nil {
 			log.Logger.Warnw("task initialization failed", "err", err)
 			continue
@@ -102,7 +100,7 @@ func (t *TaskLogic) DeleteTask(id int) (err error) {
 }
 
 func (t *TaskLogic) CreateTask(data model.Task) error {
-	tj, err := NewTaskJob(&data, t.eventLogic, t.processCtlLogic, t.taskLogic)
+	tj, err := NewTaskJob(&data, t.eventLogic, t.processCtlLogic, t)
 	if err != nil {
 		return err
 	}

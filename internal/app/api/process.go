@@ -15,15 +15,18 @@ import (
 
 type ProcApi struct {
 	processCtlLogic *logic.ProcessCtlLogic
-	permissionLogic *logic.PermissionLogic
 	wsShareLogic    *logic.WsShareLogic
+	permissionTool  *PermissionTool
 }
 
-func NewProcApi(processCtlLogic *logic.ProcessCtlLogic, permissionLogic *logic.PermissionLogic, wsShareLogic *logic.WsShareLogic) *ProcApi {
+func NewProcApi(
+	processCtlLogic *logic.ProcessCtlLogic,
+	wsShareLogic *logic.WsShareLogic,
+	permissionTool *PermissionTool) *ProcApi {
 	return &ProcApi{
 		processCtlLogic: processCtlLogic,
-		permissionLogic: permissionLogic,
 		wsShareLogic:    wsShareLogic,
+		permissionTool:  permissionTool,
 	}
 }
 
@@ -65,7 +68,7 @@ func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionLogic.GetPermission(getUserName(ctx), req.UUID).Stop == false {
+	if !p.permissionTool.HasOprPermission(ctx, req.UUID, eum.OperationStop) {
 		return errors.New("not permission")
 	}
 	proc, err := p.processCtlLogic.GetProcess(req.UUID)
@@ -83,7 +86,7 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionLogic.GetPermission(getUserName(ctx), req.UUID).Start == false {
+	if !p.permissionTool.HasOprPermission(ctx, req.UUID, eum.OperationStart) {
 		return errors.New("not permission")
 	}
 	prod, err := p.processCtlLogic.GetProcess(req.UUID)

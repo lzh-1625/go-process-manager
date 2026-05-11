@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -31,7 +32,7 @@ func (u *UserApi) LoginHandler(ctx *echo.Context) error {
 			Code:    -1,
 		})
 	}
-	token, err := utils.GenerateToken(req.Account)
+	token, err := utils.GenerateToken(req.Account, config.CF.SecretKey)
 	if err != nil {
 		return err
 	}

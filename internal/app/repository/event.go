@@ -7,9 +7,10 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
-func NewEventRepository() *EventRepository {
+
+func NewEventRepository(query *query.Query) *EventRepository {
 	return &EventRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 

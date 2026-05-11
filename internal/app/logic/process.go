@@ -25,8 +25,8 @@ type ProcessCtlLogic struct {
 	permissionRepository *repository.PermissionRepository
 	eventLogic           *EventLogic
 	pushLogic            *PushLogic
-	taskLogic            *TaskLogic
-	logHandler           *LogHandler
+	// taskLogic            *TaskLogic
+	logHandler *LogHandler
 }
 
 func NewProcessCtlLogic(
@@ -34,7 +34,7 @@ func NewProcessCtlLogic(
 	permissionRepository *repository.PermissionRepository,
 	eventLogic *EventLogic,
 	pushLogic *PushLogic,
-	taskLogic *TaskLogic,
+	// taskLogic *TaskLogic,
 	logHandler *LogHandler,
 ) *ProcessCtlLogic {
 	p := &ProcessCtlLogic{
@@ -43,8 +43,8 @@ func NewProcessCtlLogic(
 		permissionRepository: permissionRepository,
 		eventLogic:           eventLogic,
 		pushLogic:            pushLogic,
-		taskLogic:            taskLogic,
-		logHandler:           logHandler,
+		// taskLogic:            taskLogic,
+		logHandler: logHandler,
 	}
 	p.ProcessInit()
 	return p
@@ -265,7 +265,7 @@ func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.Pro
 		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
 			ProcessWaitCond.Trigger()
 			p.createEvent(proc, state)
-			go p.taskLogic.RunTaskByTriggerEvent(proc.Name, state)
+			// go p.taskLogic.RunTaskByTriggerEvent(proc.Name, state)
 		}),
 	)
 }

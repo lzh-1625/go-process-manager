@@ -5,9 +5,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-func NewWsShareRepository() *WsShareRepository {
+func NewWsShareRepository(query *query.Query) *WsShareRepository {
 	return &WsShareRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 

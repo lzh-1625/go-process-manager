@@ -38,7 +38,7 @@ func NewPermissionTool(permissionLogic *logic.PermissionLogic) *PermissionTool {
 	}
 }
 
-func (p *PermissionTool) hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
+func (p *PermissionTool) HasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
 	if isAdmin(c) {
 		return true
 	}

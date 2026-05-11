@@ -5,30 +5,30 @@ import (
 	"os"
 	"time"
 
+	"github.com/glebarez/sqlite"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 
-	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 var (
-	db            *gorm.DB
 	defaultConfig = gorm.Session{PrepareStmt: true, SkipDefaultTransaction: true}
-	tables        = []any{
+	Tables        = []any{
 		&model.Process{},
 		&model.User{},
 		&model.Permission{},
 		&model.Push{},
-		&model.Config{},
 		&model.ProcessLog{},
+		&model.Event{},
 		&model.Task{},
+		&model.WsShare{},
 	}
 )
 
-func NewDB() query.Query {
+func NewDB() *gorm.DB {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
@@ -50,15 +50,15 @@ func NewDB() query.Query {
 		log.Panicf("sqlite database init failed! \nerror: %v", err)
 	}
 	sqlDB.SetConnMaxLifetime(time.Hour)
-	db = gdb.Session(&defaultConfig)
+	db := gdb.Session(&defaultConfig)
 	if config.CF.LogLevel == "debug" {
 		db = db.Debug()
 	}
-	err = db.AutoMigrate(tables...)
-	if err != nil {
-		log.Panicf("database migrate failed! \nerror: %v", err)
-	}
-	gormGen(db)
+	err = db.AutoMigrate(Tables...)
+	return db
+}
+
+func NewQuery(db *gorm.DB) *query.Query {
 	query.SetDefault(db)
-	return *query.Q
+	return query.Use(db)
 }

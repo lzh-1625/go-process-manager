@@ -21,6 +21,7 @@ var ApiModule = fx.Options(
 		api.NewLogApi,
 		api.NewConfigApi,
 		api.NewMetricApi,
+		api.NewPermissionTool,
 	),
 )
 
@@ -42,6 +43,8 @@ var LogicModule = fx.Options(
 		logic.NewLogLogic,
 		logic.NewConfigLogic,
 		logic.NewProcessCtlLogic,
+		logic.NewWsShareLogic,
+		logic.NewLogHandler,
 	),
 )
 
@@ -59,8 +62,10 @@ var RepositoryModule = fx.Options(
 		repository.NewEventRepository,
 		repository.NewPermissionRepository,
 		repository.NewLogRepository,
-		repository.NewConfigRepository,
+		repository.NewWsShareRepository,
+		repository.NewTaskRepository,
 		repository.NewDB,
+		repository.NewQuery,
 	),
 )
 

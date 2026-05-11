@@ -6,9 +6,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-func NewTaskRepository() *TaskRepository {
+func NewTaskRepository(query *query.Query) *TaskRepository {
 	return &TaskRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 
@@ -58,7 +58,7 @@ func (t *TaskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 		p2.Name.As("target_name"),
 		p3.Name.As("trigger_name"),
 	).
-		LeftJoin(p, p.UUID.EqCol(task.Process)).
+		LeftJoin(p, p.UUID.EqCol(task.ProcessID)).
 		LeftJoin(p2, p2.UUID.EqCol(task.OperationTarget)).
 		LeftJoin(p3, p3.UUID.EqCol(task.TriggerTarget)).
 		Scan(&result)

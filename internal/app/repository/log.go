@@ -8,9 +8,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 )
 
-func NewLogRepository() *LogRepository {
+func NewLogRepository(query *query.Query) *LogRepository {
 	return &LogRepository{
-		query: query.Q,
+		query: query,
 	}
 }
 
