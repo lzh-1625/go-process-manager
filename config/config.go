@@ -15,7 +15,7 @@ var CF = new(Configuration)
 func init() {
 	err := LoadConfig()
 	if err == nil {
-		log.Println("config loaded from file")
+		// log.Println("config loaded from file")
 		return
 	}
 	if err := ResetConfig(); err != nil {
@@ -30,7 +30,7 @@ func init() {
 
 // 只支持 float64、int、int64、bool、string类型
 type Configuration struct {
-	LogLevel                  string  `default:"debug"  describe:"log level [debug,info]"`
+	LogLevel                  string  `default:"info"  describe:"log level [debug,info]"`
 	Listen                    string  `default:":8797" describe:"listen port"`
 	StorgeType                string  `default:"sqlite" describe:"storage engine [sqlite,es,bleve]"`
 	EsUrl                     string  `default:"" describe:"Elasticsearch url"`

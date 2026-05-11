@@ -20,8 +20,11 @@ func NewUserLogic(userRepository *repository.UserRepository) *UserLogic {
 	}
 }
 
-const DefaultRootAccount = "root"
-const DefaultRootPassword = "root"
+const (
+	DefaultConsoleAccount = "console"
+	DefaultRootAccount    = "root"
+	DefaultRootPassword   = "root"
+)
 
 func (u *UserLogic) CheckLoginInfo(account, password string) (*model.User, bool) {
 	user := u.userRepository.GetUserByName(account)
@@ -43,8 +46,8 @@ func (u *UserLogic) CreateUser(user model.User) error {
 	if user.Role == eum.RoleRoot {
 		return errors.New("creation of root accounts is forbidden")
 	}
-	if user.Account == DefaultRootAccount {
-		return errors.New("operation failed")
+	if user.Account == DefaultRootAccount || user.Account == DefaultConsoleAccount {
+		return errors.New("cannot create console or root user")
 	}
 	if len(user.Password) < config.CF.UserPassWordMinLength {
 		return errors.New("password is too short")
@@ -80,5 +83,11 @@ func (u *UserLogic) GetUserList() []*model.User {
 }
 
 func (u *UserLogic) GetUserByName(name string) *model.User {
+	if name == DefaultConsoleAccount {
+		return &model.User{
+			Account: DefaultConsoleAccount,
+			Role:    eum.RoleRoot,
+		}
+	}
 	return u.userRepository.GetUserByName(name)
 }

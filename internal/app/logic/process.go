@@ -39,7 +39,7 @@ func NewProcessCtlLogic(
 	logHandler *LogHandler,
 	eventBus *EventBus,
 ) *ProcessCtlLogic {
-	p := &ProcessCtlLogic{
+	return &ProcessCtlLogic{
 		processMap:           sync.Map{},
 		processRepository:    processRepository,
 		permissionRepository: permissionRepository,
@@ -49,8 +49,6 @@ func NewProcessCtlLogic(
 		logHandler: logHandler,
 		eventBus:   eventBus,
 	}
-	p.ProcessInit()
-	return p
 }
 func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
 	p.processMap.Store(uuid, proc)

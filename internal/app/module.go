@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
+	"github.com/lzh-1625/go_process_manager/internal/app/cli"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
@@ -70,10 +71,17 @@ var RepositoryModule = fx.Options(
 	),
 )
 
+var CliModule = fx.Options(
+	fx.Provide(
+		cli.NewProcessCli,
+	),
+)
+
 var Module = fx.Options(
 	ApiModule,
 	MiddlewareModule,
 	LogicModule,
 	RepositoryModule,
 	RouteModule,
+	CliModule,
 )

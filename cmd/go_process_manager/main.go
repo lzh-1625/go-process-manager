@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
@@ -54,9 +56,21 @@ var rootCmd = &cobra.Command{
 			fx.Invoke(func(logRepository *repository.LogRepository) {
 				search.Register("sqlite", sqlite.NewSqliteSearch(logRepository))
 			}),
-			// start echo server
-			fx.Invoke(func(r *echo.Echo) {
-				log.Fatal(r.Start(config.CF.Listen))
+
+			fx.Invoke(func(r *echo.Echo, lc fx.Lifecycle, processCtlLogic *logic.ProcessCtlLogic, taskLogic *logic.TaskLogic) {
+				lc.Append(fx.Hook{
+					OnStart: func(ctx context.Context) error {
+						processCtlLogic.ProcessInit()
+						taskLogic.InitTaskJob()
+						go r.Start(config.CF.Listen)
+						return nil
+					},
+					OnStop: func(ctx context.Context) error {
+						log.Println("stop all process")
+						processCtlLogic.KillAllProcess()
+						return nil
+					},
+				})
 			}),
 		).Run()
 	},

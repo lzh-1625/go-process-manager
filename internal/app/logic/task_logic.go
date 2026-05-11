@@ -34,7 +34,6 @@ func NewTaskLogic(
 		processCtlLogic: processCtlLogic,
 		eventBus:        eventBus,
 	}
-	t.InitTaskJob()
 	go func() {
 		for event := range t.eventBus.Subscribe() {
 			t.RunTaskByTriggerEvent(event.p.Name, event.state)

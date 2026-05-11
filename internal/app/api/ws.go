@@ -155,7 +155,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	w.wsShareLogic.Edit(data)
 
 	proc.SetTerminalSize(req.Cols, req.Rows)
-	wsCtx, cancel := context.WithCancel(context.Background())
+	wsCtx, cancel := context.WithCancel(ctx.Request().Context())
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
 		CancelFunc: cancel,
@@ -192,6 +192,7 @@ func (w *WsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 			_, b, err := wci.WsConnect.ReadMessage()
 			if err != nil {
 				log.Logger.Debugw("ws read thread exited", "info", err)
+				cancel()
 				return
 			}
 			if write {
