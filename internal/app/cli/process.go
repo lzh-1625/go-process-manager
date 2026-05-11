@@ -96,7 +96,7 @@ func formatBytes(bytes int64) string {
 	}
 
 	size := float64(bytes) / math.Pow(1024, level)
-	return fmt.Sprintf("%.1f%s", size, units[int(level)])
+	return fmt.Sprintf("%.2f%s", size, units[int(level)])
 }
 
 func (p *ProcessCli) Exec(uuid int) error {
