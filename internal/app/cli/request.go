@@ -3,8 +3,9 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
@@ -12,8 +13,53 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-func Get[T any](uri string) (*T, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1%s/api/process", config.CF.Listen), nil)
+func Get[T any](uri string, query map[string]string) (*T, error) {
+	q := url.Values{}
+	for k, v := range query {
+		q.Add(k, v)
+	}
+	u := url.URL{
+		Scheme:   "http",
+		Host:     config.CF.Listen,
+		Path:     uri,
+		RawQuery: q.Encode(),
+	}
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return Do[T](req)
+}
+
+func Put[T any](uri string, body any) (*T, error) {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	u := url.URL{
+		Scheme: "http",
+		Host:   config.CF.Listen,
+		Path:   uri,
+	}
+	req, err := http.NewRequest(http.MethodPut, u.String(), bytes.NewReader(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	return Do[T](req)
+}
+
+func Delete[T any](uri string, query map[string]string) (*T, error) {
+	q := url.Values{}
+	for k, v := range query {
+		q.Add(k, v)
+	}
+	u := url.URL{
+		Scheme:   "http",
+		Host:     config.CF.Listen,
+		Path:     uri,
+		RawQuery: q.Encode(),
+	}
+	req, err := http.NewRequest(http.MethodDelete, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +71,12 @@ func Post[T any](uri string, body any) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1%s/api/process", config.CF.Listen), bytes.NewReader(jsonBody))
+	u := url.URL{
+		Scheme: "http",
+		Host:   config.CF.Listen,
+		Path:   uri,
+	}
+	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewReader(jsonBody))
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +93,12 @@ func Do[T any](req *http.Request) (*T, error) {
 	}
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	if result.Code != 0 {
+		return nil, errors.New(result.Message)
+	}
 	return &result.Data, err
 }
 

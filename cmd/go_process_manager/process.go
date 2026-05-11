@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -26,6 +27,8 @@ func init() {
 func init() {
 	processCmd.AddCommand(processListCmd)
 	processCmd.AddCommand(processExecCmd)
+	processCmd.AddCommand(processStartCmd)
+	processCmd.AddCommand(processStopCmd)
 }
 
 var processListCmd = &cobra.Command{
@@ -38,7 +41,7 @@ var processListCmd = &cobra.Command{
 			app.Module,
 			// register sqlite implement search engine
 			fx.Invoke(func(cli *cli.ProcessCli) {
-				err := cli.GetProcessList()
+				err := cli.GetList()
 				if err != nil {
 					log.Panic(err)
 				}
@@ -58,9 +61,49 @@ var processExecCmd = &cobra.Command{
 			fx.NopLogger,
 			app.Module,
 			fx.Invoke(func(cli *cli.ProcessCli) {
-				err := cli.ProcessExec(utils.Unwarp(strconv.Atoi(args[0])))
+				err := cli.Exec(utils.Unwarp(strconv.Atoi(args[0])))
 				if err != nil {
-					log.Panic(err)
+					fmt.Print(err)
+				}
+				os.Exit(0)
+			}),
+		).Run()
+	},
+}
+
+var processStartCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start the process",
+	Long:  `Start the process`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		fx.New(
+			fx.NopLogger,
+			app.Module,
+			fx.Invoke(func(cli *cli.ProcessCli) {
+				err := cli.Start(utils.Unwarp(strconv.Atoi(args[0])))
+				if err != nil {
+					fmt.Print(err)
+				}
+				os.Exit(0)
+			}),
+		).Run()
+	},
+}
+
+var processStopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop the process",
+	Long:  `Stop the process`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		fx.New(
+			fx.NopLogger,
+			app.Module,
+			fx.Invoke(func(cli *cli.ProcessCli) {
+				err := cli.Stop(utils.Unwarp(strconv.Atoi(args[0])))
+				if err != nil {
+					fmt.Print(err)
 				}
 				os.Exit(0)
 			}),

@@ -20,8 +20,8 @@ func NewProcessCli() *ProcessCli {
 	return &ProcessCli{}
 }
 
-func (p *ProcessCli) GetProcessList() error {
-	result, err := Get[[]model.ProcessInfo]("/api/process")
+func (p *ProcessCli) GetList() error {
+	result, err := Get[[]model.ProcessInfo]("/api/process", nil)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (p *ProcessCli) GetProcessList() error {
 	return nil
 }
 
-func (p *ProcessCli) ProcessExec(uuid int) error {
+func (p *ProcessCli) Exec(uuid int) error {
 	u := url.URL{
 		Scheme:   "ws",
 		Host:     "localhost" + config.CF.Listen,
@@ -104,4 +104,20 @@ func (p *ProcessCli) ProcessExec(uuid int) error {
 		}
 		os.Stdout.Write(message)
 	}
+}
+
+func (p *ProcessCli) Start(uuid int) error {
+	_, err := Put[struct{}]("/api/process", map[string]any{"uuid": uuid})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *ProcessCli) Stop(uuid int) error {
+	_, err := Delete[struct{}]("/api/process", map[string]string{"uuid": strconv.Itoa(uuid)})
+	if err != nil {
+		return err
+	}
+	return nil
 }
