@@ -74,6 +74,10 @@ var RepositoryModule = fx.Options(
 var CliModule = fx.Options(
 	fx.Provide(
 		cli.NewProcessCli,
+		cli.NewTaskCli,
+		cli.NewUserCli,
+		cli.NewPushCli,
+		cli.NewWSShareCli,
 	),
 )
 
