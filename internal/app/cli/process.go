@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"strconv"
@@ -33,8 +35,9 @@ func (p *ProcessCli) GetList() error {
 		"UUID",
 		"STATUS",
 		"USER",
-		"CPU(%)",
-		"MEMORY(KB)",
+		"CPU",
+		"MEMORY",
+		"START TIME",
 	})
 
 	getStateString := func(state eum.ProcessState) string {
@@ -52,11 +55,18 @@ func (p *ProcessCli) GetList() error {
 		}
 	}
 
-	getUsageString := func(usage []float64) string {
+	getCPUUsageString := func(usage []float64) string {
 		if len(usage) == 0 {
 			return "-"
 		}
-		return strconv.FormatFloat(usage[len(usage)-1], 'f', 2, 64)
+		return fmt.Sprintf("%f%%", usage[len(usage)-1])
+	}
+	getMemoryUsageString := func(usage []float64) string {
+		if len(usage) == 0 {
+			return "-"
+		}
+
+		return formatBytes(int64(usage[len(usage)-1]))
 	}
 	for _, process := range *result {
 		table.Append([]string{
@@ -64,8 +74,9 @@ func (p *ProcessCli) GetList() error {
 			strconv.Itoa(process.UUID),
 			getStateString(process.State.State),
 			process.User,
-			getUsageString(process.Usage.Cpu),
-			getUsageString(process.Usage.Mem),
+			getCPUUsageString(process.Usage.Cpu),
+			getMemoryUsageString(process.Usage.Mem),
+			process.StartTime,
 		})
 	}
 
@@ -73,12 +84,27 @@ func (p *ProcessCli) GetList() error {
 	return nil
 }
 
+func formatBytes(bytes int64) string {
+	if bytes == 0 {
+		return "0B"
+	}
+
+	units := []string{"B", "K", "M", "G", "T", "P"}
+	level := math.Floor(math.Log(float64(bytes)) / math.Log(1024))
+	if int(level) >= len(units) {
+		level = float64(len(units) - 1)
+	}
+
+	size := float64(bytes) / math.Pow(1024, level)
+	return fmt.Sprintf("%.1f%s", size, units[int(level)])
+}
+
 func (p *ProcessCli) Exec(uuid int) error {
 	u := url.URL{
 		Scheme:   "ws",
 		Host:     "localhost" + config.CF.Listen,
 		Path:     "/api/ws",
-		RawQuery: url.Values{"uuid": {"1"}, "token": {GetJwt()}}.Encode(),
+		RawQuery: url.Values{"uuid": {strconv.Itoa(uuid)}, "token": {GetJwt()}}.Encode(),
 	}
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
