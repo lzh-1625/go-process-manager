@@ -1,4 +1,5 @@
 //go:build gen
+
 package main
 
 import (

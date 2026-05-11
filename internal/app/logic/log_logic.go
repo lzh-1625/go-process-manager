@@ -6,7 +6,6 @@ import (
 
 	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/bleve"
 	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/es"
-	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
 )
 
 // var LogLogicImpl search.LogLogic

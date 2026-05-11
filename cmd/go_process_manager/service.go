@@ -5,11 +5,8 @@ import (
 	"os"
 
 	"github.com/kardianos/service"
-	"github.com/labstack/echo/v5"
-	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/spf13/cobra"
-	"go.uber.org/fx"
 )
 
 func init() {
@@ -95,12 +92,7 @@ func (s *Service) Start(_ service.Service) error {
 
 func (s *Service) run() {
 	print(startTitle)
-	fx.New(
-		Module,
-		fx.Invoke(func(r *echo.Echo) {
-			log.Fatal(r.Start(config.CF.Listen))
-		}),
-	).Run()
+	rootCmd.Run(nil, nil)
 }
 
 func (s *Service) Stop(_ service.Service) error {
