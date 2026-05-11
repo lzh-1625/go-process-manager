@@ -66,7 +66,7 @@ func (p *ProcessCli) GetList() error {
 			return "-"
 		}
 
-		return formatBytes(int64(usage[len(usage)-1]))
+		return formatBytes(int64(usage[len(usage)-1]) * 1024)
 	}
 	for _, process := range *result {
 		table.Append([]string{
