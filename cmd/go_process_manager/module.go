@@ -45,6 +45,7 @@ var LogicModule = fx.Options(
 		logic.NewProcessCtlLogic,
 		logic.NewWsShareLogic,
 		logic.NewLogHandler,
+		logic.NewEventBus,
 	),
 )
 

@@ -27,6 +27,7 @@ type ProcessCtlLogic struct {
 	pushLogic            *PushLogic
 	// taskLogic            *TaskLogic
 	logHandler *LogHandler
+	eventBus   *EventBus
 }
 
 func NewProcessCtlLogic(
@@ -36,6 +37,7 @@ func NewProcessCtlLogic(
 	pushLogic *PushLogic,
 	// taskLogic *TaskLogic,
 	logHandler *LogHandler,
+	eventBus *EventBus,
 ) *ProcessCtlLogic {
 	p := &ProcessCtlLogic{
 		processMap:           sync.Map{},
@@ -45,6 +47,7 @@ func NewProcessCtlLogic(
 		pushLogic:            pushLogic,
 		// taskLogic:            taskLogic,
 		logHandler: logHandler,
+		eventBus:   eventBus,
 	}
 	p.ProcessInit()
 	return p
@@ -265,7 +268,10 @@ func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.Pro
 		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
 			ProcessWaitCond.Trigger()
 			p.createEvent(proc, state)
-			// go p.taskLogic.RunTaskByTriggerEvent(proc.Name, state)
+			p.eventBus.Publish(Event{
+				p:     proc,
+				state: state,
+			})
 		}),
 	)
 }
