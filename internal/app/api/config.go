@@ -6,27 +6,36 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 )
 
-type configApi struct{}
+type ConfigApi struct {
+	configLogic *logic.ConfigLogic
+	logLogic    search.LogLogic
+}
 
-var ConfigApi = new(configApi)
+func NewConfigApi(configLogic *logic.ConfigLogic, logLogic search.LogLogic) *ConfigApi {
+	return &ConfigApi{
+		configLogic: configLogic,
+		logLogic:    logLogic,
+	}
+}
 
-func (c *configApi) GetSystemConfiguration(ctx *echo.Context) error {
+func (c *ConfigApi) GetSystemConfiguration(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]model.SystemConfigurationVo]{
-		Data:    logic.ConfigLogic.GetSystemConfiguration(),
+		Data:    c.configLogic.GetSystemConfiguration(),
 		Message: "success",
 	})
 }
 
-func (c *configApi) SetSystemConfiguration(ctx *echo.Context) error {
+func (c *ConfigApi) SetSystemConfiguration(ctx *echo.Context) error {
 	req := map[string]string{}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.ConfigLogic.SetSystemConfiguration(req)
+	return c.configLogic.SetSystemConfiguration(req)
 }
 
-func (c *configApi) LogConfigReload(ctx *echo.Context) error {
-	return logic.LogLogicImpl.Init()
+func (c *ConfigApi) LogConfigReload(ctx *echo.Context) error {
+	return c.logLogic.Init()
 }

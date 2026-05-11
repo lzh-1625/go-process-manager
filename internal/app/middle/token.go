@@ -7,8 +7,8 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
@@ -19,7 +19,17 @@ var whiteList = []string{
 	"/api/ws/share",
 }
 
-func Auth(next echo.HandlerFunc) echo.HandlerFunc {
+func NewAuthMiddleware(userLogic *logic.UserLogic) *AuthMiddleware {
+	return &AuthMiddleware{
+		userLogic: userLogic,
+	}
+}
+
+type AuthMiddleware struct {
+	userLogic *logic.UserLogic
+}
+
+func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		path := c.Request().URL.Path
 		// 白名单放行
@@ -46,7 +56,7 @@ func Auth(next echo.HandlerFunc) echo.HandlerFunc {
 			c.Set(eum.CtxUserName, mc.Username)
 			c.Set(
 				eum.CtxRole,
-				repository.UserRepository.GetUserByName(mc.Username).Role,
+				a.userLogic.GetUserByName(mc.Username).Role,
 			)
 		}
 		err := next(c)

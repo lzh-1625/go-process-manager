@@ -51,7 +51,17 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func EventLogger(next echo.HandlerFunc) echo.HandlerFunc {
+type EventLoggerMiddleware struct {
+	eventLogic *logic.EventLogic
+}
+
+func NewEventLoggerMiddleware(eventLogic *logic.EventLogic) *EventLoggerMiddleware {
+	return &EventLoggerMiddleware{
+		eventLogic: eventLogic,
+	}
+}
+
+func (e *EventLoggerMiddleware) EventLogger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		err := next(c)
 
@@ -68,7 +78,7 @@ func EventLogger(next echo.HandlerFunc) echo.HandlerFunc {
 			return err
 		}
 
-		logic.EventLogic.Create(
+		e.eventLogic.Create(
 			c.Request().Method,
 			eum.EventApiRequest,
 			"uri", c.Request().URL.Path,

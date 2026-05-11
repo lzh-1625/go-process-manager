@@ -11,18 +11,20 @@ import (
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
-type pushLogic struct {
-	httpClient *http.Client
+type PushLogic struct {
+	httpClient     *http.Client
+	pushRepository *repository.PushRepository
 }
 
-var PushLogic = &pushLogic{
-	httpClient: &http.Client{
-		Transport: http.DefaultTransport,
-	},
+func NewPushLogic(pushRepository *repository.PushRepository) *PushLogic {
+	return &PushLogic{
+		httpClient:     http.DefaultClient,
+		pushRepository: pushRepository,
+	}
 }
 
-func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
-	pl := repository.PushRepository.GetPushConfigByIDs(ids)
+func (p *PushLogic) Push(ids []int64, placeholders map[string]string) {
+	pl := p.pushRepository.GetPushConfigByIDs(ids)
 	for _, v := range pl {
 		if v.Enable {
 			var resp *http.Response
@@ -48,27 +50,27 @@ func (p *pushLogic) Push(ids []int64, placeholders map[string]string) {
 	}
 }
 
-func (p *pushLogic) GetPushList() []*model.Push {
-	return repository.PushRepository.GetPushList()
+func (p *PushLogic) GetPushList() []*model.Push {
+	return p.pushRepository.GetPushList()
 }
 
-func (p *pushLogic) GetPushConfigByID(id int) *model.Push {
-	return repository.PushRepository.GetPushConfigByID(id)
+func (p *PushLogic) GetPushConfigByID(id int) *model.Push {
+	return p.pushRepository.GetPushConfigByID(id)
 }
 
-func (p *pushLogic) AddPushConfig(data model.Push) error {
-	return repository.PushRepository.AddPushConfig(data)
+func (p *PushLogic) AddPushConfig(data model.Push) error {
+	return p.pushRepository.AddPushConfig(data)
 }
 
-func (p *pushLogic) UpdatePushConfig(data model.Push) error {
-	return repository.PushRepository.UpdatePushConfig(data)
+func (p *PushLogic) UpdatePushConfig(data model.Push) error {
+	return p.pushRepository.UpdatePushConfig(data)
 }
 
-func (p *pushLogic) DeletePushConfig(id int) error {
-	return repository.PushRepository.DeletePushConfig(id)
+func (p *PushLogic) DeletePushConfig(id int) error {
+	return p.pushRepository.DeletePushConfig(id)
 }
 
-func (p *pushLogic) getReplaceMessage(placeholders map[string]string, message string, urlEncode bool) string {
+func (p *PushLogic) getReplaceMessage(placeholders map[string]string, message string, urlEncode bool) string {
 	kvs := []string{}
 	for k, v := range placeholders {
 		if urlEncode {

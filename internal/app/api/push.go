@@ -8,19 +8,25 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
-type pushApi struct{}
+type PushApi struct {
+	pushLogic *logic.PushLogic
+}
 
-var PushApi = new(pushApi)
+func NewPushApi(pushLogic *logic.PushLogic) *PushApi {
+	return &PushApi{
+		pushLogic: pushLogic,
+	}
+}
 
-func (p *pushApi) GetPushList(ctx *echo.Context) error {
+func (p *PushApi) GetPushList(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]*model.Push]{
-		Data:    logic.PushLogic.GetPushList(),
+		Data:    p.pushLogic.GetPushList(),
 		Message: "success",
 		Code:    0,
 	})
 }
 
-func (p *pushApi) GetPushByID(ctx *echo.Context) error {
+func (p *PushApi) GetPushByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
@@ -28,34 +34,34 @@ func (p *pushApi) GetPushByID(ctx *echo.Context) error {
 		return err
 	}
 	return ctx.JSON(http.StatusOK, model.Response[*model.Push]{
-		Data:    logic.PushLogic.GetPushConfigByID(req.ID),
+		Data:    p.pushLogic.GetPushConfigByID(req.ID),
 		Message: "success",
 		Code:    0,
 	})
 }
 
-func (p *pushApi) AddPushConfig(ctx *echo.Context) error {
+func (p *PushApi) AddPushConfig(ctx *echo.Context) error {
 	var req model.Push
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.PushLogic.AddPushConfig(req)
+	return p.pushLogic.AddPushConfig(req)
 }
 
-func (p *pushApi) UpdatePushConfig(ctx *echo.Context) error {
+func (p *PushApi) UpdatePushConfig(ctx *echo.Context) error {
 	var req model.Push
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.PushLogic.UpdatePushConfig(req)
+	return p.pushLogic.UpdatePushConfig(req)
 }
 
-func (p *pushApi) DeletePushConfig(ctx *echo.Context) error {
+func (p *PushApi) DeletePushConfig(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.PushLogic.DeletePushConfig(req.ID)
+	return p.pushLogic.DeletePushConfig(req.ID)
 }

@@ -9,26 +9,32 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-type taskApi struct{}
+type TaskApi struct {
+	taskLogic *logic.TaskLogic
+}
 
-var TaskApi = new(taskApi)
+func NewTaskApi(taskLogic *logic.TaskLogic) *TaskApi {
+	return &TaskApi{
+		taskLogic: taskLogic,
+	}
+}
 
-func (t *taskApi) CreateTask(ctx *echo.Context) error {
+func (t *TaskApi) CreateTask(ctx *echo.Context) error {
 	var req model.Task
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.TaskLogic.CreateTask(req)
+	return t.taskLogic.CreateTask(req)
 }
 
-func (t *taskApi) GetTaskByID(ctx *echo.Context) error {
+func (t *TaskApi) GetTaskByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	result, err := logic.TaskLogic.GetTaskByID(req.ID)
+	result, err := t.taskLogic.GetTaskByID(req.ID)
 	if err != nil {
 		return err
 	}
@@ -39,46 +45,46 @@ func (t *taskApi) GetTaskByID(ctx *echo.Context) error {
 	})
 }
 
-func (t *taskApi) GetTaskList(ctx *echo.Context) error {
+func (t *TaskApi) GetTaskList(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]model.TaskVo]{
-		Data:    logic.TaskLogic.GetAllTaskJob(),
+		Data:    t.taskLogic.GetAllTaskJob(),
 		Message: "success",
 		Code:    0,
 	})
 }
 
-func (t *taskApi) DeleteTaskByID(ctx *echo.Context) error {
+func (t *TaskApi) DeleteTaskByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.TaskLogic.DeleteTask(req.ID)
+	return t.taskLogic.DeleteTask(req.ID)
 }
 
-func (t *taskApi) StartTask(ctx *echo.Context) error {
+func (t *TaskApi) StartTask(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	go logic.TaskLogic.RunTaskByID(req.ID)
+	go t.taskLogic.RunTaskByID(req.ID)
 	return nil
 }
 
-func (t *taskApi) StopTask(ctx *echo.Context) error {
+func (t *TaskApi) StopTask(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.TaskLogic.StopTaskJob(req.ID)
+	return t.taskLogic.StopTaskJob(req.ID)
 }
 
-func (t *taskApi) EditTask(ctx *echo.Context) error {
+func (t *TaskApi) EditTask(ctx *echo.Context) error {
 	var req model.Task
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -87,19 +93,19 @@ func (t *taskApi) EditTask(ctx *echo.Context) error {
 	if _, err := cron.ParseStandard(req.CronExpression); err != nil && req.CronExpression != "" { // cron expression validation
 		return err
 	}
-	return logic.TaskLogic.EditTask(&req)
+	return t.taskLogic.EditTask(&req)
 }
 
-func (t *taskApi) RunTaskByKey(ctx *echo.Context) error {
-	return logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
+func (t *TaskApi) RunTaskByKey(ctx *echo.Context) error {
+	return t.taskLogic.RunTaskByKey(ctx.Param("key"))
 }
 
-func (t *taskApi) CreateTaskApiKey(ctx *echo.Context) error {
+func (t *TaskApi) CreateTaskApiKey(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.TaskLogic.CreateApiKey(req.ID)
+	return t.taskLogic.CreateApiKey(req.ID)
 }

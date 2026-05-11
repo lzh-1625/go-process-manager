@@ -8,16 +8,22 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
-type eventApi struct{}
+type EventApi struct {
+	eventLogic *logic.EventLogic
+}
 
-var EventApi = new(eventApi)
+func NewEventApi(eventLogic *logic.EventLogic) *EventApi {
+	return &EventApi{
+		eventLogic: eventLogic,
+	}
+}
 
-func (e *eventApi) GetEventList(ctx *echo.Context) error {
+func (e *EventApi) GetEventList(ctx *echo.Context) error {
 	var req model.EventListReq
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	data, total, err := logic.EventLogic.Get(req)
+	data, total, err := e.eventLogic.Get(req)
 	if err != nil {
 		return err
 	}

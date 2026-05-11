@@ -19,9 +19,21 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type wsApi struct{}
+type WsApi struct {
+	processCtlLogic *logic.ProcessCtlLogic
+	permissionLogic *logic.PermissionLogic
+	wsShareLogic    *logic.WsShareLogic
+	eventLogic      *logic.EventLogic
+}
 
-var WsApi = new(wsApi)
+func NewWsApi(processCtlLogic *logic.ProcessCtlLogic, permissionLogic *logic.PermissionLogic, wsShareLogic *logic.WsShareLogic, eventLogic *logic.EventLogic) *WsApi {
+	return &WsApi{
+		processCtlLogic: processCtlLogic,
+		permissionLogic: permissionLogic,
+		wsShareLogic:    wsShareLogic,
+		eventLogic:      eventLogic,
+	}
+}
 
 type WsConnetInstance struct {
 	WsConnect  *websocket.Conn
@@ -47,16 +59,16 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (w *wsApi) WebsocketHandle(ctx *echo.Context) (err error) {
+func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	var req model.WebsocketHandleReq
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !hasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
+	if !w.permissionLogic.GetPermission(getUserName(ctx), req.UUID).Terminal {
 		return errors.New("not permission")
 	}
 	reqUser := getUserName(ctx)
-	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
+	proc, err := w.processCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -84,8 +96,8 @@ func (w *wsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	}
 	if proc.State.State == eum.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		write := hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
-		logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
+		write := w.permissionLogic.GetPermission(getUserName(ctx), req.UUID).Write
+		w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddConn(reqUser, wci)
 		defer proc.DeleteConn(reqUser)
@@ -103,19 +115,19 @@ func (w *wsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	return
 }
 
-func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
+func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	var req model.WebsocketHandleReq
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	data, err := logic.WsShareLogic.GetWsShareDataByToken(req.Token)
+	data, err := w.wsShareLogic.GetWsShareDataByToken(req.Token)
 	if err != nil {
 		return err
 	}
 	if data.ExpireTime.Before(time.Now()) {
 		return errors.New("share expired")
 	}
-	proc, err := logic.ProcessCtlLogic.GetProcess(data.Pid)
+	proc, err := w.processCtlLogic.GetProcess(data.Pid)
 	if err != nil {
 		return err
 	}
@@ -136,7 +148,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	defer conn.Close()
 	log.Logger.Infow("ws connection success", "user", data.CreateBy, "process", proc.Name)
 	data.LastLink = time.Now()
-	logic.WsShareLogic.Edit(data)
+	w.wsShareLogic.Edit(data)
 
 	proc.SetTerminalSize(req.Cols, req.Rows)
 	wsCtx, cancel := context.WithCancel(context.Background())
@@ -148,7 +160,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	logic.EventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
+	w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddConn(guestName, wci)
 	defer proc.DeleteConn(guestName)
@@ -169,7 +181,7 @@ func (w *wsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	return
 }
 
-func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *process.ProcessPty, write bool) {
+func (w *WsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *process.ProcessPty, write bool) {
 	log.Logger.Debugw("ws read thread started")
 	go func() {
 		for {
@@ -210,20 +222,20 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 
 }
 
-func GetWsShareList(ctx *echo.Context) error {
+func (w *WsApi) GetWsShareList(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]*model.WsShare]{
-		Data:    logic.WsShareLogic.GetWsShareList(),
+		Data:    w.wsShareLogic.GetWsShareList(),
 		Message: "success",
 		Code:    0,
 	})
 }
 
-func DeleteWsShareByID(ctx *echo.Context) error {
+func (w *WsApi) DeleteWsShareByID(ctx *echo.Context) error {
 	var req struct {
 		ID int `query:"id"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.WsShareLogic.DeleteByID(req.ID)
+	return w.wsShareLogic.DeleteByID(req.ID)
 }

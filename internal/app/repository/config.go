@@ -8,26 +8,32 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type configRepository struct{}
+type ConfigRepository struct {
+	query *query.Query
+}
 
-var ConfigRepository = new(configRepository)
+func NewConfigRepository() *ConfigRepository {
+	return &ConfigRepository{
+		query: query.Q,
+	}
+}
 
-func (c *configRepository) GetConfigValue(key string) (string, error) {
-	data, err := query.Config.Select(query.Config.Value).Where(query.Config.Key.Eq(key)).First()
+func (c *ConfigRepository) GetConfigValue(key string) (string, error) {
+	data, err := c.query.Config.Select(query.Config.Value).Where(query.Config.Key.Eq(key)).First()
 	if data == nil || err != nil {
 		return "", errors.ErrUnsupported
 	}
 	return *data.Value, err
 }
 
-func (c *configRepository) GetAllConfig() ([]*model.Config, error) {
-	data, err := query.Config.Select(query.Config.Key, query.Config.Value).Find()
+func (c *ConfigRepository) GetAllConfig() ([]*model.Config, error) {
+	data, err := c.query.Config.Select(query.Config.Key, query.Config.Value).Find()
 	return data, err
 }
 
-func (c *configRepository) SetConfigValue(key, value string) error {
+func (c *ConfigRepository) SetConfigValue(key, value string) error {
 	config := model.Config{Key: key, Value: &value}
-	return query.Config.Clauses(clause.OnConflict{
+	return c.query.Config.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: query.Config.Key.ColumnName().String()}},
 		DoUpdates: clause.AssignmentColumns([]string{query.Config.Value.ColumnName().String()}),
 	}).Create(&config)

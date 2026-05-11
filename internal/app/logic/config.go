@@ -1,21 +1,67 @@
 package logic
 
 import (
+	"log"
 	"reflect"
 	"strconv"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type configLogic struct{}
+func NewConfigLogic(configRepository *repository.ConfigRepository) *ConfigLogic {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Panic("config init fail", err)
+		}
+	}()
+	configKvMap := map[string]string{}
 
-var (
-	ConfigLogic = new(configLogic)
-)
+	data, err := configRepository.GetAllConfig()
+	if err != nil {
+		panic(err)
+	}
+	for _, v := range data {
+		configKvMap[v.Key] = *v.Value
+	}
 
-func (c *configLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
+	typeElem := reflect.TypeFor[config.Configuration]()
+	valueElem := reflect.ValueOf(config.CF).Elem()
+	for i := 0; i < typeElem.NumField(); i++ {
+		typeField := typeElem.Field(i)
+		valueField := valueElem.Field(i)
+		value, ok := configKvMap[typeField.Name]
+		if !ok {
+			value = typeField.Tag.Get("default")
+		}
+		if value == "-" {
+			continue
+		}
+		switch typeField.Type.Kind() {
+		case reflect.String:
+			valueField.SetString(value)
+		case reflect.Bool:
+			valueField.SetBool(utils.UnwarpIgnore(strconv.ParseBool(value)))
+		case reflect.Float64:
+			valueField.SetFloat(utils.UnwarpIgnore(strconv.ParseFloat(value, 64)))
+		case reflect.Int64, reflect.Int:
+			valueField.SetInt(utils.UnwarpIgnore(strconv.ParseInt(value, 10, 64)))
+		default:
+			continue
+		}
+	}
+	return &ConfigLogic{
+		configRepository: configRepository,
+	}
+}
+
+type ConfigLogic struct {
+	configRepository *repository.ConfigRepository
+}
+
+func (c *ConfigLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
 	result := []model.SystemConfigurationVo{}
 	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
@@ -49,7 +95,7 @@ func (c *configLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
 	return result
 }
 
-func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
+func (c *ConfigLogic) SetSystemConfiguration(kv map[string]string) error {
 	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
@@ -85,7 +131,7 @@ func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
 				if err != nil {
 					return err
 				}
-				err = repository.ConfigRepository.SetConfigValue(k, v)
+				err = c.configRepository.SetConfigValue(k, v)
 				if err != nil {
 					return err
 				}
@@ -96,7 +142,7 @@ func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
 }
 
 // reset system config to default
-func (c *configLogic) ResetSystemConfiguration() error {
+func (c *ConfigLogic) ResetSystemConfiguration() error {
 	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
@@ -134,7 +180,7 @@ func (c *configLogic) ResetSystemConfiguration() error {
 		if err != nil {
 			return err
 		}
-		err = repository.ConfigRepository.SetConfigValue(typeField.Name, defaultValue)
+		err = c.configRepository.SetConfigValue(typeField.Name, defaultValue)
 		if err != nil {
 			return err
 		}

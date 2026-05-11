@@ -7,16 +7,27 @@ import (
 	"github.com/duke-git/lancet/v2/datetime"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 )
 
-type metricLogic struct{}
+type MetricLogic struct {
+	processCtlLogic *ProcessCtlLogic
+	logHandler      *LogHandler
+	logLogic        search.LogLogic
+}
 
-var MetricLogic = new(metricLogic)
+func NewMetricLogic(processCtlLogic *ProcessCtlLogic, logHandler *LogHandler, logLogic search.LogLogic) *MetricLogic {
+	return &MetricLogic{
+		processCtlLogic: processCtlLogic,
+		logHandler:      logHandler,
+		logLogic:        logLogic,
+	}
+}
 
-func (m *metricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
-	pl := ProcessCtlLogic.GetProcessList()
+func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
+	pl := m.processCtlLogic.GetProcessList()
 	items := make([]model.PerformceUsageItem, 0, len(pl))
 
 	for _, v := range pl {
@@ -49,7 +60,7 @@ func (m *metricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 
 }
 
-func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric) {
+func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric) {
 	t := time.Now()
 	switch dateType {
 	case 1:
@@ -57,7 +68,7 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfDay(t)
 			end := datetime.EndOfDay(t)
 
-			resp := LogLogicImpl.Search(model.GetLogReq{
+			resp := m.logLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -77,7 +88,7 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfWeek(t, time.Monday)
 			end := datetime.EndOfWeek(t, time.Monday)
 
-			resp := LogLogicImpl.Search(model.GetLogReq{
+			resp := m.logLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -97,7 +108,7 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfMonth(t)
 			end := datetime.EndOfMonth(t)
 
-			resp := LogLogicImpl.Search(model.GetLogReq{
+			resp := m.logLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -113,6 +124,6 @@ func (m *metricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			t = datetime.AddMonth(t, -1)
 		}
 	}
-	result.Executing = Loghandler.GetRunning()
+	result.Executing = m.logHandler.GetRunning()
 	return
 }

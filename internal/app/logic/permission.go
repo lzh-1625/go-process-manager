@@ -6,22 +6,28 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 )
 
-type permissionLogic struct{}
-
-var PermissionLogic = new(permissionLogic)
-
-func (p *permissionLogic) GetPermission(user string, pid int) (result *model.Permission) {
-	return repository.PermissionRepository.GetPermission(user, pid)
+type PermissionLogic struct {
+	permissionRepository *repository.PermissionRepository
 }
 
-func (p *permissionLogic) EditPermssion(data model.Permission) error {
-	return repository.PermissionRepository.EditPermssion(data)
+func NewPermissionLogic(permissionRepository *repository.PermissionRepository) *PermissionLogic {
+	return &PermissionLogic{
+		permissionRepository: permissionRepository,
+	}
 }
 
-func (p *permissionLogic) GetPermssionList(account string) []model.PermissionPo {
-	return repository.PermissionRepository.GetPermssionList(account)
+func (p *PermissionLogic) GetPermission(user string, pid int) (result *model.Permission) {
+	return p.permissionRepository.GetPermission(user, pid)
 }
 
-func (p *permissionLogic) GetProcessNameByPermission(user string, op eum.OprPermission) (result []string) {
-	return repository.PermissionRepository.GetProcessNameByPermission(user, op)
+func (p *PermissionLogic) EditPermssion(data model.Permission) error {
+	return p.permissionRepository.EditPermssion(data)
+}
+
+func (p *PermissionLogic) GetPermssionList(account string) []model.PermissionPo {
+	return p.permissionRepository.GetPermssionList(account)
+}
+
+func (p *PermissionLogic) GetProcessNameByPermission(user string, op eum.OprPermission) (result []string) {
+	return p.permissionRepository.GetProcessNameByPermission(user, op)
 }

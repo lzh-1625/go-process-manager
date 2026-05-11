@@ -5,34 +5,40 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-type pushRepository struct{}
+func NewPushRepository() *PushRepository {
+	return &PushRepository{
+		query: query.Q,
+	}
+}
 
-var PushRepository = new(pushRepository)
+type PushRepository struct {
+	query *query.Query
+}
 
-func (p *pushRepository) GetPushList() (result []*model.Push) {
-	result, _ = query.Push.Find()
+func (p *PushRepository) GetPushList() (result []*model.Push) {
+	result, _ = p.query.Push.Find()
 	return
 }
 
-func (p *pushRepository) GetPushConfigByID(id int) (result *model.Push) {
-	result, _ = query.Push.Where(query.Push.ID.Eq(int64(id))).First()
+func (p *PushRepository) GetPushConfigByID(id int) (result *model.Push) {
+	result, _ = p.query.Push.Where(p.query.Push.ID.Eq(int64(id))).First()
 	return
 }
 
-func (p *pushRepository) UpdatePushConfig(data model.Push) error {
-	return query.Push.Save(&data)
+func (p *PushRepository) UpdatePushConfig(data model.Push) error {
+	return p.query.Push.Save(&data)
 }
 
-func (p *pushRepository) AddPushConfig(data model.Push) error {
-	return query.Push.Create(&data)
+func (p *PushRepository) AddPushConfig(data model.Push) error {
+	return p.query.Push.Create(&data)
 }
 
-func (p *pushRepository) DeletePushConfig(id int) error {
-	_, err := query.Push.Where(query.Push.ID.Eq(int64(id))).Delete()
+func (p *PushRepository) DeletePushConfig(id int) error {
+	_, err := p.query.Push.Where(p.query.Push.ID.Eq(int64(id))).Delete()
 	return err
 }
 
-func (p *pushRepository) GetPushConfigByIDs(ids []int64) (result []*model.Push) {
-	result, _ = query.Push.Where(query.Push.ID.In(ids...)).Find()
+func (p *PushRepository) GetPushConfigByIDs(ids []int64) (result []*model.Push) {
+	result, _ = p.query.Push.Where(p.query.Push.ID.In(ids...)).Find()
 	return
 }

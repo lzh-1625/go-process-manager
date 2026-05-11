@@ -28,12 +28,21 @@ func isAdmin(c *echo.Context) bool {
 	return getRole(c) <= eum.RoleAdmin
 }
 
-func hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
+type PermissionTool struct {
+	permissionLogic *logic.PermissionLogic
+}
+
+func NewPermissionTool(permissionLogic *logic.PermissionLogic) *PermissionTool {
+	return &PermissionTool{
+		permissionLogic: permissionLogic,
+	}
+}
+
+func (p *PermissionTool) hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
 	if isAdmin(c) {
 		return true
 	}
-
-	per := logic.PermissionLogic.GetPermission(
+	per := p.permissionLogic.GetPermission(
 		getUserName(c),
 		uuid,
 	)

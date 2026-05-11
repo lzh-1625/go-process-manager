@@ -10,11 +10,17 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type eventLogic struct{}
+type EventLogic struct {
+	eventRepository *repository.EventRepository
+}
 
-var EventLogic = new(eventLogic)
+func NewEventLogic(eventRepository *repository.EventRepository) *EventLogic {
+	return &EventLogic{
+		eventRepository: eventRepository,
+	}
+}
 
-func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv ...string) {
+func (e *EventLogic) Create(name string, eventType eum.EventType, additionalKv ...string) {
 	if len(additionalKv)%2 != 0 {
 		log.Logger.Errorw("parameters length error", "args", additionalKv)
 		return
@@ -29,15 +35,15 @@ func (e *eventLogic) Create(name string, eventType eum.EventType, additionalKv .
 		m[additionalKv[2*i]] = additionalKv[2*i+1]
 	}
 	data.Additional = utils.StructToJsonStr(m)
-	if err := repository.EventRepository.Create(data); err != nil {
+	if err := e.eventRepository.Create(data); err != nil {
 		log.Logger.Errorw("event creation failed", "err", err)
 	}
 }
 
-func (e *eventLogic) Get(req model.EventListReq) ([]*model.Event, int64, error) {
-	return repository.EventRepository.GetList(req)
+func (e *EventLogic) Get(req model.EventListReq) ([]*model.Event, int64, error) {
+	return e.eventRepository.GetList(req)
 }
 
-func (e *eventLogic) Clean(t time.Duration) error {
-	return repository.EventRepository.Clean(t)
+func (e *EventLogic) Clean(t time.Duration) error {
+	return e.eventRepository.Clean(t)
 }

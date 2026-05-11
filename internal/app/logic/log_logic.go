@@ -9,9 +9,15 @@ import (
 	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
 )
 
-var LogLogicImpl search.LogLogic
+// var LogLogicImpl search.LogLogic
 
-func InitLog() {
-	LogLogicImpl = search.GetSearchImpl(config.CF.StorgeType)
+// func InitLog() {
+// 	LogLogicImpl = search.GetSearchImpl(config.CF.StorgeType)
+// 	LogLogicImpl.Init()
+// }
+
+func NewLogLogic() search.LogLogic {
+	LogLogicImpl := search.GetSearchImpl(config.CF.StorgeType)
 	LogLogicImpl.Init()
+	return LogLogicImpl
 }

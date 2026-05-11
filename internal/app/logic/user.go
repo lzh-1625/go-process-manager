@@ -10,22 +10,28 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type userLogic struct{}
+type UserLogic struct {
+	userRepository *repository.UserRepository
+}
 
-var UserLogic = new(userLogic)
+func NewUserLogic(userRepository *repository.UserRepository) *UserLogic {
+	return &UserLogic{
+		userRepository: userRepository,
+	}
+}
 
 const DefaultRootAccount = "root"
 const DefaultRootPassword = "root"
 
-func (u *userLogic) CheckLoginInfo(account, password string) (*model.User, bool) {
-	user := repository.UserRepository.GetUserByName(account)
+func (u *UserLogic) CheckLoginInfo(account, password string) (*model.User, bool) {
+	user := u.userRepository.GetUserByName(account)
 	if user == nil && account == DefaultRootAccount {
 		user = &model.User{
 			Account:  DefaultRootAccount,
 			Password: DefaultRootPassword,
 			Role:     eum.RoleRoot,
 		}
-		if err := repository.UserRepository.CreateUser(*user); err != nil {
+		if err := u.userRepository.CreateUser(*user); err != nil {
 			return nil, false
 		}
 		return user, password == DefaultRootPassword
@@ -33,7 +39,7 @@ func (u *userLogic) CheckLoginInfo(account, password string) (*model.User, bool)
 	return user, user != nil && user.Password == utils.Md5(password)
 }
 
-func (u *userLogic) CreateUser(user model.User) error {
+func (u *UserLogic) CreateUser(user model.User) error {
 	if user.Role == eum.RoleRoot {
 		return errors.New("creation of root accounts is forbidden")
 	}
@@ -43,10 +49,10 @@ func (u *userLogic) CreateUser(user model.User) error {
 	if len(user.Password) < config.CF.UserPassWordMinLength {
 		return errors.New("password is too short")
 	}
-	return repository.UserRepository.CreateUser(user)
+	return u.userRepository.CreateUser(user)
 }
 
-func (u *userLogic) EditUser(user model.User, currentAccount string, currentRole eum.Role) error {
+func (u *UserLogic) EditUser(user model.User, currentAccount string, currentRole eum.Role) error {
 	if user.Account == DefaultRootAccount {
 		return errors.New("can not edit root user")
 	}
@@ -59,16 +65,20 @@ func (u *userLogic) EditUser(user model.User, currentAccount string, currentRole
 	if len(user.Password) != 0 && len(user.Password) < config.CF.UserPassWordMinLength {
 		return errors.New("password is too short")
 	}
-	return repository.UserRepository.EditUser(user)
+	return u.userRepository.EditUser(user)
 }
 
-func (u *userLogic) DeleteUser(account string) error {
+func (u *UserLogic) DeleteUser(account string) error {
 	if account == DefaultRootAccount {
 		return errors.New("deletion of root accounts is forbidden")
 	}
-	return repository.UserRepository.DeleteUser(account)
+	return u.userRepository.DeleteUser(account)
 }
 
-func (u *userLogic) GetUserList() []*model.User {
-	return repository.UserRepository.GetUserList()
+func (u *UserLogic) GetUserList() []*model.User {
+	return u.userRepository.GetUserList()
+}
+
+func (u *UserLogic) GetUserByName(name string) *model.User {
+	return u.userRepository.GetUserByName(name)
 }

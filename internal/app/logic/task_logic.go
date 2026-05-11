@@ -13,13 +13,27 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type taskLogic struct {
-	taskJobMap sync.Map
+type TaskLogic struct {
+	taskRepository  *repository.TaskRepository
+	taskJobMap      sync.Map
+	eventLogic      *EventLogic
+	processCtlLogic *ProcessCtlLogic
+	taskLogic       *TaskLogic
 }
 
-var TaskLogic = new(taskLogic)
+func NewTaskLogic(taskRepository *repository.TaskRepository, eventLogic *EventLogic, processCtlLogic *ProcessCtlLogic, taskLogic *TaskLogic) *TaskLogic {
+	t := &TaskLogic{
+		taskRepository:  taskRepository,
+		taskJobMap:      sync.Map{},
+		eventLogic:      eventLogic,
+		processCtlLogic: processCtlLogic,
+		taskLogic:       taskLogic,
+	}
+	t.InitTaskJob()
+	return t
+}
 
-func (t *taskLogic) getTaskJob(id int) (*TaskJob, error) {
+func (t *TaskLogic) getTaskJob(id int) (*TaskJob, error) {
 	c, ok := t.taskJobMap.Load(id)
 	if !ok {
 		return nil, errors.New("don't exist this task id")
@@ -27,9 +41,9 @@ func (t *taskLogic) getTaskJob(id int) (*TaskJob, error) {
 	return c.(*TaskJob), nil
 }
 
-func (t *taskLogic) InitTaskJob() {
-	for _, v := range repository.TaskRepository.GetAllTask() {
-		tj, err := NewTaskJob(v)
+func (t *TaskLogic) InitTaskJob() {
+	for _, v := range t.taskRepository.GetAllTask() {
+		tj, err := NewTaskJob(v, t.eventLogic, t.processCtlLogic, t.taskLogic)
 		if err != nil {
 			log.Logger.Warnw("task initialization failed", "err", err)
 			continue
@@ -38,7 +52,7 @@ func (t *taskLogic) InitTaskJob() {
 	}
 }
 
-func (t *taskLogic) StopTaskJob(id int) error {
+func (t *TaskLogic) StopTaskJob(id int) error {
 	taskJob, err := t.getTaskJob(id)
 	if err != nil {
 		return err
@@ -52,9 +66,8 @@ func (t *taskLogic) StopTaskJob(id int) error {
 	return nil
 }
 
-
-func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
-	result := repository.TaskRepository.GetAllTaskWithProcessName()
+func (t *TaskLogic) GetAllTaskJob() []model.TaskVo {
+	result := t.taskRepository.GetAllTaskWithProcessName()
 	for i, v := range result {
 		task, err := t.getTaskJob(v.ID)
 		if err != nil {
@@ -68,11 +81,11 @@ func (t *taskLogic) GetAllTaskJob() []model.TaskVo {
 	return result
 }
 
-func (t *taskLogic) GetTaskByID(id int) (*model.Task, error) {
-	return repository.TaskRepository.GetTaskByID(id)
+func (t *TaskLogic) GetTaskByID(id int) (*model.Task, error) {
+	return t.taskRepository.GetTaskByID(id)
 }
 
-func (t *taskLogic) DeleteTask(id int) (err error) {
+func (t *TaskLogic) DeleteTask(id int) (err error) {
 
 	if tj, err := t.getTaskJob(id); err == nil {
 		if tj.Running {
@@ -81,19 +94,19 @@ func (t *taskLogic) DeleteTask(id int) (err error) {
 	}
 	t.StopTaskJob(id)
 	t.taskJobMap.Delete(id)
-	err = repository.TaskRepository.DeleteTask(id)
+	err = t.taskRepository.DeleteTask(id)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (t *taskLogic) CreateTask(data model.Task) error {
-	tj, err := NewTaskJob(&data)
+func (t *TaskLogic) CreateTask(data model.Task) error {
+	tj, err := NewTaskJob(&data, t.eventLogic, t.processCtlLogic, t.taskLogic)
 	if err != nil {
 		return err
 	}
-	taskID, err := repository.TaskRepository.AddTask(data)
+	taskID, err := t.taskRepository.AddTask(data)
 	if err != nil {
 		return err
 	}
@@ -102,7 +115,7 @@ func (t *taskLogic) CreateTask(data model.Task) error {
 	return nil
 }
 
-func (t *taskLogic) EditTask(data *model.Task) error {
+func (t *TaskLogic) EditTask(data *model.Task) error {
 	tj, err := t.getTaskJob(data.ID)
 	if err != nil {
 		return err
@@ -121,11 +134,11 @@ func (t *taskLogic) EditTask(data *model.Task) error {
 	}
 
 	tj.TaskConfig = data
-	return repository.TaskRepository.EditTask(data)
+	return t.taskRepository.EditTask(data)
 }
 
-func (t *taskLogic) CreateApiKey(id int) error {
-	data, err := repository.TaskRepository.GetTaskByID(id)
+func (t *TaskLogic) CreateApiKey(id int) error {
+	data, err := t.taskRepository.GetTaskByID(id)
 	if err != nil {
 		return err
 	}
@@ -134,8 +147,8 @@ func (t *taskLogic) CreateApiKey(id int) error {
 	return nil
 }
 
-func (t *taskLogic) RunTaskByKey(key string) error {
-	data, err := repository.TaskRepository.GetTaskByKey(key)
+func (t *TaskLogic) RunTaskByKey(key string) error {
+	data, err := t.taskRepository.GetTaskByKey(key)
 	if err != nil {
 		return errors.New("don't exist key")
 	}
@@ -143,8 +156,8 @@ func (t *taskLogic) RunTaskByKey(key string) error {
 	return nil
 }
 
-func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessState) {
-	taskList := repository.TaskRepository.GetTriggerTask(processName, event)
+func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessState) {
+	taskList := t.taskRepository.GetTriggerTask(processName, event)
 	if len(taskList) == 0 {
 		return
 	}
@@ -155,7 +168,7 @@ func (t *taskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessS
 	}
 }
 
-func (t *taskLogic) RunTaskByID(id int) error {
+func (t *TaskLogic) RunTaskByID(id int) error {
 	task, err := t.getTaskJob(id)
 	if err != nil {
 		return err

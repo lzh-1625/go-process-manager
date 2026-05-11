@@ -5,33 +5,39 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-type wsShare struct{}
+func NewWsShareRepository() *WsShareRepository {
+	return &WsShareRepository{
+		query: query.Q,
+	}
+}
 
-var WsShare = new(wsShare)
+type WsShareRepository struct {
+	query *query.Query
+}
 
-func (p *wsShare) GetWsShareDataByToken(token string) (data *model.WsShare, err error) {
-	data, err = query.WsShare.Where(query.WsShare.Token.Eq(token)).First()
+func (p *WsShareRepository) GetWsShareDataByToken(token string) (data *model.WsShare, err error) {
+	data, err = p.query.WsShare.Where(p.query.WsShare.Token.Eq(token)).First()
 	return
 }
 
-func (p *wsShare) AddShareData(data model.WsShare) error {
-	return query.WsShare.Save(&data)
+func (p *WsShareRepository) AddShareData(data model.WsShare) error {
+	return p.query.WsShare.Save(&data)
 }
 
-func (p *wsShare) GetWsShareList() (data []*model.WsShare) {
-	ws := query.WsShare
+func (p *WsShareRepository) GetWsShareList() (data []*model.WsShare) {
+	ws := p.query.WsShare
 	data, _ = ws.Order(ws.CreatedAt.Desc()).Find()
 	return
 }
 
-func (p *wsShare) Delete(id int) error {
-	ws := query.WsShare
+func (p *WsShareRepository) Delete(id int) error {
+	ws := p.query.WsShare
 	_, err := ws.Where(ws.ID.Eq(id)).Delete()
 	return err
 }
 
-func (p *wsShare) Edit(data *model.WsShare) error {
-	ws := query.WsShare
+func (p *WsShareRepository) Edit(data *model.WsShare) error {
+	ws := p.query.WsShare
 	_, err := ws.Where(ws.ID.Eq(data.ID)).Updates(data)
 	return err
 }

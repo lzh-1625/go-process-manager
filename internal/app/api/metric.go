@@ -8,12 +8,18 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
-type metricApi struct{}
+type MetricApi struct {
+	metricLogic *logic.MetricLogic
+}
 
-var MetricApi = new(metricApi)
+func NewMetricApi(metricLogic *logic.MetricLogic) *MetricApi {
+	return &MetricApi{
+		metricLogic: metricLogic,
+	}
+}
 
-func (m *metricApi) GetPerformceUsage(ctx *echo.Context) error {
-	result, err := logic.MetricLogic.GetPerformceUsage()
+func (m *MetricApi) GetPerformceUsage(ctx *echo.Context) error {
+	result, err := m.metricLogic.GetPerformceUsage()
 	if err != nil {
 		return err
 	}
@@ -24,7 +30,7 @@ func (m *metricApi) GetPerformceUsage(ctx *echo.Context) error {
 	})
 }
 
-func (m *metricApi) GetLogicStatsticMetric(ctx *echo.Context) error {
+func (m *MetricApi) GetLogicStatsticMetric(ctx *echo.Context) error {
 	var req struct {
 		DateType int `query:"dateType"`
 	}
@@ -32,7 +38,7 @@ func (m *metricApi) GetLogicStatsticMetric(ctx *echo.Context) error {
 		return err
 	}
 	return ctx.JSON(http.StatusOK, model.Response[model.LogStatsticMetric]{
-		Data:    logic.MetricLogic.GetLogMetric(req.DateType),
+		Data:    m.metricLogic.GetLogMetric(req.DateType),
 		Message: "success",
 		Code:    0,
 	})

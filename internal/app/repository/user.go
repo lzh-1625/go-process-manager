@@ -8,33 +8,39 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type userRepository struct{}
+func NewUserRepository() *UserRepository {
+	return &UserRepository{
+		query: query.Q,
+	}
+}
 
-var UserRepository = new(userRepository)
+type UserRepository struct {
+	query *query.Query
+}
 
-func (u *userRepository) GetUserByName(name string) *model.User {
-	user, _ := query.User.Where(query.User.Account.Eq(name)).First()
+func (u *UserRepository) GetUserByName(name string) *model.User {
+	user, _ := u.query.User.Where(u.query.User.Account.Eq(name)).First()
 	return user
 }
 
-func (u *userRepository) CreateUser(user model.User) error {
+func (u *UserRepository) CreateUser(user model.User) error {
 	user.Password = utils.Md5(user.Password)
 	user.CreateTime = time.Now()
-	return query.User.Create(&user)
+	return u.query.User.Create(&user)
 }
 
-func (u *userRepository) EditUser(data model.User) error {
+func (u *UserRepository) EditUser(data model.User) error {
 	data.Password = utils.Md5(data.Password)
-	_, err := query.User.Where(query.User.Account.Eq(data.Account)).Updates(&data)
+	_, err := u.query.User.Where(u.query.User.Account.Eq(data.Account)).Updates(&data)
 	return err
 }
 
-func (u *userRepository) DeleteUser(name string) error {
-	_, err := query.User.Where(query.User.Account.Eq(name)).Delete()
+func (u *UserRepository) DeleteUser(name string) error {
+	_, err := u.query.User.Where(u.query.User.Account.Eq(name)).Delete()
 	return err
 }
 
-func (u *userRepository) GetUserList() (result []*model.User) {
-	result, _ = query.User.Find()
+func (u *UserRepository) GetUserList() (result []*model.User) {
+	result, _ = u.query.User.Find()
 	return
 }

@@ -16,7 +16,21 @@ import (
 	"github.com/lzh-1625/go_process_manager/resources"
 )
 
-func Route() {
+func NewRoute(
+	wsApi *api.WsApi,
+	procApi *api.ProcApi,
+	taskApi *api.TaskApi,
+	userApi *api.UserApi,
+	pushApi *api.PushApi,
+	eventApi *api.EventApi,
+	permissionApi *api.PermissionApi,
+	logApi *api.LogApi,
+	configApi *api.ConfigApi,
+	metricApi *api.MetricApi,
+	loggerMiddleware *middle.EventLoggerMiddleware,
+	authMiddleware *middle.AuthMiddleware,
+
+) *echo.Echo {
 
 	r := echo.New()
 	r.Use(middleware.Recover())
@@ -42,9 +56,105 @@ func Route() {
 	if config.CF.GZipEnable {
 		r.Use(middleware.Gzip())
 	}
-	r.Use(middle.EventLogger)
-	routePathInit(r)
-	log.Logger.Fatalw("server start failed", "err", r.Start(config.CF.Listen))
+	r.Use(loggerMiddleware.EventLogger)
+
+	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond)
+	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond)
+
+	apiGroup := r.Group("/api")
+	apiGroup.Use(authMiddleware.Auth)
+	// apiGroup.Use(middle.DemoMiddle())
+	{
+		wsGroup := apiGroup.Group("/ws")
+		{
+			wsGroup.GET("", wsApi.WebsocketHandle)
+			wsGroup.GET("/share", wsApi.WebsocketShareHandle)
+			wsGroup.GET("/token/list", wsApi.GetWsShareList, middle.RolePermission(eum.RoleAdmin))
+			wsGroup.DELETE("/token", wsApi.DeleteWsShareByID, middle.RolePermission(eum.RoleAdmin))
+		}
+
+		processGroup := apiGroup.Group("/process")
+		{
+			processGroup.DELETE("", procApi.KillProcess)
+			processGroup.GET("", procApi.GetProcessList)
+			processGroup.GET("/wait", procApi.GetProcessList, ProcessWaitCond.WaitGetMiddel)
+			processGroup.PUT("", procApi.StartProcess)
+			processGroup.PUT("/all", procApi.StartAllProcess)
+			processGroup.DELETE("/all", procApi.KillAllProcess)
+			processGroup.POST("/share", procApi.ProcessCreateShare, middle.RolePermission(eum.RoleAdmin))
+			processGroup.GET("/control", procApi.ProcessControl, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+
+			proConfigGroup := processGroup.Group("/config")
+			{
+				proConfigGroup.POST("", procApi.CreateProcess, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+				proConfigGroup.DELETE("", procApi.DeleteProcess, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+				proConfigGroup.PUT("", procApi.UpdateProcessConfig, middle.RolePermission(eum.RoleRoot))
+				proConfigGroup.GET("", procApi.GetProcessConfig, middle.RolePermission(eum.RoleAdmin))
+			}
+		}
+
+		taskGroup := apiGroup.Group("/task")
+		{
+			taskGroup.GET("", taskApi.GetTaskByID, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.GET("/all", taskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.GET("/all/wait", taskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitGetMiddel)
+			taskGroup.POST("", taskApi.CreateTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.DELETE("", taskApi.DeleteTaskByID, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.PUT("", taskApi.EditTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.GET("/start", taskApi.StartTask, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.GET("/stop", taskApi.StopTask, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.POST("/key", taskApi.CreateTaskApiKey, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.GET("/api-key/:key", taskApi.RunTaskByKey)
+		}
+
+		userGroup := apiGroup.Group("/user")
+		{
+			userGroup.POST("/login", userApi.LoginHandler)
+			userGroup.POST("", userApi.CreateUser, middle.RolePermission(eum.RoleRoot))
+			userGroup.PUT("", userApi.EditUser, middle.RolePermission(eum.RoleUser))
+			userGroup.DELETE("", userApi.DeleteUser, middle.RolePermission(eum.RoleRoot))
+			userGroup.GET("", userApi.GetUserList, middle.RolePermission(eum.RoleRoot))
+		}
+
+		pushGroup := apiGroup.Group("/push", middle.RolePermission(eum.RoleAdmin))
+		{
+			pushGroup.GET("/list", pushApi.GetPushList)
+			pushGroup.GET("", pushApi.GetPushByID)
+			pushGroup.POST("", pushApi.AddPushConfig)
+			pushGroup.PUT("", pushApi.UpdatePushConfig)
+			pushGroup.DELETE("", pushApi.DeletePushConfig)
+		}
+
+		eventGroup := apiGroup.Group("/event", middle.RolePermission(eum.RoleAdmin))
+		{
+			eventGroup.GET("", eventApi.GetEventList)
+		}
+
+		permissionGroup := apiGroup.Group("/permission", middle.RolePermission(eum.RoleRoot))
+		{
+			permissionGroup.GET("/list", permissionApi.GetPermissionList)
+			permissionGroup.PUT("", permissionApi.EditPermssion, ProcessWaitCond.WaitTriggerMiddel)
+		}
+
+		logGroup := apiGroup.Group("/log", middle.RolePermission(eum.RoleUser))
+		{
+			logGroup.POST("", logApi.GetLog)
+			logGroup.GET("/running", logApi.GetRunningLog)
+		}
+
+		configGroup := apiGroup.Group("/config", middle.RolePermission(eum.RoleRoot))
+		{
+			configGroup.GET("", configApi.GetSystemConfiguration)
+			configGroup.PUT("", configApi.SetSystemConfiguration)
+			configGroup.PUT("/reload", configApi.LogConfigReload)
+		}
+		metricGroup := apiGroup.Group("/metric", middle.RolePermission(eum.RoleAdmin))
+		{
+			metricGroup.GET("/log", metricApi.GetLogicStatsticMetric)
+			metricGroup.GET("/performce", metricApi.GetPerformceUsage)
+		}
+	}
+	return r
 }
 
 func pprofInit(r *echo.Echo) {
@@ -59,104 +169,4 @@ func pprofInit(r *echo.Echo) {
 	g.GET("/threadcreate", echo.WrapHandler(pprof.Handler("threadcreate")))
 	g.GET("/block", echo.WrapHandler(pprof.Handler("block")))
 	log.Logger.Debug("enable pprof")
-}
-
-func routePathInit(r *echo.Echo) {
-
-	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond)
-	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond)
-
-	apiGroup := r.Group("/api")
-	apiGroup.Use(middle.Auth)
-	// apiGroup.Use(middle.DemoMiddle())
-	{
-		wsGroup := apiGroup.Group("/ws")
-		{
-			wsGroup.GET("", api.WsApi.WebsocketHandle)
-			wsGroup.GET("/share", api.WsApi.WebsocketShareHandle)
-			wsGroup.GET("/token/list", api.GetWsShareList, middle.RolePermission(eum.RoleAdmin))
-			wsGroup.DELETE("/token", api.DeleteWsShareByID, middle.RolePermission(eum.RoleAdmin))
-		}
-
-		processGroup := apiGroup.Group("/process")
-		{
-			processGroup.DELETE("", api.ProcApi.KillProcess)
-			processGroup.GET("", api.ProcApi.GetProcessList)
-			processGroup.GET("/wait", api.ProcApi.GetProcessList, ProcessWaitCond.WaitGetMiddel)
-			processGroup.PUT("", api.ProcApi.StartProcess)
-			processGroup.PUT("/all", api.ProcApi.StartAllProcess)
-			processGroup.DELETE("/all", api.ProcApi.KillAllProcess)
-			processGroup.POST("/share", api.ProcApi.ProcessCreateShare, middle.RolePermission(eum.RoleAdmin))
-			processGroup.GET("/control", api.ProcApi.ProcessControl, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
-
-			proConfigGroup := processGroup.Group("/config")
-			{
-				proConfigGroup.POST("", api.ProcApi.CreateProcess, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
-				proConfigGroup.DELETE("", api.ProcApi.DeleteProcess, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
-				proConfigGroup.PUT("", api.ProcApi.UpdateProcessConfig, middle.RolePermission(eum.RoleRoot))
-				proConfigGroup.GET("", api.ProcApi.GetProcessConfig, middle.RolePermission(eum.RoleAdmin))
-			}
-		}
-
-		taskGroup := apiGroup.Group("/task")
-		{
-			taskGroup.GET("", api.TaskApi.GetTaskByID, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/all", api.TaskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/all/wait", api.TaskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitGetMiddel)
-			taskGroup.POST("", api.TaskApi.CreateTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.DELETE("", api.TaskApi.DeleteTaskByID, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.PUT("", api.TaskApi.EditTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.GET("/start", api.TaskApi.StartTask, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/stop", api.TaskApi.StopTask, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.POST("/key", api.TaskApi.CreateTaskApiKey, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/api-key/:key", api.TaskApi.RunTaskByKey)
-		}
-
-		userGroup := apiGroup.Group("/user")
-		{
-			userGroup.POST("/login", api.UserApi.LoginHandler)
-			userGroup.POST("", api.UserApi.CreateUser, middle.RolePermission(eum.RoleRoot))
-			userGroup.PUT("", api.UserApi.EditUser, middle.RolePermission(eum.RoleUser))
-			userGroup.DELETE("", api.UserApi.DeleteUser, middle.RolePermission(eum.RoleRoot))
-			userGroup.GET("", api.UserApi.GetUserList, middle.RolePermission(eum.RoleRoot))
-		}
-
-		pushGroup := apiGroup.Group("/push", middle.RolePermission(eum.RoleAdmin))
-		{
-			pushGroup.GET("/list", api.PushApi.GetPushList)
-			pushGroup.GET("", api.PushApi.GetPushByID)
-			pushGroup.POST("", api.PushApi.AddPushConfig)
-			pushGroup.PUT("", api.PushApi.UpdatePushConfig)
-			pushGroup.DELETE("", api.PushApi.DeletePushConfig)
-		}
-
-		eventGroup := apiGroup.Group("/event", middle.RolePermission(eum.RoleAdmin))
-		{
-			eventGroup.GET("", api.EventApi.GetEventList)
-		}
-
-		permissionGroup := apiGroup.Group("/permission", middle.RolePermission(eum.RoleRoot))
-		{
-			permissionGroup.GET("/list", api.PermissionApi.GetPermissionList)
-			permissionGroup.PUT("", api.PermissionApi.EditPermssion, ProcessWaitCond.WaitTriggerMiddel)
-		}
-
-		logGroup := apiGroup.Group("/log", middle.RolePermission(eum.RoleUser))
-		{
-			logGroup.POST("", api.LogApi.GetLog)
-			logGroup.GET("/running", api.LogApi.GetRunningLog)
-		}
-
-		configGroup := apiGroup.Group("/config", middle.RolePermission(eum.RoleRoot))
-		{
-			configGroup.GET("", api.ConfigApi.GetSystemConfiguration)
-			configGroup.PUT("", api.ConfigApi.SetSystemConfiguration)
-			configGroup.PUT("/reload", api.ConfigApi.LogConfigReload)
-		}
-		metricGroup := apiGroup.Group("/metric", middle.RolePermission(eum.RoleAdmin))
-		{
-			metricGroup.GET("/log", api.MetricApi.GetLogicStatsticMetric)
-			metricGroup.GET("/performce", api.MetricApi.GetPerformceUsage)
-		}
-	}
 }

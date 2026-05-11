@@ -9,16 +9,22 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type userApi struct{}
+type UserApi struct {
+	userLogic *logic.UserLogic
+}
 
-var UserApi = new(userApi)
+func NewUserApi(userLogic *logic.UserLogic) *UserApi {
+	return &UserApi{
+		userLogic: userLogic,
+	}
+}
 
-func (u *userApi) LoginHandler(ctx *echo.Context) error {
+func (u *UserApi) LoginHandler(ctx *echo.Context) error {
 	var req model.LoginHandlerReq
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	user, ok := logic.UserLogic.CheckLoginInfo(req.Account, req.Password)
+	user, ok := u.userLogic.CheckLoginInfo(req.Account, req.Password)
 	if !ok {
 		return ctx.JSON(http.StatusUnauthorized, model.Response[struct{}]{
 			Message: "incorrect username or password",
@@ -40,38 +46,38 @@ func (u *userApi) LoginHandler(ctx *echo.Context) error {
 	})
 }
 
-func (u *userApi) CreateUser(ctx *echo.Context) (err error) {
+func (u *UserApi) CreateUser(ctx *echo.Context) (err error) {
 	var req model.User
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	err = logic.UserLogic.CreateUser(req)
+	err = u.userLogic.CreateUser(req)
 	return
 }
 
-func (u *userApi) EditUser(ctx *echo.Context) (err error) {
+func (u *UserApi) EditUser(ctx *echo.Context) (err error) {
 	var req model.User
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	err = logic.UserLogic.EditUser(req, getUserName(ctx), getRole(ctx))
+	err = u.userLogic.EditUser(req, getUserName(ctx), getRole(ctx))
 	return
 }
 
-func (u *userApi) DeleteUser(ctx *echo.Context) (err error) {
+func (u *UserApi) DeleteUser(ctx *echo.Context) (err error) {
 	var req struct {
 		Account string `query:"account"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	err = logic.UserLogic.DeleteUser(req.Account)
+	err = u.userLogic.DeleteUser(req.Account)
 	return
 }
 
-func (u *userApi) GetUserList(ctx *echo.Context) error {
+func (u *UserApi) GetUserList(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, model.Response[[]*model.User]{
-		Data:    logic.UserLogic.GetUserList(),
+		Data:    u.userLogic.GetUserList(),
 		Message: "success",
 		Code:    0,
 	})

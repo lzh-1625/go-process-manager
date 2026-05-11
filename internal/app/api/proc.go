@@ -13,16 +13,26 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type procApi struct{}
+type ProcApi struct {
+	processCtlLogic *logic.ProcessCtlLogic
+	permissionLogic *logic.PermissionLogic
+	wsShareLogic    *logic.WsShareLogic
+}
 
-var ProcApi = new(procApi)
+func NewProcApi(processCtlLogic *logic.ProcessCtlLogic, permissionLogic *logic.PermissionLogic, wsShareLogic *logic.WsShareLogic) *ProcApi {
+	return &ProcApi{
+		processCtlLogic: processCtlLogic,
+		permissionLogic: permissionLogic,
+		wsShareLogic:    wsShareLogic,
+	}
+}
 
-func (p *procApi) CreateProcess(ctx *echo.Context) error {
+func (p *ProcApi) CreateProcess(ctx *echo.Context) error {
 	var req model.Process
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	proc := logic.ProcessCtlLogic.NewProcess(req)
+	proc := p.processCtlLogic.NewProcess(req)
 	if proc == nil {
 		return errors.New("create process failed")
 	}
@@ -35,30 +45,30 @@ func (p *procApi) CreateProcess(ctx *echo.Context) error {
 	})
 }
 
-func (p *procApi) DeleteProcess(ctx *echo.Context) error {
+func (p *ProcApi) DeleteProcess(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if err := logic.ProcessCtlLogic.DeleteProcess(req.UUID); err != nil {
+	if err := p.processCtlLogic.DeleteProcess(req.UUID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *procApi) KillProcess(ctx *echo.Context) error {
+func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !hasOprPermission(ctx, req.UUID, eum.OperationStop) {
+	if !p.permissionLogic.GetPermission(getUserName(ctx), req.UUID).Stop == false {
 		return errors.New("not permission")
 	}
-	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
+	proc, err := p.processCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -66,23 +76,23 @@ func (p *procApi) KillProcess(ctx *echo.Context) error {
 	return proc.Kill()
 }
 
-func (p *procApi) StartProcess(ctx *echo.Context) error {
+func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	var req struct {
 		UUID int `json:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !hasOprPermission(ctx, req.UUID, eum.OperationStart) {
+	if !p.permissionLogic.GetPermission(getUserName(ctx), req.UUID).Start == false {
 		return errors.New("not permission")
 	}
-	prod, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
+	prod, err := p.processCtlLogic.GetProcess(req.UUID)
 	if err != nil {
-		proConfig, err := logic.ProcessCtlLogic.GetProcessConfigByID(req.UUID)
+		proConfig, err := p.processCtlLogic.GetProcessConfigByID(req.UUID)
 		if err != nil {
 			return err
 		}
-		proc, err := logic.ProcessCtlLogic.RunProcess(*proConfig)
+		proc, err := p.processCtlLogic.RunProcess(*proConfig)
 		if err != nil {
 			return err
 		}
@@ -97,56 +107,56 @@ func (p *procApi) StartProcess(ctx *echo.Context) error {
 	return prod.Start()
 }
 
-func (p *procApi) StartAllProcess(ctx *echo.Context) error {
+func (p *ProcApi) StartAllProcess(ctx *echo.Context) error {
 	if isAdmin(ctx) {
-		logic.ProcessCtlLogic.ProcessStartAll()
+		p.processCtlLogic.ProcessStartAll()
 	} else {
-		logic.ProcessCtlLogic.ProcesStartAllByUsername(getUserName(ctx))
+		p.processCtlLogic.ProcesStartAllByUsername(getUserName(ctx))
 	}
 	return nil
 }
 
-func (p *procApi) KillAllProcess(ctx *echo.Context) error {
+func (p *ProcApi) KillAllProcess(ctx *echo.Context) error {
 	if isAdmin(ctx) {
-		logic.ProcessCtlLogic.KillAllProcess()
+		p.processCtlLogic.KillAllProcess()
 	} else {
-		logic.ProcessCtlLogic.KillAllProcessByUserName(getUserName(ctx))
+		p.processCtlLogic.KillAllProcessByUserName(getUserName(ctx))
 	}
 	return nil
 }
 
-func (p *procApi) GetProcessList(ctx *echo.Context) error {
+func (p *ProcApi) GetProcessList(ctx *echo.Context) error {
 	if isAdmin(ctx) {
 		return ctx.JSON(http.StatusOK, model.Response[[]model.ProcessInfo]{
-			Data:    logic.ProcessCtlLogic.GetProcessList(),
+			Data:    p.processCtlLogic.GetProcessList(),
 			Message: "success",
 			Code:    0,
 		})
 	} else {
 		return ctx.JSON(http.StatusOK, model.Response[[]model.ProcessInfo]{
-			Data:    logic.ProcessCtlLogic.GetProcessListByUser(getUserName(ctx)),
+			Data:    p.processCtlLogic.GetProcessListByUser(getUserName(ctx)),
 			Message: "success",
 			Code:    0,
 		})
 	}
 }
 
-func (p *procApi) UpdateProcessConfig(ctx *echo.Context) error {
+func (p *ProcApi) UpdateProcessConfig(ctx *echo.Context) error {
 	var req model.Process
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.ProcessCtlLogic.UpdateProcessConfig(req)
+	return p.processCtlLogic.UpdateProcessConfig(req)
 }
 
-func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
+func (p *ProcApi) GetProcessConfig(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	data, err := logic.ProcessCtlLogic.GetProcessConfigByID(req.UUID)
+	data, err := p.processCtlLogic.GetProcessConfigByID(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -157,7 +167,7 @@ func (p *procApi) GetProcessConfig(ctx *echo.Context) error {
 	})
 }
 
-func (p *procApi) ProcessControl(ctx *echo.Context) error {
+func (p *ProcApi) ProcessControl(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid"`
 	}
@@ -165,7 +175,7 @@ func (p *procApi) ProcessControl(ctx *echo.Context) error {
 		return err
 	}
 	user := getUserName(ctx)
-	proc, err := logic.ProcessCtlLogic.GetProcess(req.UUID)
+	proc, err := p.processCtlLogic.GetProcess(req.UUID)
 	if err != nil {
 		return err
 	}
@@ -173,13 +183,13 @@ func (p *procApi) ProcessControl(ctx *echo.Context) error {
 	return nil
 }
 
-func (p *procApi) ProcessCreateShare(ctx *echo.Context) error {
+func (p *ProcApi) ProcessCreateShare(ctx *echo.Context) error {
 	var req model.ProcessShare
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
 	token := utils.UnwarpIgnore(uuid.NewRandom()).String()
-	if err := logic.WsShareLogic.AddShareData(model.WsShare{
+	if err := p.wsShareLogic.AddShareData(model.WsShare{
 		ExpireTime: time.Now().Add(time.Minute * time.Duration(req.Minutes)),
 		Write:      req.Write,
 		Token:      token,

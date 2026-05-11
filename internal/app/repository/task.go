@@ -6,46 +6,52 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-type taskRepository struct{}
+func NewTaskRepository() *TaskRepository {
+	return &TaskRepository{
+		query: query.Q,
+	}
+}
 
-var TaskRepository = new(taskRepository)
+type TaskRepository struct {
+	query *query.Query
+}
 
-func (t *taskRepository) GetAllTask() (result []*model.Task) {
-	result, _ = query.Task.Find()
+func (t *TaskRepository) GetAllTask() (result []*model.Task) {
+	result, _ = t.query.Task.Find()
 	return
 }
 
-func (t *taskRepository) GetTaskByID(id int) (result *model.Task, err error) {
-	result, err = query.Task.Where(query.Task.ID.Eq(id)).First()
+func (t *TaskRepository) GetTaskByID(id int) (result *model.Task, err error) {
+	result, err = t.query.Task.Where(t.query.Task.ID.Eq(id)).First()
 	return
 }
 
-func (t *taskRepository) GetTaskByKey(key string) (result *model.Task, err error) {
-	result, err = query.Task.Where(query.Task.Key.Eq(key), query.Task.ApiEnable.Is(true)).First()
+func (t *TaskRepository) GetTaskByKey(key string) (result *model.Task, err error) {
+	result, err = t.query.Task.Where(t.query.Task.Key.Eq(key), t.query.Task.ApiEnable.Is(true)).First()
 	return
 }
 
-func (t *taskRepository) AddTask(data model.Task) (task int, err error) {
-	err = query.Task.Create(&data)
+func (t *TaskRepository) AddTask(data model.Task) (task int, err error) {
+	err = t.query.Task.Create(&data)
 	task = data.ID
 	return
 }
 
-func (t *taskRepository) DeleteTask(id int) (err error) {
-	_, err = query.Task.Where(query.Task.ID.Eq(id)).Delete()
+func (t *TaskRepository) DeleteTask(id int) (err error) {
+	_, err = t.query.Task.Where(t.query.Task.ID.Eq(id)).Delete()
 	return
 }
 
-func (t *taskRepository) EditTask(data *model.Task) (err error) {
-	err = query.Task.Save(data)
+func (t *TaskRepository) EditTask(data *model.Task) (err error) {
+	err = t.query.Task.Save(data)
 	return
 }
 
-func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
-	p := query.Process.As("p")
-	p2 := query.Process.As("p2")
-	p3 := query.Process.As("p3")
-	task := query.Task
+func (t *TaskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
+	p := t.query.Process.As("p")
+	p2 := t.query.Process.As("p2")
+	p3 := t.query.Process.As("p3")
+	task := t.query.Task
 	task.Select(
 		task.ALL,
 		p.Name.As("process_name"),
@@ -59,12 +65,12 @@ func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 	return
 }
 
-func (t *taskRepository) GetTriggerTask(processName string, event eum.ProcessState) []model.Task {
+func (t *TaskRepository) GetTriggerTask(processName string, event eum.ProcessState) []model.Task {
 	result := []model.Task{}
-	query.Task.Select(query.Task.ALL).
-		LeftJoin(query.Process, query.Process.UUID.EqCol(query.Task.TriggerTarget)).
-		Where(query.Process.Name.Eq(processName)).
-		Where(query.Task.TriggerEvent.Eq(int32(event))).
+	t.query.Task.Select(t.query.Task.ALL).
+		LeftJoin(t.query.Process, t.query.Process.UUID.EqCol(t.query.Task.TriggerTarget)).
+		Where(t.query.Process.Name.Eq(processName)).
+		Where(t.query.Task.TriggerEvent.Eq(int32(event))).
 		Scan(&result)
 	return result
 }

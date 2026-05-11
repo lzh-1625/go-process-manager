@@ -5,33 +5,35 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/panjf2000/ants/v2"
 )
 
-type loghandler struct {
+type LogHandler struct {
 	antsPool *ants.Pool
+	logLogic search.LogLogic
 }
 
-var (
-	Loghandler = new(loghandler)
-)
-
-func InitLogHandle() {
-	Loghandler.antsPool, _ = ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i any) {
+func NewLogHandler(logLogic search.LogLogic) *LogHandler {
+	antsPool, _ := ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i any) {
 		log.Logger.Warnw("log storage failed", "err", i)
 	}))
+	return &LogHandler{
+		antsPool: antsPool,
+		logLogic: logLogic,
+	}
 }
 
-func (l *loghandler) AddLog(data model.ProcessLog) {
+func (l *LogHandler) AddLog(data model.ProcessLog) {
 	if err := l.antsPool.Submit(func() {
-		LogLogicImpl.Insert(data.Log, data.Name, data.Using, data.Time)
+		l.logLogic.Insert(data.Log, data.Name, data.Using, data.Time)
 	}); err != nil {
 		log.Logger.Warnw("coroutine pool add task failed", "err", err, "current running number", l.antsPool.Running())
 	}
 }
 
-func (l *loghandler) GetRunning() int {
+func (l *LogHandler) GetRunning() int {
 	return l.antsPool.Running()
 }

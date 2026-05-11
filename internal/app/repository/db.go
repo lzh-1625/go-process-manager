@@ -28,7 +28,7 @@ var (
 	}
 )
 
-func InitDb() {
+func NewDB() query.Query {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
@@ -60,4 +60,5 @@ func InitDb() {
 	}
 	gormGen(db)
 	query.SetDefault(db)
+	return *query.Q
 }

@@ -20,12 +20,19 @@ type TaskJob struct {
 	Cancel     context.CancelFunc `json:"-"`
 	StartTime  time.Time          `json:"startTime"`
 	EndTime    time.Time          `json:"endTime"`
+
+	eventLogic      *EventLogic
+	processCtlLogic *ProcessCtlLogic
+	taskLogic       *TaskLogic
 }
 
-func NewTaskJob(data *model.Task) (*TaskJob, error) {
+func NewTaskJob(data *model.Task, eventLogic *EventLogic, processCtlLogic *ProcessCtlLogic, taskLogic *TaskLogic) (*TaskJob, error) {
 	tj := &TaskJob{
-		TaskConfig: data,
-		StartTime:  time.Now(),
+		TaskConfig:      data,
+		StartTime:       time.Now(),
+		eventLogic:      eventLogic,
+		processCtlLogic: processCtlLogic,
+		taskLogic:       taskLogic,
 	}
 	if data.Enable {
 		if err := tj.InitCronHandle(); err != nil {
@@ -40,9 +47,9 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	if ctx.Value(eum.CtxTaskTraceID{}) == nil {
 		ctx = context.WithValue(ctx, eum.CtxTaskTraceID{}, uuid.NewString())
 	}
-	EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
+	t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
 	defer func() {
-		EventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
+		t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
 	}()
 	logger = logger.With("traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
 	t.Running = true
@@ -53,7 +60,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 		TaskWaitCond.Trigger()
 	}()
 
-	proc, err := ProcessCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+	proc, err := t.processCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
 	if err != nil {
 		logger.Debugw("process not found, task execution failed")
 		return err
@@ -80,7 +87,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 
 	if t.TaskConfig.NextID != nil {
 		var nextTask *TaskJob
-		nextTask, err = TaskLogic.getTaskJob(*t.TaskConfig.NextID)
+		nextTask, err = t.taskLogic.getTaskJob(*t.TaskConfig.NextID)
 		if err != nil {
 			logger.Warnw("cannot get next node, task execution failed", "nextID", t.TaskConfig.NextID)
 			return err

@@ -11,15 +11,23 @@ import (
 )
 
 func init() {
-	search.Register("sqlite", new(sqliteSearch))
+	search.Register("sqlite", NewSqliteSearch(nil))
 }
 
-type sqliteSearch struct{}
+type sqliteSearch struct {
+	logRepository *repository.LogRepository
+}
+
+func NewSqliteSearch(logRepository *repository.LogRepository) search.LogLogic {
+	return &sqliteSearch{
+		logRepository: logRepository,
+	}
+}
 
 func (l *sqliteSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
 	req.FilterName = filterProcessName
 	query := search.QueryStringAnalysis(req.Match.Log)
-	data, total := repository.LogRepository.SearchLog(req, query)
+	data, total := l.logRepository.SearchLog(req, query)
 	for _, v := range slices.DeleteFunc(query, func(q search.Query) bool {
 		return q.Cond == search.NotMatch || q.Cond == search.NotWildCard
 	}) {
@@ -35,7 +43,7 @@ func (l *sqliteSearch) Search(req model.GetLogReq, filterProcessName ...string) 
 }
 
 func (l *sqliteSearch) Insert(log string, processName string, using string, ts int64) {
-	if err := repository.LogRepository.InsertLog(model.ProcessLog{
+	if err := l.logRepository.InsertLog(model.ProcessLog{
 		Log:   log,
 		Name:  processName,
 		Using: using,

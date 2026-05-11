@@ -5,26 +5,32 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 )
 
-type wsShareLogic struct{}
-
-var WsShareLogic = &wsShareLogic{}
-
-func (w *wsShareLogic) GetWsShareDataByToken(token string) (*model.WsShare, error) {
-	return repository.WsShare.GetWsShareDataByToken(token)
+type WsShareLogic struct {
+	wsShareRepository *repository.WsShareRepository
 }
 
-func (w *wsShareLogic) GetWsShareList() []*model.WsShare {
-	return repository.WsShare.GetWsShareList()
+func NewWsShareLogic(wsShareRepository *repository.WsShareRepository) *WsShareLogic {
+	return &WsShareLogic{
+		wsShareRepository: wsShareRepository,
+	}
 }
 
-func (w *wsShareLogic) DeleteByID(id int) error {
-	return repository.WsShare.Delete(id)
+func (w *WsShareLogic) GetWsShareDataByToken(token string) (*model.WsShare, error) {
+	return w.wsShareRepository.GetWsShareDataByToken(token)
 }
 
-func (w *wsShareLogic) Edit(data *model.WsShare) error {
-	return repository.WsShare.Edit(data)
+func (w *WsShareLogic) GetWsShareList() []*model.WsShare {
+	return w.wsShareRepository.GetWsShareList()
 }
 
-func (w *wsShareLogic) AddShareData(data model.WsShare) error {
-	return repository.WsShare.AddShareData(data)
+func (w *WsShareLogic) DeleteByID(id int) error {
+	return w.wsShareRepository.Delete(id)
+}
+
+func (w *WsShareLogic) Edit(data *model.WsShare) error {
+	return w.wsShareRepository.Edit(data)
+}
+
+func (w *WsShareLogic) AddShareData(data model.WsShare) error {
+	return w.wsShareRepository.AddShareData(data)
 }

@@ -8,19 +8,25 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
-var PermissionApi = new(permissionApi)
+type PermissionApi struct {
+	permissionLogic *logic.PermissionLogic
+}
 
-type permissionApi struct{}
+func NewPermissionApi(permissionLogic *logic.PermissionLogic) *PermissionApi {
+	return &PermissionApi{
+		permissionLogic: permissionLogic,
+	}
+}
 
-func (p *permissionApi) EditPermssion(ctx *echo.Context) error {
+func (p *PermissionApi) EditPermssion(ctx *echo.Context) error {
 	var req model.Permission
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return logic.PermissionLogic.EditPermssion(req)
+	return p.permissionLogic.EditPermssion(req)
 }
 
-func (p *permissionApi) GetPermissionList(ctx *echo.Context) error {
+func (p *PermissionApi) GetPermissionList(ctx *echo.Context) error {
 	var req struct {
 		Account string `query:"account"`
 	}
@@ -28,7 +34,7 @@ func (p *permissionApi) GetPermissionList(ctx *echo.Context) error {
 		return err
 	}
 	return ctx.JSON(http.StatusOK, model.Response[[]model.PermissionPo]{
-		Data:    logic.PermissionLogic.GetPermssionList(req.Account),
+		Data:    p.permissionLogic.GetPermssionList(req.Account),
 		Message: "success",
 		Code:    0,
 	})
