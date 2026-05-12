@@ -22,7 +22,6 @@ var ApiModule = fx.Options(
 		api.NewLogApi,
 		api.NewConfigApi,
 		api.NewMetricApi,
-		api.NewPermissionTool,
 	),
 )
 

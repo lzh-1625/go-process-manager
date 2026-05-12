@@ -16,17 +16,17 @@ import (
 type ProcApi struct {
 	processCtlLogic *logic.ProcessCtlLogic
 	wsShareLogic    *logic.WsShareLogic
-	permissionTool  *PermissionTool
+	permissionApi   *PermissionApi
 }
 
 func NewProcApi(
 	processCtlLogic *logic.ProcessCtlLogic,
 	wsShareLogic *logic.WsShareLogic,
-	permissionTool *PermissionTool) *ProcApi {
+	permissionApi *PermissionApi) *ProcApi {
 	return &ProcApi{
 		processCtlLogic: processCtlLogic,
 		wsShareLogic:    wsShareLogic,
-		permissionTool:  permissionTool,
+		permissionApi:   permissionApi,
 	}
 }
 
@@ -68,7 +68,7 @@ func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionTool.HasOprPermission(ctx, req.UUID, eum.OperationStop) {
+	if !p.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationStop) {
 		return errors.New("not permission")
 	}
 	proc, err := p.processCtlLogic.GetProcess(req.UUID)
@@ -86,7 +86,7 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionTool.HasOprPermission(ctx, req.UUID, eum.OperationStart) {
+	if !p.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationStart) {
 		return errors.New("not permission")
 	}
 	prod, err := p.processCtlLogic.GetProcess(req.UUID)

@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
-	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 )
 
 func getRole(c *echo.Context) eum.Role {
@@ -26,42 +25,4 @@ func getUserName(c *echo.Context) string {
 
 func isAdmin(c *echo.Context) bool {
 	return getRole(c) <= eum.RoleAdmin
-}
-
-type PermissionTool struct {
-	permissionLogic *logic.PermissionLogic
-}
-
-func NewPermissionTool(permissionLogic *logic.PermissionLogic) *PermissionTool {
-	return &PermissionTool{
-		permissionLogic: permissionLogic,
-	}
-}
-
-func (p *PermissionTool) HasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
-	if isAdmin(c) {
-		return true
-	}
-	per := p.permissionLogic.GetPermission(
-		getUserName(c),
-		uuid,
-	)
-	if per == nil {
-		return false
-	}
-
-	switch op {
-	case eum.OperationLog:
-		return per.Log
-	case eum.OperationTerminal:
-		return per.Terminal
-	case eum.OperationStart:
-		return per.Start
-	case eum.OperationStop:
-		return per.Stop
-	case eum.OperationTerminalWrite:
-		return per.Write
-	default:
-		panic("unknown operation")
-	}
 }

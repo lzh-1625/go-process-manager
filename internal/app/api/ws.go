@@ -23,19 +23,19 @@ type WsApi struct {
 	processCtlLogic *logic.ProcessCtlLogic
 	wsShareLogic    *logic.WsShareLogic
 	eventLogic      *logic.EventLogic
-	permissionTool  *PermissionTool
+	permissionApi   *PermissionApi
 }
 
 func NewWsApi(
 	processCtlLogic *logic.ProcessCtlLogic,
 	wsShareLogic *logic.WsShareLogic,
 	eventLogic *logic.EventLogic,
-	permissionTool *PermissionTool) *WsApi {
+	permissionApi *PermissionApi) *WsApi {
 	return &WsApi{
 		processCtlLogic: processCtlLogic,
 		wsShareLogic:    wsShareLogic,
 		eventLogic:      eventLogic,
-		permissionTool:  permissionTool,
+		permissionApi:   permissionApi,
 	}
 }
 
@@ -68,7 +68,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !w.permissionTool.HasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
+	if !w.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
 		return errors.New("not permission")
 	}
 	reqUser := getUserName(ctx)
@@ -100,7 +100,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	}
 	if proc.State.State == eum.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		write := w.permissionTool.HasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
+		write := w.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
 		w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddConn(reqUser, wci)
