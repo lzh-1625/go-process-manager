@@ -41,7 +41,7 @@ func (p *PermissionApi) GetPermissionList(ctx *echo.Context) error {
 	})
 }
 
-func (p *PermissionApi) HasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
+func (p *PermissionApi) hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
 	if isAdmin(c) {
 		return true
 	}

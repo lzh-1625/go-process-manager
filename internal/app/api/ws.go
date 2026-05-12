@@ -68,7 +68,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !w.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
+	if !w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
 		return errors.New("not permission")
 	}
 	reqUser := getUserName(ctx)
@@ -100,7 +100,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	}
 	if proc.State.State == eum.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		write := w.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
+		write := w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
 		w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddConn(reqUser, wci)

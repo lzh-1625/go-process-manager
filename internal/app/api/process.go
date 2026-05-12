@@ -68,7 +68,7 @@ func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationStop) {
+	if !p.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationStop) {
 		return errors.New("not permission")
 	}
 	proc, err := p.processCtlLogic.GetProcess(req.UUID)
@@ -86,7 +86,7 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionApi.HasOprPermission(ctx, req.UUID, eum.OperationStart) {
+	if !p.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationStart) {
 		return errors.New("not permission")
 	}
 	prod, err := p.processCtlLogic.GetProcess(req.UUID)
