@@ -66,7 +66,7 @@ var serviceRestartCmd = &cobra.Command{
 
 func serviceAction(cmd *cobra.Command, args []string) {
 	svc, err := service.New(&Service{}, &service.Config{
-		Name:             "go_process_manager",
+		Name:             "gpm",
 		DisplayName:      "Go Process Manager",
 		Description:      "Go Process Manager service",
 		WorkingDirectory: utils.UnwarpIgnore(os.Getwd()),
