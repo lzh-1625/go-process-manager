@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/olekukonko/tablewriter"
+	"golang.org/x/term"
 )
 
 type ProcessCli struct {
@@ -101,35 +103,65 @@ func formatBytes(bytes int64) string {
 
 func (p *ProcessCli) Exec(uuid int) error {
 	u := url.URL{
-		Scheme:   "ws",
-		Host:     "localhost" + config.CF.Listen,
-		Path:     "/api/ws",
-		RawQuery: url.Values{"uuid": {strconv.Itoa(uuid)}, "token": {GetJwt()}}.Encode(),
+		Scheme: "ws",
+		Host:   config.CF.Listen,
+		Path:   "/api/ws",
+		RawQuery: url.Values{
+			"uuid":  {strconv.Itoa(uuid)},
+			"token": {GetJwt()},
+		}.Encode(),
 	}
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		return err
 	}
-
 	defer conn.Close()
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return err
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	go func() {
+		defer cancel()
+		// websocket -> stdout
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+
+			_, err = os.Stdout.Write(message)
+			if err != nil {
+				return
+			}
+		}
+
+	}()
+	go func() {
+		defer cancel()
+		// stdin -> websocket
 		buf := make([]byte, 1024)
 		for {
 			n, err := os.Stdin.Read(buf)
 			if err != nil {
 				return
 			}
-			conn.WriteMessage(websocket.TextMessage, buf[:n])
+			// ctrl + d
+			if n == 1 && buf[0] == '\x04' {
+				return
+			}
+			err = conn.WriteMessage(websocket.BinaryMessage, buf[:n])
+			if err != nil {
+				return
+			}
 		}
 	}()
 
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			return err
-		}
-		os.Stdout.Write(message)
-	}
+	<-ctx.Done()
+	return nil
 }
 
 func (p *ProcessCli) Start(uuid int) error {

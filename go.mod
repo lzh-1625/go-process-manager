@@ -13,6 +13,7 @@ require (
 	github.com/vcaesar/gse-bleve v0.40.0
 	go.uber.org/fx v1.24.0
 	go.yaml.in/yaml/v2 v2.4.4
+	golang.org/x/term v0.42.0
 )
 
 require (
