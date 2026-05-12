@@ -34,11 +34,6 @@ func NewTaskLogic(
 		processCtlLogic: processCtlLogic,
 		eventBus:        eventBus,
 	}
-	go func() {
-		for event := range t.eventBus.Subscribe() {
-			t.RunTaskByTriggerEvent(event.p.Name, event.state)
-		}
-	}()
 	return t
 }
 

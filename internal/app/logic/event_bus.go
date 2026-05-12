@@ -7,8 +7,8 @@ import (
 )
 
 type Event struct {
-	p     *process.ProcessBase
-	state eum.ProcessState
+	Proc  *process.ProcessBase
+	State eum.ProcessState
 }
 
 // EventBus is a channel that publishes and subscribes to events
@@ -32,4 +32,8 @@ func (e *EventBus) Publish(event Event) {
 
 func (e *EventBus) Subscribe() <-chan Event {
 	return e.events
+}
+
+func (e *EventBus) Close() {
+	close(e.events)
 }

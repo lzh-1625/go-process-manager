@@ -267,8 +267,8 @@ func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.Pro
 			ProcessWaitCond.Trigger()
 			p.createEvent(proc, state)
 			p.eventBus.Publish(Event{
-				p:     proc,
-				state: state,
+				Proc:  proc,
+				State: state,
 			})
 		}),
 	)

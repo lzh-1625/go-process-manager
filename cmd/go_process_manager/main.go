@@ -59,10 +59,19 @@ var rootCmd = &cobra.Command{
 				search.Register("sqlite", sqlite.NewSqliteSearch(logRepository))
 			}),
 
-			fx.Invoke(func(r *echo.Echo, lc fx.Lifecycle, processCtlLogic *logic.ProcessCtlLogic, taskLogic *logic.TaskLogic, eventLogic *logic.EventLogic) {
+			fx.Invoke(func(
+				r *echo.Echo,
+				lc fx.Lifecycle,
+				processCtlLogic *logic.ProcessCtlLogic,
+				taskLogic *logic.TaskLogic,
+				eventLogic *logic.EventLogic,
+				eventBus *logic.EventBus,
+			) {
 				c := cron.New()
 				lc.Append(fx.Hook{
 					OnStart: func(ctx context.Context) error {
+
+						// event cleaning cron job
 						if config.CF.EventStorageTime >= 0 {
 							c.AddFunc("0 3 * * *", func() {
 								log.Logger.Infow("event cleaning execution")
@@ -72,6 +81,12 @@ var rootCmd = &cobra.Command{
 						}
 						processCtlLogic.ProcessInit()
 						taskLogic.InitTaskJob()
+						go func() {
+							// run task by trigger event
+							for event := range eventBus.Subscribe() {
+								taskLogic.RunTaskByTriggerEvent(event.Proc.Name, event.State)
+							}
+						}()
 						go r.Start(config.CF.Listen)
 						return nil
 					},
@@ -79,6 +94,7 @@ var rootCmd = &cobra.Command{
 						c.Stop()
 						log.Logger.Infow("stop all process")
 						processCtlLogic.KillAllProcess()
+						eventBus.Close()
 						return nil
 					},
 				})
