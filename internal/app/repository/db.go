@@ -3,6 +3,7 @@ package repository
 import (
 	"log"
 	"os"
+	"path"
 	"time"
 
 	"github.com/glebarez/sqlite"
@@ -39,7 +40,8 @@ func NewDB() *gorm.DB {
 			Colorful:                  true,
 		},
 	)
-	gdb, err := gorm.Open(sqlite.Open("data.db"), &gorm.Config{
+	home, _ := os.UserHomeDir()
+	gdb, err := gorm.Open(sqlite.Open(path.Join(home, ".gpm", "data.db")), &gorm.Config{
 		Logger: newLogger,
 	})
 	if err != nil {

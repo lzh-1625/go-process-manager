@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"path"
 	"reflect"
 	"strconv"
 
@@ -63,7 +64,16 @@ type Configuration struct {
 }
 
 func LoadConfig() error {
-	f, err := os.Open("config.yaml")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Println("get user home dir failed", err)
+	}
+	filePath := path.Join(home, ".gpm", "config.yaml")
+	log.Println("config file path", filePath)
+	if err = os.MkdirAll(path.Dir(filePath), 0755); err != nil {
+		log.Println("create config file dir failed", err)
+	}
+	f, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
@@ -76,7 +86,16 @@ func LoadConfig() error {
 }
 
 func DumpConfig() error {
-	f, err := os.Create("config.yaml")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Println("get user home dir failed", err)
+	}
+	filePath := path.Join(home, ".gpm", "config.yaml")
+	log.Println("config file path", filePath)
+	if err = os.MkdirAll(path.Dir(filePath), 0755); err != nil {
+		log.Println("create config file dir failed", err)
+	}
+	f, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}

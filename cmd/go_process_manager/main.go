@@ -89,6 +89,7 @@ management. Run "gpm" with no sub-command to start the server in the foreground.
 				c := cron.New()
 				lc.Append(fx.Hook{
 					OnStart: func(ctx context.Context) error {
+						print(startTitle)
 						go func() {
 							log.Logger.Infow("starting echo server", "listen", config.CF.Listen)
 							err := r.Start(config.CF.Listen)
