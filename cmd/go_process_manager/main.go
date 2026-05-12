@@ -8,9 +8,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -54,11 +51,6 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			app.Module,
-			// register sqlite implement search engine
-			fx.Invoke(func(logRepository *repository.LogRepository) {
-				search.Register("sqlite", sqlite.NewSqliteSearch(logRepository))
-			}),
-
 			fx.Invoke(func(
 				r *echo.Echo,
 				lc fx.Lifecycle,

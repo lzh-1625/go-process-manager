@@ -14,18 +14,23 @@ import (
 	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
 	gse "github.com/vcaesar/gse-bleve"
-	// gse "github.com/lzh-1625/gse-bleve"
 )
 
-func init() {
-	sr.Register("bleve", new(bleveSearch))
+func NewBleveSearch() *bleveSearch {
+	b := &bleveSearch{}
+	b.init()
+	return b
 }
 
 type bleveSearch struct {
 	index bleve.Index
 }
 
-func (b *bleveSearch) Init() error {
+func (b *bleveSearch) Reload() error {
+	return b.init()
+}
+
+func (b *bleveSearch) init() error {
 	opt := gse.Option{
 		Dicts: "embed, zh_s",
 		Stop:  "",

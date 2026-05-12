@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"errors"
 	"slices"
 	"strings"
 
@@ -45,10 +46,10 @@ func (l *sqliteSearch) Insert(log string, processName string, using string, ts i
 		Using: using,
 		Time:  ts,
 	}); err != nil {
-		logger.Logger.Errorw("日志插入失败", "err", err)
+		logger.Logger.Errorw("Log insert failed", "err", err)
 	}
 }
 
-func (l *sqliteSearch) Init() error {
-	return nil
+func (l *sqliteSearch) Reload() error {
+	return errors.New("sqlite not support reload")
 }

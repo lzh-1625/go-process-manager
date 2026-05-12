@@ -8,21 +8,28 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/olivere/elastic/v7"
 )
 
-func init() {
-	sr.Register("es", new(esSearch))
+func NewEsSearch() search.LogLogic {
+	e := &esSearch{}
+	e.init()
+	return e
 }
 
 type esSearch struct {
 	esClient *elastic.Client
 }
 
-func (e *esSearch) Init() error {
+func (e *esSearch) Reload() error {
+	return e.init()
+}
+
+func (e *esSearch) init() error {
 	var err error
 	e.esClient, err = elastic.NewClient(
 		elastic.SetURL(config.CF.EsUrl),
