@@ -2,6 +2,8 @@
 
 package bleve
 
-func NewBleveSearch() *bleveSearch {
+import "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
+
+func NewBleveSearch() search.LogLogic {
 	panic("bleve not support in slim mode")
 }
