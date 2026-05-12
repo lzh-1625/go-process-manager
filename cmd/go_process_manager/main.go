@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"time"
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
@@ -11,6 +11,8 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
+	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
@@ -57,16 +59,25 @@ var rootCmd = &cobra.Command{
 				search.Register("sqlite", sqlite.NewSqliteSearch(logRepository))
 			}),
 
-			fx.Invoke(func(r *echo.Echo, lc fx.Lifecycle, processCtlLogic *logic.ProcessCtlLogic, taskLogic *logic.TaskLogic) {
+			fx.Invoke(func(r *echo.Echo, lc fx.Lifecycle, processCtlLogic *logic.ProcessCtlLogic, taskLogic *logic.TaskLogic, eventLogic *logic.EventLogic) {
+				c := cron.New()
 				lc.Append(fx.Hook{
 					OnStart: func(ctx context.Context) error {
+						if config.CF.EventStorageTime >= 0 {
+							c.AddFunc("0 3 * * *", func() {
+								log.Logger.Infow("event cleaning execution")
+								eventLogic.Clean(time.Duration(config.CF.EventStorageTime) * time.Hour * 24)
+							})
+							c.Start()
+						}
 						processCtlLogic.ProcessInit()
 						taskLogic.InitTaskJob()
 						go r.Start(config.CF.Listen)
 						return nil
 					},
 					OnStop: func(ctx context.Context) error {
-						log.Println("stop all process")
+						c.Stop()
+						log.Logger.Infow("stop all process")
 						processCtlLogic.KillAllProcess()
 						return nil
 					},
