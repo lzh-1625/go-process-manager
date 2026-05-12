@@ -43,13 +43,27 @@ var startTitle = `
                                                            \/____/         
 ----------------------------------------------------------------------------  
 `
-
+var stopTitle = `
+----------------------------------------
+ ________      ___    ___ _______      
+|\   __  \    |\  \  /  /|\  ___ \     
+\ \  \|\ /_   \ \  \/  / | \   __/|    
+ \ \   __  \   \ \    / / \ \  \_|/__  
+  \ \  \|\  \   \/  /  /   \ \  \_|\ \ 
+   \ \_______\__/  / /      \ \_______\
+    \|_______|\___/ /        \|_______|
+             \|___|/                   
+                                       
+                                       
+----------------------------------------
+`
 var rootCmd = &cobra.Command{
 	Use:   "gpm",
 	Short: "Go Process Manager",
 	Long:  `Go Process Manager is a tool for managing processes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
+			fx.NopLogger,
 			app.Module,
 			fx.Invoke(func(
 				r *echo.Echo,
@@ -62,7 +76,13 @@ var rootCmd = &cobra.Command{
 				c := cron.New()
 				lc.Append(fx.Hook{
 					OnStart: func(ctx context.Context) error {
-
+						go func() {
+							log.Logger.Infow("starting echo server", "listen", config.CF.Listen)
+							err := r.Start(config.CF.Listen)
+							if err != nil {
+								log.Logger.Panicw("start echo server failed", "err", err)
+							}
+						}()
 						// event cleaning cron job
 						if config.CF.EventStorageTime >= 0 {
 							c.AddFunc("0 3 * * *", func() {
@@ -76,17 +96,17 @@ var rootCmd = &cobra.Command{
 						go func() {
 							// run task by trigger event
 							for event := range eventBus.Subscribe() {
-								taskLogic.RunTaskByTriggerEvent(event.Proc.Name, event.State)
+								go taskLogic.RunTaskByTriggerEvent(event.Proc.Name, event.State)
 							}
 						}()
-						go r.Start(config.CF.Listen)
 						return nil
 					},
 					OnStop: func(ctx context.Context) error {
 						c.Stop()
-						log.Logger.Infow("stop all process")
+						log.Logger.Infow("waiting for all process to stop")
 						processCtlLogic.KillAllProcess()
 						eventBus.Close()
+						print(stopTitle)
 						return nil
 					},
 				})

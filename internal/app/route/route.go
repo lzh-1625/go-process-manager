@@ -1,6 +1,8 @@
 package route
 
 import (
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
 
@@ -35,6 +37,7 @@ func NewRoute(
 	r := echo.New()
 	r.Use(middleware.Recover())
 	r.Use(middle.Logger)
+	r.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 	r.HTTPErrorHandler = func(c *echo.Context, err error) {
 		log.Logger.Errorw("HTTPErrorHandler", "err", err)
 		c.JSON(http.StatusInternalServerError, model.Response[struct{}]{
