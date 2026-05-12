@@ -15,8 +15,11 @@ import (
 
 var pushCmd = &cobra.Command{
 	Use:   "push",
-	Short: "Push configuration management",
-	Long:  `Manage push configurations including list, delete.`,
+	Short: "Manage event push configurations",
+	Long: `Manage configurations that push process or task events to external endpoints
+(such as webhooks, IM bots, etc.).`,
+	Example: `  gpm push list           # list all push configurations
+  gpm push delete 1       # remove push configuration with ID 1`,
 }
 
 func init() {
@@ -30,7 +33,7 @@ func init() {
 var pushListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all push configurations",
-	Long:  `List all push configurations.`,
+	Long:  `Print a table of all event-push configurations, including their ID, type and target endpoint.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
@@ -48,8 +51,8 @@ var pushListCmd = &cobra.Command{
 
 var pushDeleteCmd = &cobra.Command{
 	Use:   "delete [id]",
-	Short: "Delete push config by ID",
-	Long:  `Delete a push configuration by its ID.`,
+	Short: "Delete a push configuration by ID",
+	Long:  `Permanently remove the push configuration with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(

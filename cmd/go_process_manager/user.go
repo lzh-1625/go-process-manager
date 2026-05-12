@@ -13,8 +13,10 @@ import (
 
 var userCmd = &cobra.Command{
 	Use:   "user",
-	Short: "User management",
-	Long:  `Manage users including list, delete.`,
+	Short: "Manage gpm users",
+	Long:  `Manage user accounts that can log in to the gpm web interface and API.`,
+	Example: `  gpm user list                 # list all user accounts
+  gpm user delete admin         # delete the user with account "admin"`,
 }
 
 func init() {
@@ -27,8 +29,8 @@ func init() {
 
 var userListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all users",
-	Long:  `List all users with details.`,
+	Short: "List all user accounts",
+	Long:  `Print a table of all registered user accounts, including their account name and role.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
@@ -46,8 +48,8 @@ var userListCmd = &cobra.Command{
 
 var userDeleteCmd = &cobra.Command{
 	Use:   "delete [account]",
-	Short: "Delete user by account",
-	Long:  `Delete a user by account name.`,
+	Short: "Delete a user by account name",
+	Long:  `Permanently remove the user with the given account name from gpm.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(

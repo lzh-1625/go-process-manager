@@ -25,42 +25,51 @@ func init() {
 
 var serviceCmd = &cobra.Command{
 	Use:   "service",
-	Short: "Service the service",
-	Long:  `Service the service`,
+	Short: "Manage gpm as a system service",
+	Long: `Manage the gpm system service (systemd on Linux, launchd on macOS,
+Service Control Manager on Windows).
+
+Use these sub-commands to install gpm so it starts automatically at boot,
+or to start/stop/restart the background service from the command line.`,
+	Example: `  gpm service install      # register gpm as a system service
+  gpm service start        # start the service
+  gpm service restart      # restart the service`,
 }
 
 var serviceInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install the service",
-	Long:  `Install the service`,
-	Run:   serviceAction,
+	Short: "Install gpm as a system service",
+	Long: `Register gpm as a system service using the current working directory
+as the service's working directory. After installing, use "gpm service start"
+to launch it.`,
+	Run: serviceAction,
 }
 
 var serviceUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Uninstall the service",
-	Long:  `Uninstall the service`,
+	Short: "Uninstall the gpm system service",
+	Long:  `Remove the gpm service registration from the operating system.`,
 	Run:   serviceAction,
 }
 
 var serviceStartCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start the service",
-	Long:  `Start the service`,
+	Short: "Start the gpm system service",
+	Long:  `Start the previously installed gpm system service in the background.`,
 	Run:   serviceAction,
 }
 
 var serviceStopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stop the service",
-	Long:  `Stop the service`,
+	Short: "Stop the gpm system service",
+	Long:  `Gracefully stop the running gpm system service.`,
 	Run:   serviceAction,
 }
 
 var serviceRestartCmd = &cobra.Command{
 	Use:   "restart",
-	Short: "Restart the service",
-	Long:  `Restart the service`,
+	Short: "Restart the gpm system service",
+	Long:  `Stop and start the gpm system service. Useful after upgrading or changing the configuration.`,
 	Run:   serviceAction,
 }
 

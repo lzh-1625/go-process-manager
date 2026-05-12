@@ -15,8 +15,13 @@ import (
 
 var wsshareCmd = &cobra.Command{
 	Use:   "wsshare",
-	Short: "WebSocket share management",
-	Long:  `Manage WebSocket terminal share tokens.`,
+	Short: "Manage WebSocket terminal share tokens",
+	Long: `Manage share tokens for the WebSocket-based remote terminal.
+
+Each token grants temporary, browser-accessible terminal access; use these
+sub-commands to audit or revoke them.`,
+	Example: `  gpm wsshare list        # list all active share tokens
+  gpm wsshare delete 1    # revoke the share token with ID 1`,
 }
 
 func init() {
@@ -29,8 +34,8 @@ func init() {
 
 var wsshareListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all WebSocket shares",
-	Long:  `List all active WebSocket terminal share tokens.`,
+	Short: "List all active share tokens",
+	Long:  `Print a table of all active WebSocket terminal share tokens, including their ID and expiry.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
@@ -48,8 +53,8 @@ var wsshareListCmd = &cobra.Command{
 
 var wsshareDeleteCmd = &cobra.Command{
 	Use:   "delete [id]",
-	Short: "Delete WebSocket share by ID",
-	Long:  `Delete a WebSocket terminal share token by its ID.`,
+	Short: "Revoke a share token by ID",
+	Long:  `Immediately revoke the WebSocket terminal share token with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(

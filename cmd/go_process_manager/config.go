@@ -14,14 +14,16 @@ func init() {
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Config the config",
-	Long:  `Config the config`,
+	Short: "Manage gpm configuration",
+	Long:  `Inspect and modify the gpm configuration file.`,
 }
 
 var configResetCmd = &cobra.Command{
 	Use:   "reset",
-	Short: "Reset the config",
-	Long:  `Reset the config`,
+	Short: "Reset configuration to default values",
+	Long: `Reset the gpm configuration file to its default values.
+
+Warning: this overwrites any customisations you have made to the config file.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.ResetConfig(); err != nil {
 			log.Panic(err)

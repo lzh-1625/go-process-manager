@@ -16,8 +16,14 @@ import (
 
 var processCmd = &cobra.Command{
 	Use:   "process",
-	Short: "Process the process",
-	Long:  `Process the process`,
+	Short: "Manage managed processes",
+	Long: `Inspect and control processes managed by gpm.
+
+Sub-commands let you list all managed processes, run a one-shot execution,
+or start/stop a specific process by its ID.`,
+	Example: `  gpm process list         # show all managed processes
+  gpm process start 1      # start the process with ID 1
+  gpm process stop 1       # stop the process with ID 1`,
 }
 
 func init() {
@@ -33,8 +39,8 @@ func init() {
 
 var processListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List the process",
-	Long:  `List the process`,
+	Short: "List all managed processes",
+	Long:  `Print a table of all processes managed by gpm, including their ID, name and current state.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
@@ -52,10 +58,11 @@ var processListCmd = &cobra.Command{
 }
 
 var processExecCmd = &cobra.Command{
-	Use:   "exec",
-	Short: "Exec the process",
-	Long:  `Exec the process`,
-	Args:  cobra.ExactArgs(1),
+	Use:   "exec [id]",
+	Short: "Execute a process once in the foreground",
+	Long: `Run the process with the given ID once in the foreground and stream
+its output to the current terminal. The process is not kept under supervision.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
@@ -72,9 +79,9 @@ var processExecCmd = &cobra.Command{
 }
 
 var processStartCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start the process",
-	Long:  `Start the process`,
+	Use:   "start [id]",
+	Short: "Start a managed process by ID",
+	Long:  `Start the managed process with the given ID and keep it under gpm supervision.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
@@ -92,9 +99,9 @@ var processStartCmd = &cobra.Command{
 }
 
 var processStopCmd = &cobra.Command{
-	Use:   "stop",
-	Short: "Stop the process",
-	Long:  `Stop the process`,
+	Use:   "stop [id]",
+	Short: "Stop a managed process by ID",
+	Long:  `Gracefully stop the managed process with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(

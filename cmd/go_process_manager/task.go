@@ -15,8 +15,13 @@ import (
 
 var taskCmd = &cobra.Command{
 	Use:   "task",
-	Short: "Task management",
-	Long:  `Manage tasks including list, delete, start, stop.`,
+	Short: "Manage scheduled tasks",
+	Long: `Manage scheduled and event-triggered tasks.
+
+Tasks can be listed, deleted, manually started or stopped from the command line.`,
+	Example: `  gpm task list           # list all tasks
+  gpm task start 1        # manually trigger task with ID 1
+  gpm task delete 1       # remove task with ID 1`,
 }
 
 func init() {
@@ -32,7 +37,7 @@ func init() {
 var taskListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all tasks",
-	Long:  `List all tasks with details.`,
+	Long:  `Print a table of all registered tasks, including their ID, name, schedule and last run status.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
@@ -50,8 +55,8 @@ var taskListCmd = &cobra.Command{
 
 var taskDeleteCmd = &cobra.Command{
 	Use:   "delete [id]",
-	Short: "Delete task by ID",
-	Long:  `Delete a task by its ID.`,
+	Short: "Delete a task by ID",
+	Long:  `Permanently remove the task with the given ID from gpm.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
@@ -71,8 +76,8 @@ var taskDeleteCmd = &cobra.Command{
 
 var taskStartCmd = &cobra.Command{
 	Use:   "start [id]",
-	Short: "Start task by ID",
-	Long:  `Start a task manually by its ID.`,
+	Short: "Manually trigger a task by ID",
+	Long:  `Manually run the task with the given ID, ignoring its schedule.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
@@ -92,8 +97,8 @@ var taskStartCmd = &cobra.Command{
 
 var taskStopCmd = &cobra.Command{
 	Use:   "stop [id]",
-	Short: "Stop task by ID",
-	Long:  `Stop a task by its ID.`,
+	Short: "Stop a running task by ID",
+	Long:  `Stop the currently running task with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
