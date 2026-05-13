@@ -87,7 +87,6 @@ func NewRoute(
 
 	apiGroup := r.Group("/api")
 	apiGroup.Use(authMiddleware.Auth)
-	// apiGroup.Use(middle.DemoMiddle())
 	{
 		wsGroup := apiGroup.Group("/ws")
 		{
