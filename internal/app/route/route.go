@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
+	"os"
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -37,7 +38,10 @@ func NewRoute(
 	r := echo.New()
 	r.Use(middleware.Recover())
 	r.Use(middle.Logger)
+
+	// close echo default log print
 	r.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
+
 	r.HTTPErrorHandler = func(c *echo.Context, err error) {
 		log.Logger.Errorw("HTTPErrorHandler", "err", err)
 		c.JSON(http.StatusInternalServerError, model.Response[struct{}]{
@@ -57,6 +61,7 @@ func NewRoute(
 			return nil
 		}
 	})
+	// static file
 	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		HTML5:      true,
 		Root:       "dist",
@@ -70,6 +75,10 @@ func NewRoute(
 
 	if config.CF.GZipEnable {
 		r.Use(middleware.Gzip())
+	}
+
+	if os.Getenv("GPM_DEMO") == "true" {
+		r.Use(middle.DemoMiddle())
 	}
 	r.Use(loggerMiddleware.EventLogger)
 
