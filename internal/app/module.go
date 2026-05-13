@@ -40,7 +40,7 @@ var LogicModule = fx.Options(
 		logic.NewTaskLogic,
 		logic.NewUserLogic,
 		logic.NewPushLogic,
-		logic.NewLogLogic,
+		logic.NewILogLogic,
 		logic.NewConfigLogic,
 		logic.NewProcessCtlLogic,
 		logic.NewWsShareLogic,

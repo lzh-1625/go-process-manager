@@ -12,23 +12,23 @@ import (
 )
 
 type LogHandler struct {
-	antsPool *ants.Pool
-	logLogic search.LogLogic
+	antsPool  *ants.Pool
+	ILogLogic search.ILogLogic
 }
 
-func NewLogHandler(logLogic search.LogLogic) *LogHandler {
+func NewLogHandler(ILogLogic search.ILogLogic) *LogHandler {
 	antsPool, _ := ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i any) {
 		log.Logger.Warnw("log storage failed", "err", i)
 	}))
 	return &LogHandler{
-		antsPool: antsPool,
-		logLogic: logLogic,
+		antsPool:  antsPool,
+		ILogLogic: ILogLogic,
 	}
 }
 
 func (l *LogHandler) AddLog(data model.ProcessLog) {
 	if err := l.antsPool.Submit(func() {
-		l.logLogic.Insert(data.Log, data.Name, data.Using, data.Time)
+		l.ILogLogic.Insert(data.Log, data.Name, data.Using, data.Time)
 	}); err != nil {
 		log.Logger.Warnw("coroutine pool add task failed", "err", err, "current running number", l.antsPool.Running())
 	}

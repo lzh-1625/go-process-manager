@@ -15,7 +15,7 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-func NewEsSearch() search.LogLogic {
+func NewEsSearch() search.ILogLogic {
 	e := &esSearch{}
 	e.init()
 	return e

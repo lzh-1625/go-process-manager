@@ -14,14 +14,14 @@ import (
 
 type LogApi struct {
 	permissionLogic *logic.PermissionLogic
-	logLogic        search.LogLogic
+	ILogLogic       search.ILogLogic
 	logHandler      *logic.LogHandler
 }
 
-func NewLogApi(permissionLogic *logic.PermissionLogic, logLogic search.LogLogic) *LogApi {
+func NewLogApi(permissionLogic *logic.PermissionLogic, ILogLogic search.ILogLogic) *LogApi {
 	return &LogApi{
 		permissionLogic: permissionLogic,
-		logLogic:        logLogic,
+		ILogLogic:       ILogLogic,
 	}
 }
 
@@ -32,7 +32,7 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 	}
 	if isAdmin(ctx) {
 		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.logLogic.Search(req, req.FilterName...),
+			Data:    a.ILogLogic.Search(req, req.FilterName...),
 			Message: "success",
 			Code:    0,
 		})
@@ -48,7 +48,7 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 			return errors.New("no information found")
 		}
 		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.logLogic.Search(req, filterName...),
+			Data:    a.ILogLogic.Search(req, filterName...),
 			Message: "success",
 			Code:    0,
 		})

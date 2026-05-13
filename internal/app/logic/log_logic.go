@@ -12,7 +12,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
 )
 
-func NewLogLogic(logRepository *repository.LogRepository) search.LogLogic {
+func NewILogLogic(logRepository *repository.LogRepository) search.ILogLogic {
 	switch config.CF.StorgeType {
 	case "es":
 		return es.NewEsSearch()

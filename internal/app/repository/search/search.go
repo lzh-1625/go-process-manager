@@ -8,7 +8,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type LogLogic interface {
+type ILogLogic interface {
 	Search(req model.GetLogReq, filterProcessName ...string) model.LogResp
 	Insert(log string, processName string, using string, ts int64)
 	Reload() error

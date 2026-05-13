@@ -11,13 +11,13 @@ import (
 
 type ConfigApi struct {
 	configLogic *logic.ConfigLogic
-	logLogic    search.LogLogic
+	ILogLogic   search.ILogLogic
 }
 
-func NewConfigApi(configLogic *logic.ConfigLogic, logLogic search.LogLogic) *ConfigApi {
+func NewConfigApi(configLogic *logic.ConfigLogic, ILogLogic search.ILogLogic) *ConfigApi {
 	return &ConfigApi{
 		configLogic: configLogic,
-		logLogic:    logLogic,
+		ILogLogic:   ILogLogic,
 	}
 }
 
@@ -37,5 +37,5 @@ func (c *ConfigApi) SetSystemConfiguration(ctx *echo.Context) error {
 }
 
 func (c *ConfigApi) LogConfigReload(ctx *echo.Context) error {
-	return c.logLogic.Reload()
+	return c.ILogLogic.Reload()
 }

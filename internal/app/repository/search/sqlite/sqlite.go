@@ -15,7 +15,7 @@ type sqliteSearch struct {
 	logRepository *repository.LogRepository
 }
 
-func NewSqliteSearch(logRepository *repository.LogRepository) search.LogLogic {
+func NewSqliteSearch(logRepository *repository.LogRepository) search.ILogLogic {
 	return &sqliteSearch{
 		logRepository: logRepository,
 	}

@@ -15,14 +15,14 @@ import (
 type MetricLogic struct {
 	processCtlLogic *ProcessCtlLogic
 	logHandler      *LogHandler
-	logLogic        search.LogLogic
+	ILogLogic       search.ILogLogic
 }
 
-func NewMetricLogic(processCtlLogic *ProcessCtlLogic, logHandler *LogHandler, logLogic search.LogLogic) *MetricLogic {
+func NewMetricLogic(processCtlLogic *ProcessCtlLogic, logHandler *LogHandler, ILogLogic search.ILogLogic) *MetricLogic {
 	return &MetricLogic{
 		processCtlLogic: processCtlLogic,
 		logHandler:      logHandler,
-		logLogic:        logLogic,
+		ILogLogic:       ILogLogic,
 	}
 }
 
@@ -68,7 +68,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfDay(t)
 			end := datetime.EndOfDay(t)
 
-			resp := m.logLogic.Search(model.GetLogReq{
+			resp := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -88,7 +88,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfWeek(t, time.Monday)
 			end := datetime.EndOfWeek(t, time.Monday)
 
-			resp := m.logLogic.Search(model.GetLogReq{
+			resp := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -108,7 +108,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfMonth(t)
 			end := datetime.EndOfMonth(t)
 
-			resp := m.logLogic.Search(model.GetLogReq{
+			resp := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
