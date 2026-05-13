@@ -74,7 +74,7 @@ var serviceRestartCmd = &cobra.Command{
 }
 
 func serviceAction(cmd *cobra.Command, args []string) {
-	svc, err := service.New(&Service{}, &service.Config{
+	svc, err := service.New(&Service{cmd, args}, &service.Config{
 		Name:             "gpm",
 		DisplayName:      "Go Process Manager",
 		Description:      "Go Process Manager service",
@@ -92,7 +92,10 @@ func serviceAction(cmd *cobra.Command, args []string) {
 
 }
 
-type Service struct{}
+type Service struct {
+	runCmd *cobra.Command
+	args   []string
+}
 
 func (s *Service) Start(_ service.Service) error {
 	go s.run()
@@ -101,7 +104,7 @@ func (s *Service) Start(_ service.Service) error {
 
 func (s *Service) run() {
 	print(startTitle)
-	rootCmd.Run(nil, nil)
+	s.runCmd.Run(s.runCmd, s.args)
 }
 
 func (s *Service) Stop(_ service.Service) error {
