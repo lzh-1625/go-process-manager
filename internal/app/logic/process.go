@@ -25,9 +25,8 @@ type ProcessCtlLogic struct {
 	permissionRepository *repository.PermissionRepository
 	eventLogic           *EventLogic
 	pushLogic            *PushLogic
-	// taskLogic            *TaskLogic
-	logHandler *LogHandler
-	eventBus   *EventBus
+	logHandler           *LogHandler
+	eventBus             *EventBus
 }
 
 func NewProcessCtlLogic(
@@ -45,9 +44,8 @@ func NewProcessCtlLogic(
 		permissionRepository: permissionRepository,
 		eventLogic:           eventLogic,
 		pushLogic:            pushLogic,
-		// taskLogic:            taskLogic,
-		logHandler: logHandler,
-		eventBus:   eventBus,
+		logHandler:           logHandler,
+		eventBus:             eventBus,
 	}
 }
 func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
