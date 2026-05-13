@@ -41,7 +41,7 @@ func (p *ProcessPty) Start() (err error) {
 	}
 	cmd := exec.Command(p.StartCommand[0], p.StartCommand[1:]...)
 	cmd.Dir = p.WorkDir
-	cmd.Env = append(cmd.Env, p.Env...)
+	cmd.Env = append(os.Environ(), p.Env...)
 	pf, err := pty.Start(cmd)
 	if err != nil || cmd.Process == nil {
 		log.Logger.Errorw("process start failed", "err", err)

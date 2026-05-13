@@ -44,7 +44,7 @@ func (p *ProcessPty) Start() (err error) {
 		return err
 	}
 	pty.SetCWD(p.WorkDir)
-	pty.SetENV(p.Env)
+	pty.SetENV(append(os.Environ(), p.Env...))
 	err = pty.Start(p.StartCommand)
 	if err != nil {
 		log.Logger.Errorw("process start failed", "err", err)
