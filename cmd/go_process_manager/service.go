@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"strings"
 
 	"github.com/kardianos/service"
 	"github.com/lzh-1625/go_process_manager/utils"
@@ -76,22 +75,12 @@ var serviceRestartCmd = &cobra.Command{
 
 func serviceAction(cmd *cobra.Command, args []string) {
 
-	osEnv := os.Environ()
-	envVars := make(map[string]string)
-	for _, env := range osEnv {
-		k, v, ok := strings.Cut(env, "=")
-		if !ok {
-			continue
-		}
-		envVars[k] = v
-	}
 	svc, err := service.New(&Service{cmd, args}, &service.Config{
 		Name:             "gpm",
 		DisplayName:      "Go Process Manager",
 		Description:      "Go Process Manager service",
 		WorkingDirectory: utils.UnwarpIgnore(os.UserHomeDir()),
 		Arguments:        []string{"run"},
-		EnvVars:          envVars,
 	})
 	if err != nil {
 		log.Panic(err)
