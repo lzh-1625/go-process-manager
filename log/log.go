@@ -2,8 +2,11 @@ package log
 
 import (
 	"log"
+	"os"
+	"path"
 
 	"github.com/lzh-1625/go_process_manager/config"
+	"github.com/lzh-1625/go_process_manager/utils"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -36,7 +39,7 @@ func init() {
 		Development:      true,
 		Encoding:         "console",
 		EncoderConfig:    encoderConfig,
-		OutputPaths:      []string{"stdout", "info.log"},
+		OutputPaths:      []string{"stdout", path.Join(utils.UnwarpIgnore(os.UserHomeDir()), "info.log")},
 		ErrorOutputPaths: []string{"stderr"},
 	}
 	log, _ := config.Build()
