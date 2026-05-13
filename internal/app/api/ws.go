@@ -43,11 +43,13 @@ type WsConnetInstance struct {
 	WsConnect  *websocket.Conn
 	wsLock     sync.Mutex
 	CancelFunc context.CancelFunc
+	timer      *time.Timer
 }
 
 func (w *WsConnetInstance) Write(b []byte) {
 	w.wsLock.Lock()
 	defer w.wsLock.Unlock()
+	w.timer.Reset(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
 	w.WsConnect.WriteMessage(websocket.TextMessage, b)
 }
 
@@ -91,10 +93,14 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 
 	wsCtx, cancel := context.WithCancel(ctx.Request().Context())
 	defer cancel()
+
+	timer := time.NewTimer(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
+	defer timer.Stop()
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
 		CancelFunc: cancel,
 		wsLock:     sync.Mutex{},
+		timer:      timer,
 	}
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
@@ -112,7 +118,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 		return nil
 	})
 	select {
-	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
+	case <-timer.C:
 		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
 	case <-wsCtx.Done():
 		log.Logger.Infow("ws connection closed", "reason", "tcp connection closed")
@@ -157,10 +163,16 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 
 	proc.SetTerminalSize(req.Cols, req.Rows)
 	wsCtx, cancel := context.WithCancel(ctx.Request().Context())
+	defer cancel()
+
+	timer := time.NewTimer(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
+	defer timer.Stop()
+
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
 		CancelFunc: cancel,
 		wsLock:     sync.Mutex{},
+		timer:      timer,
 	}
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
@@ -176,7 +188,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	select {
 	case <-proc.StopChan:
 		log.Logger.Infow("ws connection closed", "reason", "process stopped, force close ws connection")
-	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
+	case <-timer.C:
 		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
 	case <-wsCtx.Done():
 		log.Logger.Infow("ws connection closed", "reason", "tcp connection closed")
