@@ -93,8 +93,8 @@ func serviceAction(cmd *cobra.Command, args []string) {
 }
 
 type Service struct {
-	runCmd *cobra.Command
-	args   []string
+	cmd  *cobra.Command
+	args []string
 }
 
 func (s *Service) Start(_ service.Service) error {
@@ -103,8 +103,7 @@ func (s *Service) Start(_ service.Service) error {
 }
 
 func (s *Service) run() {
-	print(startTitle)
-	s.runCmd.Run(s.runCmd, s.args)
+	runCmd.Run(s.cmd, s.args)
 }
 
 func (s *Service) Stop(_ service.Service) error {
