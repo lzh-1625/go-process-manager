@@ -1,8 +1,8 @@
 import enMessages from "@/locales/en";
 import zhHansMessages from "@/locales/zhHans";
 
-const supported = ["en", "zhHans", "ja"];
-let locale = "zhHans";
+const supported = ["en", "zhHans"];
+let locale = "en";
 
 try {
   const { 0: browserLang } = navigator.language.split("-");
