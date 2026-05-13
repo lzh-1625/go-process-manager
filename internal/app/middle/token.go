@@ -1,7 +1,6 @@
 package middle
 
 import (
-	"net/http"
 	"slices"
 	"strings"
 
@@ -60,17 +59,6 @@ func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 				a.userLogic.GetUserByName(mc.Username).Role,
 			)
 		}
-		err := next(c)
-		if err != nil {
-			return err
-		}
-		if resp, err := echo.UnwrapResponse(c.Response()); err == nil && !resp.Committed && c.Request().URL.Path != "/api/ws" {
-			return c.JSON(http.StatusOK, model.Response[any]{
-				Code:    0,
-				Message: "success",
-			})
-		}
-
-		return nil
+		return next(c)
 	}
 }

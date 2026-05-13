@@ -45,6 +45,18 @@ func NewRoute(
 			Message: "error: " + err.Error(),
 		})
 	}
+	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c *echo.Context) error {
+			next(c)
+			if resp, err := echo.UnwrapResponse(c.Response()); err == nil && !resp.Committed && !c.IsWebSocket() {
+				return c.JSON(http.StatusOK, model.Response[any]{
+					Code:    0,
+					Message: "success",
+				})
+			}
+			return nil
+		}
+	})
 	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		HTML5:      true,
 		Root:       "dist",
