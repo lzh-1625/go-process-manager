@@ -79,6 +79,7 @@ func serviceAction(cmd *cobra.Command, args []string) {
 		DisplayName:      "Go Process Manager",
 		Description:      "Go Process Manager service",
 		WorkingDirectory: utils.UnwarpIgnore(os.UserHomeDir()),
+		Arguments:        []string{"run"},
 	})
 	if err != nil {
 		log.Panic(err)
@@ -103,7 +104,7 @@ func (s *Service) Start(_ service.Service) error {
 }
 
 func (s *Service) run() {
-	runCmd.Run(s.cmd, s.args)
+	rootCmd.Run(s.cmd, s.args)
 }
 
 func (s *Service) Stop(_ service.Service) error {
