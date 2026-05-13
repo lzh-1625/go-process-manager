@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
@@ -32,7 +33,7 @@ func (u *UserApi) LoginHandler(ctx *echo.Context) error {
 			Code:    -1,
 		})
 	}
-	token, err := utils.GenerateToken(req.Account, config.CF.SecretKey)
+	token, err := utils.GenerateToken(req.Account, config.CF.SecretKey, time.Now().Add(time.Duration(config.CF.TokenExpirationTime)*time.Hour))
 	if err != nil {
 		return err
 	}

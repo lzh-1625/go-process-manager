@@ -176,7 +176,7 @@ func (p *ProcessBase) ProcessControl(name string) {
 
 // not being controlled or control time expired
 func (p *ProcessBase) VerifyControl() bool {
-	return p.Control.Controller == "" || p.Control.changControlTime.Unix() < time.Now().Unix()-config.CF.ProcessExpireTime
+	return p.Control.Controller == "" || p.Control.changControlTime.Unix() < time.Now().Unix()-config.CF.ProcessControlExpireTime
 }
 
 func (p *ProcessBase) setProcessConfig(pconfig model.Process) {

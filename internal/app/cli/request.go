@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
@@ -103,7 +104,7 @@ func Do[T any](req *http.Request) (*T, error) {
 }
 
 func GetJwt() string {
-	token, err := utils.GenerateToken(logic.DefaultConsoleAccount, config.CF.SecretKey)
+	token, err := utils.GenerateToken(logic.DefaultConsoleAccount, config.CF.SecretKey, time.Now().Add(time.Hour))
 	if err != nil {
 		return ""
 	}

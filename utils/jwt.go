@@ -12,8 +12,7 @@ type MyClaims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(username string, secretKey string) (string, error) {
-	expirationTime := time.Now().Add(3 * 24 * time.Hour)
+func GenerateToken(username string, secretKey string, expirationTime time.Time) (string, error) {
 
 	claims := &MyClaims{
 		Username: username,
