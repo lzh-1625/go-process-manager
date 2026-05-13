@@ -104,7 +104,7 @@ func (s *Service) Start(_ service.Service) error {
 }
 
 func (s *Service) run() {
-	rootCmd.Run(s.cmd, s.args)
+	runCmd.Run(s.cmd, s.args)
 }
 
 func (s *Service) Stop(_ service.Service) error {
