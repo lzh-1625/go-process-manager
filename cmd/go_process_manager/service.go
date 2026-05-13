@@ -78,7 +78,7 @@ func serviceAction(cmd *cobra.Command, args []string) {
 		Name:             "gpm",
 		DisplayName:      "Go Process Manager",
 		Description:      "Go Process Manager service",
-		WorkingDirectory: utils.UnwarpIgnore(os.Getwd()),
+		WorkingDirectory: utils.UnwarpIgnore(os.UserHomeDir()),
 	})
 	if err != nil {
 		log.Panic(err)

@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	rootCmd.AddCommand(runCmd)
 	rootCmd.Execute()
 }
 
@@ -66,7 +67,7 @@ It can start, stop, restart and monitor long-running processes, run scheduled
 tasks, push events to external endpoints and expose a web API for remote
 management. Run "gpm" with no sub-command to start the server in the foreground.`,
 	Example: `  # Start the gpm server in the foreground
-  gpm
+  gpm run
 
   # Install gpm as a system service and start it
   gpm service install
@@ -74,6 +75,12 @@ management. Run "gpm" with no sub-command to start the server in the foreground.
 
   # List all managed processes
   gpm process list`,
+}
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Run gpm in the foreground",
+	Long:  `Run gpm in the foreground.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,

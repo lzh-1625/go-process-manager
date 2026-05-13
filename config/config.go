@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"path"
@@ -8,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/lzh-1625/go_process_manager/utils"
-	"go.yaml.in/yaml/v2"
 )
 
 var CF = new(Configuration)
@@ -63,22 +63,16 @@ type Configuration struct {
 	SecretKey                 string  `default:"-"`
 }
 
+const configFileName = "config.json"
+
 func LoadConfig() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Println("get user home dir failed", err)
-	}
-	filePath := path.Join(home, ".gpm", "config.yaml")
-	log.Println("config file path", filePath)
-	if err = os.MkdirAll(path.Dir(filePath), 0755); err != nil {
-		log.Println("create config file dir failed", err)
-	}
-	f, err := os.Open(filePath)
+	home, _ := os.UserHomeDir()
+	f, err := os.Open(path.Join(home, ".gpm", configFileName))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	err = yaml.NewDecoder(f).Decode(CF)
+	err = json.NewDecoder(f).Decode(CF)
 	if err != nil {
 		return err
 	}
@@ -90,7 +84,7 @@ func DumpConfig() error {
 	if err != nil {
 		log.Println("get user home dir failed", err)
 	}
-	filePath := path.Join(home, ".gpm", "config.yaml")
+	filePath := path.Join(home, ".gpm", configFileName)
 	log.Println("config file path", filePath)
 	if err = os.MkdirAll(path.Dir(filePath), 0755); err != nil {
 		log.Println("create config file dir failed", err)
@@ -100,11 +94,9 @@ func DumpConfig() error {
 		return err
 	}
 	defer f.Close()
-	err = yaml.NewEncoder(f).Encode(CF)
-	if err != nil {
-		return err
-	}
-	return nil
+	b, _ := json.MarshalIndent(CF, "", "  ")
+	_, err = f.Write(b)
+	return err
 }
 
 func ResetConfig() error {
