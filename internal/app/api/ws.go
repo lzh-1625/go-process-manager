@@ -89,7 +89,8 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	defer conn.Close()
 	log.Logger.Infow("ws connection success", "user", reqUser, "process", proc.Name)
 
-	wsCtx, cancel := context.WithCancel(context.Background())
+	wsCtx, cancel := context.WithCancel(ctx.Request().Context())
+	defer cancel()
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
 		CancelFunc: cancel,
