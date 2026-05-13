@@ -253,6 +253,9 @@ func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.Pro
 			ProcessWaitCond.Trigger()
 		}),
 		process.SetLogHandle(func(proc *process.ProcessBase, log string) {
+			if utils.RemoveANSI(log) == "" {
+				return
+			}
 			p.logHandler.AddLog(model.ProcessLog{
 				Log:   log,
 				Using: proc.GetUserString(),
