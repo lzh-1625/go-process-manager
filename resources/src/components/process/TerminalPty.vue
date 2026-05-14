@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted } from "vue"; // 引入 watch, nextTick 和 onUnmounted
+import { ref, watch, nextTick, onUnmounted, computed } from "vue"; // 引入 watch, nextTick 和 onUnmounted
+import { useI18n } from "vue-i18n";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { ProcessItem } from "~/src/types/process/process";
 import { Terminal } from "xterm";
@@ -8,6 +9,7 @@ import { AttachAddon } from "xterm-addon-attach";
 import { CanvasAddon } from "@xterm/addon-canvas";
 import "xterm/css/xterm.css";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
 const props = defineProps<{
@@ -37,7 +39,7 @@ watch(dialog, (newValue) => {
 
 const initWebSocketPty = () => {
   if (!xtermEl.value) {
-    snackbarStore.showErrorMessage("终端容器初始化失败");
+    snackbarStore.showErrorMessage(t("processCardPage.terminalInitFailed"));
     return;
   }
   // 在这里计算初始尺寸更准确
@@ -62,12 +64,12 @@ const initSocket = (url: string) => {
   };
 
   socket.onclose = () => {
-    snackbarStore.showErrorMessage("终端连接断开");
+    snackbarStore.showErrorMessage(t("processCardPage.terminalDisconnected"));
     dialog.value = false;
   };
 
   socket.onerror = (err) => {
-    snackbarStore.showErrorMessage("终端连接发生错误");
+    snackbarStore.showErrorMessage(t("processCardPage.terminalError"));
     console.error("WebSocket Error:", err);
   };
 };

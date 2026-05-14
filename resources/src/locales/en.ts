@@ -325,6 +325,9 @@ export default {
     stopSuccess: "Stop successful",
     controlSuccess: "Control acquired",
     deleteSuccess: "Delete successful",
+    terminalInitFailed: "Terminal container initialization failed",
+    terminalDisconnected: "Terminal connection closed",
+    terminalError: "Terminal connection error",
   },
   logPage: {
     title: "Log Viewer",

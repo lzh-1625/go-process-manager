@@ -150,7 +150,7 @@
                     density="comfortable"
                     rows="4"
                     placeholder='{"message": "{$message}", "user": "{$user}"}'
-                    :hint="$t('pushPage.placeholderHint')"
+                    :hint="$t('pushPage.placeholder')"
                     persistent-hint
                   ></v-textarea>
                 </v-col>

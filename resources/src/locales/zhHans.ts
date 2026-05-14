@@ -318,6 +318,9 @@ export default {
     stopSuccess: "停止成功",
     controlSuccess: "获取控制权成功",
     deleteSuccess: "删除成功",
+    terminalInitFailed: "终端容器初始化失败",
+    terminalDisconnected: "终端连接断开",
+    terminalError: "终端连接发生错误",
   },
   logPage: {
     title: "日志查看",
