@@ -10,6 +10,7 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
 	_ "github.com/blevesearch/bleve/v2/search/highlight/highlighter/ansi"
+	"github.com/blevesearch/bleve/v2/search/query"
 	"github.com/google/uuid"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -135,10 +136,14 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	buildQuery.AddMust(timeQuery)
 
 	if len(filterProcessName) != 0 {
+		shouldQueryList := []query.Query{}
 		for _, v := range filterProcessName {
-			filterQuery := bleve.NewTermQuery(v)
-			filterQuery.SetField("name")
-			buildQuery.AddShould(filterQuery)
+			shouldQueryList = append(shouldQueryList, bleve.NewTermQuery(v))
+		}
+		if len(shouldQueryList) > 0 {
+			shouldQuery := bleve.NewBooleanQuery()
+			shouldQuery.AddShould(shouldQueryList...)
+			buildQuery.AddMust(shouldQuery)
 		}
 	}
 	sortArgs := ([]string{"-_score"})
