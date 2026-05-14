@@ -102,6 +102,10 @@ func formatBytes(bytes int64) string {
 }
 
 func (p *ProcessCli) Exec(uuid int) error {
+	width, height, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		return err
+	}
 	u := url.URL{
 		Scheme: "ws",
 		Host:   config.CF.Listen,
@@ -109,6 +113,8 @@ func (p *ProcessCli) Exec(uuid int) error {
 		RawQuery: url.Values{
 			"uuid":  {strconv.Itoa(uuid)},
 			"token": {GetJwt()},
+			"cols":  {strconv.Itoa(width)},
+			"rows":  {strconv.Itoa(height)},
 		}.Encode(),
 	}
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
