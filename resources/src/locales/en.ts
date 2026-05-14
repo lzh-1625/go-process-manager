@@ -65,7 +65,7 @@ export default {
     // Core feature menus
     process: "Process Manager",
     shareManage: "Share Management",
-    task: "Scheduled Tasks",
+    task: "Task Management",
     log: "Log Viewer",
     event: "System Events",
     user: "User Management",
