@@ -111,19 +111,21 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 		usingQuery.SetField("using")
 		buildQuery.AddMust(usingQuery)
 	}
-	if req.TimeRange.EndTime != 0 || req.TimeRange.StartTime != 0 {
-		st := new(0.0)
-		ed := new(float64(time.Now().UnixMilli()))
 
-		if req.TimeRange.StartTime != 0 {
-			st = new(float64(req.TimeRange.StartTime))
-		}
-		if req.TimeRange.EndTime != 0 {
-			ed = new(float64(req.TimeRange.EndTime))
-		}
-		timeQuery := bleve.NewNumericRangeQuery(st, ed)
-		buildQuery.AddMust(timeQuery)
+	st := new(0.1)
+	ed := new(float64(time.Now().UnixMilli()))
+
+	if req.TimeRange.StartTime != 0 {
+		st = new(float64(req.TimeRange.StartTime))
 	}
+	if req.TimeRange.EndTime != 0 {
+		ed = new(float64(req.TimeRange.EndTime))
+	}
+	timeQuery := bleve.NewNumericRangeQuery(st, ed)
+
+	// at least one of the time range must be specified
+	buildQuery.AddMust(timeQuery)
+
 	if len(filterProcessName) != 0 {
 		for _, v := range filterProcessName {
 			filterQuery := bleve.NewTermQuery(v)
