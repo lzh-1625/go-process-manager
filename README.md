@@ -1,179 +1,290 @@
-<div align="center">
-  <br/>
-  <img src="https://raw.githubusercontent.com/lzh-1625/go_process_manager/refs/heads/master/resources/templates/favicon.ico" alt="GPM logo">
-  <br/>
-</div>
+# GPM
+### 🚀 Lightweight & High-Performance Process and Task Management Platform
+An all-in-one platform integrating **process management, task orchestration, log collection, event auditing, status push, and access control**.
 
+Supports Web UI / CLI / Webhook / cgroup resource limiting / log retrieval / terminal sharing.
 
-# Go Process Manager
-
-Go Process Manager is a process management tool developed based on Golang, offering process management capabilities similar to `screen`, and supports Web UI for visual operations. This tool integrates log management, permission control, process performance monitoring, status push, and more. It supports CPU and memory limits through `cgroup` and also provides task management and scheduled task functionalities.
-
----
+<p>
+  <img src="https://img.shields.io/badge/Go-1.20+-00ADD8?style=for-the-badge&logo=go" />
+  <img src="https://img.shields.io/badge/Linux-Supported-success?style=for-the-badge&logo=linux" />
+  <img src="https://img.shields.io/badge/WebUI-Built--in-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" />
+</p>
 
 ## [中文](./README_CN.md)
+---
 
-## Features
+# ✨ Project Introduction
+GPM (General Process Manager) is a modern process management platform designed for service, script and task workflow scenarios.
 
-### Core Features
+Compared with traditional tools such as `nohup`, `pm2` and `supervisor`, GPM delivers:
+- More comprehensive task orchestration capabilities
+- Powerful log collection
+- Flexible status push mechanism
+- Modern built-in Web UI
+- Complete permission system
+- Rich event auditing features
 
-- **Process Management**: Supports creating, starting, stopping, restarting, and deleting processes, providing multi-process management capabilities similar to `screen`.
-- **Web UI for Visual Operations**: Offers a user-friendly web interface, allowing users to easily manage processes, view logs, and monitor performance through a browser.
-- **Log Management**: Supports storing logs in Elasticsearch 8 or SQLite, providing efficient log query and analysis capabilities.
-- **Permission Management**: Provides role-based access control with three roles (root, admin, user), ensuring system security and flexibility.
-- **Process Performance Monitoring**: Real-time monitoring of CPU, memory, and other resource usage, helping users optimize system performance.
-- **Process Status Push**: Supports real-time status push for processes, allowing users to receive the latest process status via Web UI or API.
-- **Resource Limits**: Implements CPU and memory limits through `cgroup`, preventing processes from consuming excessive system resources.
-- **Task Management**: Supports task management, scheduled tasks, and API calls, meeting the needs of automated operations.
+## Use Cases
+- Service hosting
+- Automated script execution
+- AI inference services
+- Game servers
+- Crawler tasks
+- DevOps automation
+- CI/CD auxiliary tasks
+- Remote terminal sharing
 
 ---
 
-### Terminal Types
+# 📦 Core Features
+## 🖥️ Process Management
+Start processes in GPM with custom launch commands, working directories, environment variables and more.
 
-- **pty (Pseudo Terminal)**: Based on pseudo terminals, supports ANSI characters and shortcut key operations, suitable for interactive command-line programs.
-- **std (Standard Input/Output)**: Based on standard input/output pipes, suitable for non-interactive programs or scripts.
+GPM automatically handles:
+- Process lifecycle management
+- Output log collection
+- Status monitoring
+- cgroup resource limiting
+- performance metrics collection
+- status event push
 
----
-
-## Role Permissions
-
-| Role  | Role Management | Process Creation | Process Control | Log Viewing | Task Management |
-| ----- | --------------- | ---------------- | --------------- | ----------- | --------------- |
-| root  | ✔              | ✔               | ✔              | ✔          | ✔              |
-| admin | ×              | ×               | ✔              | ✔          | ✔              |
-| user  | ×              | ×               | Custom          | Custom      | ×              |
-
-- **root**: Has the highest permissions, can manage all processes, logs, and user roles.
-- **admin**: Can control processes and view logs but cannot create processes or manage roles.
-- **user**: Permissions can be customized, suitable for regular users.
-
----
-
-## User Guide
-
-### Starting the Process
-
-#### Windows
-
-1. Download the Windows version of the binary file.
-2. Double-click to run and start the service.
-
-#### Linux
-
-1. Download the Linux version of the binary file.
-2. Use the following commands to grant execution permissions and start:
-
-   ```bash
-   chmod 777 ./go_process_manager
-   ./go_process_manager
-   ```
-
-### Web Interface
-
-1. After starting the service, access `http://[ip]:8797`.
-2. Log in with the default credentials `root/root`.
-
-### Demo
-
-Visit the [Demo](http://xcon.top:9787/process) to experience the features. Use the credentials `root/root` to log in.
+### Capabilities
+- Web UI visual management
+- CLI command-line interaction
+- In-browser terminal access
+- Temporary terminal share links
+- Real-time process status overview
+- Resource usage monitoring
 
 ---
 
-## Interface Showcase
+## ⚙️ Task Management
+GPM features a flexible automated task system.
 
-### Process Management
+### Trigger Modes
+- Scheduled trigger
+- API trigger
+- Task linkage trigger
+- Process status change trigger
 
-![Process Management Interface](https://github.com/lzh-1625/go_process_manager/assets/59822923/50f31b99-41d4-4d8c-88fe-20c978385155)
-
-- **Process List**: Displays all running processes, including process ID, name, status, resource usage, etc.
-- **Action Buttons**: Supports starting, stopping, restarting, and deleting processes.
-
-### Terminal Operations
-
-![Terminal Operations Interface](https://github.com/lzh-1625/go_process_manager/assets/59822923/63eb6bec-353f-4d12-a1d9-95d89fccdac3)
-
-- **Terminal Emulation**: Supports ANSI characters and shortcut key operations, providing an experience similar to a local terminal.
-- **Input/Output**: Real-time display of process standard input and output.
-
-### Log Viewing
-
-![Log Viewing Interface](https://github.com/lzh-1625/go_process_manager/assets/59822923/6af8e228-7709-45c5-aba8-4b61dc825026)
-
-- **Log Query**: Supports filtering logs by time, process ID, operator, etc.
+### Capabilities
+- Auto start/stop processes
+- Conditional execution
+- Task chain orchestration
+- Workflow execution
+- Subsequent task triggering
 
 ---
 
-## Additional Notes
+## 📜 Log Collection
+Automatically collect and centrally store process logs.
 
-### Log Management
+### Supported Storage Backends
+- SQLite (Default)
+- Elasticsearch
+- Bleve (Non-slim version)
 
-- **Elasticsearch 8**: Suitable for large-scale log storage and query, supports distributed deployment.
-- **SQLite**: Lightweight log storage, suitable for single-machine or small-scale use.
-
-### Permission Control
-
-- **root User**: Has the highest permissions, can manage all processes, logs, and user roles.
-- **admin User**: Can control processes and view logs, suitable for operations personnel.
-- **user User**: Permissions can be customized, suitable for regular users or developers.
-
-### Resource Limits
-
-- **CPU Limits**: Set CPU usage limits for processes through `cgroup`.
-- **Memory Limits**: Set memory usage limits for processes through `cgroup`.
-
-### Task Management
-
-- **Scheduled Tasks**: Supports Cron expressions, allowing users to create scheduled tasks.
-- **API Calls**: Provides APIs to trigger tasks.
-- **Task Flow**: Chain execution of tasks.
-- **Trigger Events**: Trigger tasks through process stop, start, or exceptions.
+### Capabilities
+- Web-based log query
+- Full-text log search
+- Historical log archiving
+- Unified log management for multiple processes
+- Full-text indexing (Elasticsearch / Bleve)
 
 ---
 
-## Development and Deployment
+## 📡 Status Push
+Push process and task status via Webhook.
 
-### Environment Requirements
+### Supported Methods
+- GET Webhook
+- POST Webhook
 
-- **Golang**: Version 1.18 or higher.
-- **Elasticsearch 8** (optional): For log storage.
-- **SQLite** (optional): For lightweight log storage.
-
-### Compilation and Execution
-
-1. Clone the project:
-
-   ```bash
-   git clone https://github.com/lzh-1625/go_process_manager.git
-   cd go_process_manager
-   ```
-2. Compile the project:
-
-   ```bash
-   go build -o go_process_manager
-   ```
-3. Run the project:
-
-   ```bash
-   ./go_process_manager
-   ```
+### Features
+- Custom placeholder variables
+- Custom push payload
+- Real-time status change notifications
 
 ---
 
-## Contributions and Feedback
+## 📋 Event Auditing
+Record critical system activities.
 
-We welcome submitting Issues and Pull Requests to help improve Go Process Manager. If you have any questions or suggestions, please provide feedback via [GitHub Issues](https://github.com/lzh-1625/go_process_manager/issues).
+### Monitored Events
+- Process status changes
+- Task status changes
+- Terminal access records
+- User operation logs
+
+### Capabilities
+- Event query & filtering
+- Operation audit trail
+- Automatic log cleanup
 
 ---
 
-## License
+## 👥 User & Access Control
+Built-in multi-role RBAC permission system.
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). For more details, please refer to the [LICENSE](LICENSE) file.
+| Role | Permissions |
+|---|---|
+| root | Full system privileges |
+| admin | All privileges except process creation/deletion, role management and system configuration |
+| user | Access only assigned processes and logs |
 
 ---
 
-## Contact Us
+## ⚙️ System Configuration
+Configure via:
+- `config.json`
+- Web UI panel
 
-- **Author**: lzh-1625
-- **GitHub**: [go_process_manager](https://github.com/lzh-1625/go_process_manager)
+### Configurable Items
+- Max restart attempts
+- Log storage engine
+- Timeout thresholds
+- Log level
+- Global system parameters
 
-Thank you for using Go Process Manager! We hope this tool brings convenience to your process management.
+---
+
+# 🌐 Online Demo
+## Demo Address
+http://106.54.154.228:8790/
+
+## Test Account
+| Username | Password |
+|---|---|
+| root | root |
+
+---
+
+# 🚀 Quick Start
+## 1. Download Binary
+```bash
+wget <release-url>
+```
+
+## 2. Grant Execute Permission
+```bash
+chmod +x ./gpm
+```
+
+## 3. Launch Service
+### Run Directly
+```bash
+./gpm run
+```
+
+### Install as System Service
+```bash
+./gpm service install
+./gpm service start
+```
+After installation, use the `gpm` CLI to interact with the background service.
+
+---
+
+# 📂 Data Storage Paths
+| Type | Path |
+|---|---|
+| Config File | `{User Home}/.gpm/config.json` |
+| Database | `{User Home}/.gpm/data.db` |
+| Log File | `{User Home}/.gpm/info.log` |
+
+---
+
+# 💻 CLI Usage
+Ensure the GPM backend service is running:
+```bash
+./gpm -h
+```
+View full command documentation.
+
+---
+
+# 🏗️ Architecture Highlights
+- Lightweight deployment
+- Single binary distribution
+- Built-in Web UI
+- Multi-user RBAC system
+- Highly extensible design
+- Automatic log harvesting
+- Native workflow support
+- Multiple storage backends
+- Webhook integration
+- Complete event auditing
+
+---
+
+# 📌 Application Scenarios
+## AI Service Hosting
+- LLM inference services
+- Stable Diffusion deployment
+- Model scheduling & orchestration
+
+## DevOps
+- Automated task scripts
+- CI/CD pipeline jobs
+- Service health inspection
+
+## Game Servers
+- Minecraft
+- Rust
+- Palworld
+- Steam game servers
+
+## Operation & Maintenance
+- Background service management
+- Centralized log management
+- Remote terminal collaboration
+
+---
+
+# 🔐 Security
+- RBAC access control
+- User resource isolation
+- Full operation audit logs
+- Terminal access recording
+- Event traceability
+
+---
+
+# 🛣️ Roadmap
+- [ ] Docker container management
+- [ ] Kubernetes integration
+- [ ] Multi-node cluster support
+- [ ] Prometheus metrics integration
+- [ ] OpenAPI documentation
+- [ ] Plugin system
+- [ ] WebSocket real-time push
+- [ ] Multi-tenant isolation
+
+---
+
+# 🤝 Contribution
+Welcome to submit:
+- Issues
+- Pull Requests
+- Feature Requests
+
+Let’s build GPM together.
+
+---
+
+# ⭐ Star History
+If this project helps you, please give it a Star ⭐
+
+---
+
+# 📄 License
+MIT License
+
+---
+
+<div align="center">
+
+### GPM — The Modern All-in-One Process Management Platform 🚀
+
+</div>

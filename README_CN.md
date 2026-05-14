@@ -1,178 +1,350 @@
 <div align="center">
-  <br/>
-  <img src="https://raw.githubusercontent.com/lzh-1625/go_process_manager/refs/heads/master/resources/templates/favicon.ico" alt="GPM logo">
-  <br/>
+
+# GPM
+
+### 🚀 轻量级、高性能的进程与任务管理平台
+
+一个集 **进程管理、任务编排、日志收集、事件审计、状态推送、权限控制** 于一体的通用服务管理平台。
+
+支持 Web UI / CLI / Webhook / cgroup 限制 / 日志检索 / 终端共享。
+
+<p>
+  <img src="https://img.shields.io/badge/Go-1.20+-00ADD8?style=for-the-badge&logo=go" />
+  <img src="https://img.shields.io/badge/Linux-Supported-success?style=for-the-badge&logo=linux" />
+  <img src="https://img.shields.io/badge/WebUI-Built--in-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" />
+</p>
+
 </div>
 
-# Go Process Manager
+---
 
-Go Process Manager 是一个基于 Golang 开发的进程管理工具，提供了类似 `screen` 的进程管理功能，并支持 Web UI 可视化操作。该工具集成了日志管理、权限控制、进程性能监控、状态推送等功能，支持通过 `cgroup` 实现 CPU 和内存限制，同时还提供了任务管理和定时任务功能。
+# ✨ 项目介绍
+
+GPM（General Process Manager）是一个面向服务、脚本、任务流场景设计的现代化进程管理平台。
+
+相比传统的 `nohup`、`pm2`、`supervisor` 等工具，GPM 提供：
+
+- 更完整的任务编排能力
+- 更强的日志收集能力
+- 更灵活的状态推送机制
+- 更现代化的 Web UI
+- 更完善的权限体系
+- 更丰富的事件审计能力
+
+适用于：
+
+- 服务托管
+- 自动化脚本运行
+- AI 推理服务
+- 游戏服务器
+- 爬虫任务
+- DevOps 自动化
+- CI/CD 辅助任务
+- 远程终端共享
 
 ---
 
-## 功能特性
+# 📦 功能特性
 
-### 核心功能
+## 🖥️ 进程管理
 
-- **进程管理**支持进程的创建、启动、停止、重启和删除操作，提供类似 `screen` 的多进程管理能力。
-- **Web UI 可视化操作**提供友好的 Web 界面，用户可以通过浏览器轻松管理进程、查看日志和监控性能。
-- **日志管理**支持将日志存储到 Elasticsearch 8 或 SQLite 中，提供高效的日志查询和分析功能。
-- **权限管理**提供三种角色（root、admin、user）的权限控制，确保系统安全性和灵活性。
-- **进程性能监控**实时监控进程的 CPU、内存等资源使用情况，帮助用户优化系统性能。
-- **进程状态推送**支持进程状态的实时推送，用户可以通过 Web UI 或 API 推送进程的最新状态。
-- **资源限制**通过 `cgroup` 实现 CPU 和内存的限制，防止进程占用过多系统资源。
-- **任务管理**
-  支持任务管理、定时任务和 API 调用，满足自动化运维需求。
+通过启动命令、工作目录、环境变量等信息在 GPM 中启动进程。
 
----
+GPM 将自动完成：
 
-### 终端类型
+- 进程生命周期管理
+- 输出日志收集
+- 状态监听
+- cgroup 资源限制
+- 性能信息采集
+- 状态推送
 
-- **pty（伪终端）**基于伪终端实现，支持 ANSI 字符和快捷键操作，适合交互式命令行程序。
-- **std（标准输入输出）**
-  基于标准输入输出管道实现，适合非交互式程序或脚本。
+### 支持能力
 
----
-
-## 角色权限
-
-| 角色  | 角色管理 | 进程创建 | 操控进程 | 日志查看 | 任务管理 |
-| ----- | -------- | -------- | -------- | -------- | -------- |
-| root  | ✔       | ✔       | ✔       | ✔       | ✔       |
-| admin | ×       | ×       | ✔       | ✔       | ✔       |
-| user  | ×       | ×       | 自定义   | 自定义   | ×       |
-
-- **root**：拥有最高权限，可以管理所有进程、日志和用户角色。
-- **admin**：可以操控进程和查看日志，但不能创建进程或管理角色。
-- **user**：权限可自定义，适合普通用户使用。
+- Web UI 在线管理
+- CLI 命令行交互
+- 在线终端访问
+- 临时终端分享链接
+- 进程实时状态查看
+- 资源占用监控
 
 ---
 
-## 使用指南
+## ⚙️ 任务管理
 
-### 启动进程
+GPM 提供灵活的自动化任务系统。
 
-#### Windows
+### 支持触发方式
 
-1. 下载 Windows 版本的二进制文件。
-2. 双击运行即可启动服务。
+- 定时触发
+- API 触发
+- 任务联动触发
+- 进程状态变更触发
 
-#### Linux
+### 支持能力
 
-1. 下载 Linux 版本的二进制文件。
-2. 使用以下命令赋予执行权限并启动：
-
-   ```bash
-   chmod 777 ./go_process_manager
-   ./go_process_manager
-   ```
-
-### Web 界面
-
-1. 启动服务后，访问 `http://[ip]:8797`。
-2. 使用默认账号密码 `root/root` 登录。
-
-### Demo 演示
-
-访问 [Demo 演示](http://xcon.top:9787/process) 体验功能，使用账号 `root/root` 登录。
+- 自动启动/停止进程
+- 条件判断
+- 任务链编排
+- 工作流执行
+- 后续任务触发
 
 ---
 
-## 界面展示
+## 📜 日志收集
 
-### 进程管理
+自动收集进程日志并统一存储。
 
-![进程管理界面](https://github.com/lzh-1625/go_process_manager/assets/59822923/50f31b99-41d4-4d8c-88fe-20c978385155)
+### 支持存储后端
 
-- **进程列表**：显示所有运行的进程，包括进程 ID、名称、状态、资源使用情况等。
-- **操作按钮**：支持启动、停止、重启和删除进程。
+- SQLite（默认）
+- Elasticsearch
+- Bleve（非 slim 版本）
 
-### 终端操作
+### 提供能力
 
-![终端操作界面](https://github.com/lzh-1625/go_process_manager/assets/59822923/63eb6bec-353f-4d12-a1d9-95d89fccdac3)
-
-- **终端模拟**：支持 ANSI 字符和快捷键操作，提供类似本地终端的体验。
-- **输入输出**：实时显示进程的标准输入和输出。
-
-### 日志查看
-
-![日志查看界面](https://github.com/lzh-1625/go_process_manager/assets/59822923/6af8e228-7709-45c5-aba8-4b61dc825026)
-
-- **日志查询**：支持按时间、进程 ID、操作用户等条件过滤日志。
+- Web 日志查询
+- 日志检索
+- 历史日志存储
+- 多进程日志统一管理
+- 全文索引(es、bleve)
 
 ---
 
-## 补充说明
+## 📡 状态推送
 
-### 日志管理
+支持通过 Webhook 推送进程或任务状态。
 
-- **Elasticsearch 8**：适合大规模日志存储和查询，支持分布式部署。
-- **SQLite**：轻量级日志存储，适合单机或小规模使用。
+### 支持方式
 
-### 权限控制
+- GET Webhook
+- POST Webhook
 
-- **root 用户**：拥有最高权限，可以管理所有进程、日志和用户角色。
-- **admin 用户**：可以操控进程和查看日志，适合运维人员使用。
-- **user 用户**：权限可自定义，适合普通用户或开发人员使用。
+### 特性
 
-### 资源限制
-
-- **CPU 限制**：通过 `cgroup` 设置进程的 CPU 使用上限。
-- **内存限制**：通过 `cgroup` 设置进程的内存使用上限。
-
-### 任务管理
-
-- **定时任务**：支持 Cron 表达式，用户可以创建定时任务。
-- **API 调用**：提供 API触发任务。
-- **任务流**：任务的链式执行。
-- **触发事件**：通过进程的停止、启动、异常触发任务。
+- 自定义占位符
+- 自定义推送内容
+- 状态变更通知
 
 ---
 
-## 开发与部署
+## 📋 事件管理
 
-### 环境要求
+记录系统中的关键行为。
 
-- **Golang**：版本 1.18 或以上。
-- **Elasticsearch 8**（可选）：用于日志存储。
-- **SQLite**（可选）：用于轻量级日志存储。
+### 支持记录
 
-### 编译与运行
+- 进程状态变更
+- 任务状态变更
+- 终端访问事件
+- 用户操作行为
 
-1. 克隆项目：
+### 提供能力
 
-   ```bash
-   git clone https://github.com/lzh-1625/go_process_manager.git
-   cd go_process_manager
-   ```
-2. 编译项目：
-
-   ```bash
-   go build -o go_process_manager
-   ```
-3. 运行项目：
-
-   ```bash
-   ./go_process_manager
-   ```
+- 事件查询
+- 审计记录
+- 定时清理
 
 ---
 
-## 贡献与反馈
+## 👥 用户与权限管理
 
-欢迎提交 Issue 和 Pull Request，帮助我们改进 Go Process Manager。如果有任何问题或建议，请通过 [GitHub Issues](https://github.com/lzh-1625/go_process_manager/issues) 反馈。
+提供多角色权限体系。
+
+| 角色 | 权限 |
+|---|---|
+| root | 全部权限 |
+| admin | 除创建/删除进程、角色管理、系统设置外的全部权限 |
+| user | 可配置允许访问的进程与日志 |
 
 ---
 
-## 许可证
+## ⚙️ 系统设置
 
-本项目采用 [MIT 许可证](https://opensource.org/licenses/MIT)，详情请参阅 [LICENSE](LICENSE) 文件。
+支持通过：
+
+- `config.json`
+- Web UI
+
+进行系统配置。
+
+### 可配置项
+
+- 重启次数
+- 存储引擎
+- 超时时长
+- 日志等级
+- 系统行为参数
 
 ---
 
-## 联系我们
+# 🌐 在线 Demo
 
-- **作者**：lzh-1625
-- **GitHub**：[go_process_manager](https://github.com/lzh-1625/go_process_manager)
+## Demo 地址
 
-感谢您使用 Go Process Manager！希望这个工具能为您的进程管理带来便利。
+http://106.54.154.228:8790/
+
+## 测试账号
+
+| 用户名 | 密码 |
+|---|---|
+| root | root |
+
+---
+
+# 🚀 快速开始
+
+# 1️⃣ 下载二进制文件
+
+```bash
+wget <release-url>
+````
+
+---
+
+# 2️⃣ 添加执行权限
+
+```bash
+chmod +x ./gpm
+```
+
+---
+
+# 3️⃣ 启动服务
+
+## 直接启动
+
+```bash
+./gpm run
+```
+
+## 注册为系统服务
+
+```bash
+./gpm service install
+./gpm service start
+```
+
+注册为服务后，可通过 `gpm` 命令访问后台服务信息。
+
+---
+
+# 📂 数据存储位置
+
+| 类型   | 路径                        |
+| ---- | ------------------------- |
+| 配置文件 | `{用户目录}/.gpm/config.json` |
+| 数据库  | `{用户目录}/.gpm/data.db`     |
+| 日志文件 | `{用户目录}/.gpm/info.log`    |
+
+---
+
+# 💻 CLI 使用
+
+确保 GPM 已在后台运行：
+
+```bash
+./gpm -h
+```
+
+查看帮助命令。
+
+---
+
+# 🏗️ 架构特点
+
+* 轻量级部署
+* 单二进制运行
+* Web UI 内置
+* 多用户权限体系
+* 高扩展性
+* 自动日志采集
+* 任务流支持
+* 多存储后端
+* Webhook 集成
+* 事件审计能力
+
+---
+
+# 📌 使用场景
+
+## AI 服务托管
+
+* LLM 推理服务
+* Stable Diffusion
+* 模型调度
+
+## DevOps
+
+* 自动化脚本
+* CI/CD 任务
+* 服务巡检
+
+## 游戏服务
+
+* Minecraft
+* Rust
+* Palworld
+* Steam 游戏服务器
+
+## 运维场景
+
+* 后台服务管理
+* 日志统一管理
+* 远程终端共享
+
+---
+
+# 🔐 安全性
+
+* RBAC 权限控制
+* 用户隔离
+* 操作审计
+* 终端访问记录
+* 事件日志追踪
+
+---
+
+# 🛣️ Roadmap
+
+* [ ] Docker 管理支持
+* [ ] Kubernetes 集成
+* [ ] 多节点集群
+* [ ] Prometheus 指标支持
+* [ ] OpenAPI 文档
+* [ ] 插件系统
+* [ ] WebSocket 实时推送
+* [ ] 多租户支持
+
+---
+
+# 🤝 贡献
+
+欢迎提交：
+
+* Issue
+* Pull Request
+* Feature Request
+
+一起让 GPM 变得更强大。
+
+---
+
+# ⭐ Star History
+
+如果这个项目对你有帮助，欢迎点一个 Star ⭐
+
+---
+
+# 📄 License
+
+MIT License
+
+---
+
+<div align="center">
+
+### GPM — 一个真正现代化的进程管理平台 🚀
+
+</div>
