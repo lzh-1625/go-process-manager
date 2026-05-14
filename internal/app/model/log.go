@@ -99,6 +99,15 @@ func (n *ProcessLog) TableName() string {
 	return "process_log"
 }
 
+type BleveProcessLog struct {
+	ID         string `json:"id,omitempty"`
+	Log        string `json:"log"`
+	LogKeyword string `json:"log_keyword"`
+	Time       int64  `json:"time"`
+	Name       string `json:"name"`
+	Using      string `json:"using"`
+}
+
 type QueryBody struct {
 	MinScore int `json:"min_score,omitempty"`
 	Query    struct {

@@ -35,9 +35,9 @@ func QueryStringAnalysis(s string) (query []Query) {
 	strList := utils.UnwarpIgnore(shlex.Split(s))
 	for _, v := range strList {
 		switch {
-		case strings.HasPrefix(v, "!^"):
+		case strings.HasPrefix(v, "!^") || strings.HasPrefix(v, "^!"):
 			query = append(query, Query{NotMatch, v[2:]})
-		case strings.HasPrefix(v, "!~"):
+		case strings.HasPrefix(v, "!~") || strings.HasPrefix(v, "~!"):
 			query = append(query, Query{NotWildCard, v[2:]})
 		case strings.HasPrefix(v, "!"):
 			query = append(query, Query{NotMatch, v[1:]})

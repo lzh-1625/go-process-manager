@@ -3,6 +3,8 @@
 package bleve
 
 import (
+	"os"
+	"path"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -13,6 +15,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
+	"github.com/lzh-1625/go_process_manager/utils"
 	gse "github.com/vcaesar/gse-bleve"
 )
 
@@ -45,6 +48,8 @@ func (b *bleveSearch) init() error {
 	mapping := bleve.NewDocumentMapping()
 	log := bleve.NewTextFieldMapping()
 	log.Index = true
+	logKeyword := bleve.NewKeywordFieldMapping()
+	logKeyword.Index = true
 	time := bleve.NewNumericFieldMapping()
 	time.Index = true
 	name := bleve.NewKeywordFieldMapping()
@@ -52,13 +57,15 @@ func (b *bleveSearch) init() error {
 	using := bleve.NewKeywordFieldMapping()
 	using.Index = true
 	mapping.AddFieldMappingsAt("log", log)
+	mapping.AddFieldMappingsAt("log_keyword", logKeyword)
 	mapping.AddFieldMappingsAt("time", time)
 	mapping.AddFieldMappingsAt("name", name)
 	mapping.AddFieldMappingsAt("using", using)
 	indexMapping.AddDocumentMapping("server_log_v1", mapping)
-	index, err := bleve.Open("log.bleve")
+	path := path.Join(utils.UnwarpIgnore(os.UserHomeDir()), ".gpm", "log.bleve")
+	index, err := bleve.Open(path)
 	if err != nil {
-		index, err = bleve.New("log.bleve", indexMapping)
+		index, err = bleve.New(path, indexMapping)
 		if err != nil {
 			logger.Logger.Errorw("bleve init error", "err", err)
 			return err
@@ -69,11 +76,12 @@ func (b *bleveSearch) init() error {
 }
 
 func (b *bleveSearch) Insert(logContent string, processName string, using string, ts int64) {
-	if err := b.index.Index(uuid.NewString(), model.ProcessLog{
-		Log:   logContent,
-		Name:  processName,
-		Using: using,
-		Time:  ts,
+	if err := b.index.Index(uuid.NewString(), model.BleveProcessLog{
+		Log:        logContent,
+		LogKeyword: logContent,
+		Name:       processName,
+		Using:      using,
+		Time:       ts,
 	}); err != nil {
 		logger.Logger.Warnw("bleve log insert failed", "err", err)
 	}
@@ -83,22 +91,22 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	buildQuery := bleve.NewBooleanQuery()
 	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
 		switch v.Cond {
-		case sr.Match, sr.WildCard:
+		case sr.Match:
 			logQuery := bleve.NewMatchQuery(v.Content)
 			logQuery.SetField("log")
 			buildQuery.AddMust(logQuery)
-		case sr.NotMatch, sr.NotWildCard:
+		case sr.NotMatch:
 			logQuery := bleve.NewMatchQuery(v.Content)
 			logQuery.SetField("log")
 			buildQuery.AddMustNot(logQuery)
-			// case sr.WildCard:
-			// 	logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
-			// 	logQuery.SetField("log")
-			// 	buildQuery.AddMust(logQuery)
-			// case sr.NotWildCard:
-			// 	logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
-			// 	logQuery.SetField("log")
-			// 	buildQuery.AddMustNot(logQuery)
+		case sr.WildCard:
+			logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
+			logQuery.SetField("log_keyword")
+			buildQuery.AddMust(logQuery)
+		case sr.NotWildCard:
+			logQuery := bleve.NewWildcardQuery("*" + v.Content + "*")
+			logQuery.SetField("log_keyword")
+			buildQuery.AddMustNot(logQuery)
 		}
 	}
 	if req.Match.Name != "" {
