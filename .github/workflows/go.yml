@@ -38,3 +38,10 @@ jobs:
       # 执行 make（go build）
       - name: Build Go project
         run: make
+          # 👇 新增：上传发布编译后的二进制文件 gpm
+      - name: Upload binary gpm
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpm_linux_amd64
+          path: gpm  # 你指定的二进制文件路径
+          if-no-files-found: error # 如果文件不存在，直接报错，方便排查
