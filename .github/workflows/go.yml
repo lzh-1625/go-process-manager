@@ -40,19 +40,25 @@ jobs:
           go-version: '1.26'
 
       # 执行 make（go build）
-      - name: Build Go project
-        run: make
-          # 👇 新增：上传发布编译后的二进制文件 gpm
-      - name: Upload binary gpm
-        uses: actions/upload-artifact@v4
-        with:
-          name: gpm_linux_amd64
-          path: gpm  # 你指定的二进制文件路径
-          if-no-files-found: error # 如果文件不存在，直接报错，方便排查
+      - name: Build Go project Linux AMD64
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_linux_amd64 ./cmd/go_process_manager
+      - name: Build Go project Windows AMD64
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_windows_amd64.exe ./cmd/go_process_manager
+      - name: Build Go project Darwin AMD64
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_darwin_amd64 ./cmd/go_process_manager
+      - name: Build Go project Darwin ARM64
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o gpm_darwin_arm64 ./cmd/go_process_manager
+      - name: Build Go project Linux ARM64
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o gpm_linux_arm64 ./cmd/go_process_manager
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./gpm
+          files: |
+            gpm_linux_amd64
+            gpm_windows_amd64.exe
+            gpm_darwin_amd64
+            gpm_darwin_arm64
+            gpm_linux_arm64
           name: Release ${{ github.sha }}
           tag_name: v${{ github.run_number }}
           generate_release_notes: true
