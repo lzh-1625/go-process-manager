@@ -1,4 +1,8 @@
 name: Build
+permissions:
+  contents: write
+  actions: read
+  checks: read
 
 on:
   push:
