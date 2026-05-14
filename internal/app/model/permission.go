@@ -2,7 +2,7 @@ package model
 
 // Owned{Terminal{Write},Start,Stop}
 type Permission struct {
-	Id       int64  `gorm:"column:id;NOT NULL" json:"id" `
+	ID       int64  `gorm:"column:id;NOT NULL" json:"id" `
 	Account  string `gorm:"column:account;NOT NULL" json:"account"`
 	Pid      int32  `gorm:"column:pid;NOT NULL" json:"pid"`
 	Owned    bool   `gorm:"column:owned;NOT NULL" json:"owned"`
@@ -18,7 +18,7 @@ func (*Permission) TableName() string {
 }
 
 type PermissionPo struct {
-	Id       int64  `gorm:"column:id" json:"id"`
+	ID       int64  `gorm:"column:id" json:"id"`
 	Account  string `gorm:"column:account" json:"account"`
 	Name     string `gorm:"column:name" json:"name"`
 	Pid      int32  `gorm:"column:pid" json:"pid"`

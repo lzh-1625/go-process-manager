@@ -1,7 +1,7 @@
 package model
 
 type Push struct {
-	Id     int64  `gorm:"column:id;NOT NULL" json:"id"`
+	ID     int64  `gorm:"column:id;NOT NULL" json:"id"`
 	Method string `gorm:"column:method;NOT NULL" json:"method"`
 	Url    string `gorm:"column:url;NOT NULL" json:"url"`
 	Body   string `gorm:"column:body;NOT NULL" json:"body"`

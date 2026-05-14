@@ -1,72 +1,76 @@
 package repository
 
 import (
-	"errors"
-
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-
-	"gorm.io/gorm"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 )
 
-type taskRepository struct{}
-
-var TaskRepository = new(taskRepository)
-
-func (t *taskRepository) GetAllTask() (result []model.Task) {
-	db.Find(&result)
-	return
-}
-
-func (t *taskRepository) GetTaskById(id int) (result model.Task, err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: int(id)}).First(&result).Error
-	return
-}
-
-func (t *taskRepository) GetTaskByKey(key string) (result model.Task, err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Key: &key, ApiEnable: true}).First(&result).Error
-	return
-}
-
-func (t *taskRepository) AddTask(data model.Task) (taskId int, err error) {
-	err = db.Create(&data).Error
-	taskId = data.Id
-	return
-}
-
-func (t *taskRepository) DeleteTask(id int) (err error) {
-	err = db.Delete(&model.Task{Id: id}).Error
-	return
-}
-
-func (t *taskRepository) EditTask(data model.Task) (err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: data.Id}).First(&model.Task{}).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
+func NewTaskRepository(query *query.Query) *TaskRepository {
+	return &TaskRepository{
+		query: query,
 	}
+}
 
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: data.Id}).Save(data).Error
+type TaskRepository struct {
+	query *query.Query
+}
+
+func (t *TaskRepository) GetAllTask() (result []*model.Task) {
+	result, _ = t.query.Task.Find()
 	return
 }
 
-func (t *taskRepository) EditTaskEnable(id int, enable bool) (err error) {
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: id}).First(&model.Task{}).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
-	err = db.Model(&model.Task{}).Where(&model.Task{Id: id}).Update("enable", enable).Error
+func (t *TaskRepository) GetTaskByID(id int) (result *model.Task, err error) {
+	result, err = t.query.Task.Where(t.query.Task.ID.Eq(id)).First()
 	return
 }
 
-func (t *taskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
-	db.Raw(`SELECT t.*, p.name AS process_name, p2.name AS target_name,p3.name AS trigger_name 
-	FROM task t LEFT JOIN process p ON t.process_id = p.uuid LEFT JOIN process p2 ON t.operation_target = p2.uuid LEFT JOIN process p3 ON t.trigger_target = p3.uuid`).Scan(&result)
+func (t *TaskRepository) GetTaskByKey(key string) (result *model.Task, err error) {
+	result, err = t.query.Task.Where(t.query.Task.Key.Eq(key), t.query.Task.ApiEnable.Is(true)).First()
 	return
 }
 
-func (t *taskRepository) GetTriggerTask(processName string, event constants.ProcessState) []model.Task {
+func (t *TaskRepository) AddTask(data model.Task) (task int, err error) {
+	err = t.query.Task.Create(&data)
+	task = data.ID
+	return
+}
+
+func (t *TaskRepository) DeleteTask(id int) (err error) {
+	_, err = t.query.Task.Where(t.query.Task.ID.Eq(id)).Delete()
+	return
+}
+
+func (t *TaskRepository) EditTask(data *model.Task) (err error) {
+	err = t.query.Task.Save(data)
+	return
+}
+
+func (t *TaskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
+	p := t.query.Process.As("p")
+	p2 := t.query.Process.As("p2")
+	p3 := t.query.Process.As("p3")
+	task := t.query.Task
+	task.Select(
+		task.ALL,
+		p.Name.As("process_name"),
+		p2.Name.As("target_name"),
+		p3.Name.As("trigger_name"),
+	).
+		LeftJoin(p, p.UUID.EqCol(task.ProcessID)).
+		LeftJoin(p2, p2.UUID.EqCol(task.OperationTarget)).
+		LeftJoin(p3, p3.UUID.EqCol(task.TriggerTarget)).
+		Scan(&result)
+	return
+}
+
+func (t *TaskRepository) GetTriggerTask(processName string, event eum.ProcessState) []model.Task {
 	result := []model.Task{}
-	db.Raw(`SELECT task.* FROM task left join process p  on p.uuid == task.trigger_target  WHERE trigger_event= ? AND p.name = ?`, event, processName).Scan(&result)
+	t.query.Task.Select(t.query.Task.ALL).
+		LeftJoin(t.query.Process, t.query.Process.UUID.EqCol(t.query.Task.TriggerTarget)).
+		Where(t.query.Process.Name.Eq(processName)).
+		Where(t.query.Task.TriggerEvent.Eq(int32(event))).
+		Scan(&result)
 	return result
 }

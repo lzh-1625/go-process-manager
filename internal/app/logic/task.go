@@ -3,155 +3,149 @@ package logic
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
-	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
+	"github.com/google/uuid"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/robfig/cron/v3"
 )
 
-func (t *taskLogic) RunTaskById(id int) error {
-	task, err := t.getTaskJob(id)
-	if err != nil {
-		return errors.New("id不存在")
-	}
-	if task.Running {
-		return errors.New("task is running")
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	task.Cancel = cancel
-	t.run(ctx, task)
-	return nil
+type TaskJob struct {
+	Cron       *cron.Cron         `json:"-"`
+	TaskConfig *model.Task        `json:"task"`
+	Running    bool               `json:"running"`
+	Cancel     context.CancelFunc `json:"-"`
+	StartTime  time.Time          `json:"startTime"`
+	EndTime    time.Time          `json:"endTime"`
+
+	eventLogic      *EventLogic
+	processCtlLogic *ProcessCtlLogic
+	taskLogic       *TaskLogic
 }
 
-func (t *taskLogic) run(ctx context.Context, data *model.TaskJob) {
-	data.Running = true
-	middle.TaskWaitCond.Trigger()
+func NewTaskJob(data *model.Task, eventLogic *EventLogic, processCtlLogic *ProcessCtlLogic, taskLogic *TaskLogic) (*TaskJob, error) {
+	tj := &TaskJob{
+		TaskConfig:      data,
+		StartTime:       time.Now(),
+		eventLogic:      eventLogic,
+		processCtlLogic: processCtlLogic,
+		taskLogic:       taskLogic,
+	}
+	if data.Enable {
+		if err := tj.InitCronHandle(); err != nil {
+			log.Logger.Warnw("cron task start failed", "err", err, "task", data.ID)
+		}
+	}
+	return tj, nil
+}
+
+func (t *TaskJob) Run(ctx context.Context) (err error) {
+	logger := log.Logger.With("taskID", t.TaskConfig.ID)
+	if ctx.Value(eum.CtxTaskTraceID{}) == nil {
+		ctx = context.WithValue(ctx, eum.CtxTaskTraceID{}, uuid.NewString())
+	}
+	t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
 	defer func() {
-		data.Running = false
-		middle.TaskWaitCond.Trigger()
+		t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
 	}()
-	log.Logger.AddAdditionalInfo("taskId", data.Task.Id)
-	defer log.Logger.DeleteAdditionalInfo(1)
+	logger = logger.With("traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
+	t.Running = true
+	t.StartTime = time.Now()
+	TaskWaitCond.Trigger()
+	defer func() {
+		t.Running = false
+		TaskWaitCond.Trigger()
+	}()
+
+	proc, err := t.processCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+	if err != nil {
+		logger.Debugw("process not found, task execution failed")
+		return err
+	}
+
 	var ok bool
-	// 判断条件是否满足
-	if data.Task.Condition == constants.PASS {
+	// check if the condition is satisfied
+	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessID == 0 {
 		ok = true
 	} else {
-		proc, err := ProcessCtlLogic.GetProcess(data.Task.OperationTarget)
-		if err != nil {
-			return
-		}
-		ok = conditionHandle[data.Task.Condition](data.Task, proc)
+		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
 	}
-	log.Logger.Debugw("任务条件判断", "pass", ok)
+	logger.Debugw("task condition check", "pass", ok)
 	if !ok {
 		return
 	}
-
-	proc, err := ProcessCtlLogic.GetProcess(data.Task.OperationTarget)
-	if err != nil {
-		log.Logger.Debugw("不存在该进程，结束任务")
-		return
+	// execute operation
+	logger.Infow("task execute started")
+	if !GetOperationHandle()[t.TaskConfig.Operation](t.TaskConfig, proc) {
+		logger.Warnw("task execution failed")
+		return errors.New("task execution failed")
 	}
+	logger.Infow("task execution success", "target", t.TaskConfig.OperationTarget)
 
-	// 执行操作
-	log.Logger.Infow("任务开始执行")
-	if !OperationHandle[data.Task.Operation](data.Task, proc) {
-		log.Logger.Errorw("任务执行失败")
-		return
-	}
-	log.Logger.Infow("任务执行成功", "target", data.Task.OperationTarget)
-
-	if data.Task.NextId != nil {
-		nextTask, err := t.getTaskJob(*data.Task.NextId)
+	if t.TaskConfig.NextID != nil {
+		var nextTask *TaskJob
+		nextTask, err = t.taskLogic.getTaskJob(*t.TaskConfig.NextID)
 		if err != nil {
-			log.Logger.Errorw("无法获取到下一个节点,结束任务", "nextId", data.Task.NextId)
-			return
+			logger.Warnw("cannot get next node, task execution failed", "nextID", t.TaskConfig.NextID)
+			return err
 		}
 		select {
 		case <-ctx.Done():
-			log.Logger.Infow("任务流被手动结束")
+			logger.Infow("task flow manually ended")
 		default:
-			log.Logger.Debugw("执行下一个节点", "nextId", *data.Task.NextId)
+			logger.Debugw("execute next node", "nextID", t.TaskConfig.NextID)
 			if nextTask.Running {
-				log.Logger.Errorw("下一个节点已在运行，结束任务", "nextId", data.Task.NextId)
+				logger.Warnw("next node is running, task execution failed", "nextID", t.TaskConfig.NextID)
 				return
 			}
-			t.run(ctx, nextTask)
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+			nextTask.Cancel = cancel
+			return nextTask.Run(ctx)
 		}
 	} else {
-		log.Logger.Infow("任务流结束")
+		logger.Infow("task flow ended")
 	}
+	return
 }
 
-type conditionFunc func(data *model.Task, proc *ProcessBase) bool
-
-var conditionHandle = map[constants.Condition]conditionFunc{
-	constants.RUNNING: func(data *model.Task, proc *ProcessBase) bool {
-		return proc.State.State == 1
-	},
-	constants.NOT_RUNNING: func(data *model.Task, proc *ProcessBase) bool {
-		return proc.State.State != 1
-	},
-	constants.EXCEPTION: func(data *model.Task, proc *ProcessBase) bool {
-		return proc.State.State == 2
-	},
+func (t *TaskJob) InitCronHandle() error {
+	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron expression validation
+		log.Logger.Errorw("cron parse failed", "cron", t.TaskConfig.CronExpression, "err", err)
+		return err
+	}
+	c := cron.New()
+	_, err := c.AddFunc(t.TaskConfig.CronExpression, func() {
+		log.Logger.Infow("cron task start")
+		if t.Running {
+			log.Logger.Infow("task is running, skip current task")
+			return
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		t.Cancel = cancel
+		t.Run(ctx)
+		log.Logger.Infow("cron task ended")
+	})
+	if err != nil {
+		return err
+	}
+	c.Start()
+	t.Cron = c
+	return nil
 }
 
-// 执行操作，返回结果是否成功
-type operationFunc func(data *model.Task, proc *ProcessBase) bool
-
-var OperationHandle = map[constants.TaskOperation]operationFunc{
-	constants.TASK_START: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State == 1 {
-			log.Logger.Debugw("进程已在运行")
-			return false
+func (t *TaskJob) EditStatus(status bool) error {
+	if t.Cron != nil { // stop cron
+		t.Cron.Stop()
+	}
+	if status { // start cron
+		if err := t.InitCronHandle(); err != nil {
+			return err
 		}
-		go proc.Start()
-		return true
-	},
-
-	constants.TASK_START_WAIT_DONE: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State == 1 {
-			log.Logger.Debugw("进程已在运行")
-			return false
-		}
-		if err := proc.Start(); err != nil {
-			log.Logger.Debugw("进程启动失败")
-			return false
-		}
-		select {
-		case <-proc.StopChan:
-			log.Logger.Debugw("进程停止，任务完成")
-			return true
-		case <-time.After(time.Second * time.Duration(config.CF.TaskTimeout)):
-			log.Logger.Errorw("任务超时")
-			return false
-		}
-	},
-
-	constants.TASK_STOP: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State != 1 {
-			log.Logger.Debugw("进程未在运行")
-			return false
-		}
-		log.Logger.Debugw("异步停止任务")
-		proc.State.manualStopFlag = true
-		go proc.Kill()
-		return true
-	},
-
-	constants.TASK_STOP_WAIT_DONE: func(data *model.Task, proc *ProcessBase) bool {
-		if proc.State.State != 1 {
-			log.Logger.Debugw("进程未在运行")
-			return false
-		}
-		log.Logger.Debugw("停止任务并等待结束")
-		proc.State.manualStopFlag = true
-		return proc.Kill() == nil
-	},
+	}
+	return nil
 }

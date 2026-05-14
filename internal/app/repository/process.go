@@ -1,79 +1,55 @@
 package repository
 
 import (
-	"errors"
-
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 	"github.com/lzh-1625/go_process_manager/log"
-
-	"gorm.io/gorm"
 )
 
-type processRepository struct{}
-
-var ProcessRepository = new(processRepository)
-
-func (p *processRepository) GetAllProcessConfig() []model.Process {
-	result := []model.Process{}
-
-	tx := db.Find(&result)
-	if tx.Error != nil {
-		log.Logger.Error(tx.Error)
-		return []model.Process{}
+func NewProcessRepository(query *query.Query) *ProcessRepository {
+	return &ProcessRepository{
+		query: query,
 	}
-	return result
 }
 
-func (p *processRepository) GetProcessConfigByUser(username string) []model.Process {
-	result := []model.Process{}
-	tx := db.Raw(`SELECT p.* FROM permission left join process p where pid =p.uuid and owned  = 1 and account = ?`, username).Scan(&result)
-	if tx.Error != nil {
-		log.Logger.Error(tx.Error)
-		return []model.Process{}
-	}
-	return result
+type ProcessRepository struct {
+	query *query.Query
 }
 
-func (p *processRepository) UpdateProcessConfig(process model.Process) error {
-	tx := db.Save(&process)
-	return tx.Error
+func (p *ProcessRepository) GetAllProcessConfig() []*model.Process {
+	processes, _ := p.query.Process.Find()
+	return processes
 }
 
-func (p *processRepository) AddProcessConfig(process model.Process) (int, error) {
-	var existingProcess model.Process
-	err := db.Model(&model.Process{}).Where("name = ?", process.Name).First(&existingProcess).Error
-
-	if err != nil && err != gorm.ErrRecordNotFound {
+func (p *ProcessRepository) GetProcessConfigByUser(username string) []*model.Process {
+	result := []*model.Process{}
+	err := p.query.Process.LeftJoin(p.query.Permission, p.query.Process.UUID.EqCol(p.query.Permission.Pid)).
+		Where(p.query.Permission.Owned.Is(true)).
+		Where(p.query.Permission.Account.Eq(username)).
+		Scan(&result)
+	if err != nil {
 		log.Logger.Error(err)
-		return 0, err
-	}
-
-	if err == nil {
-
-		return 0, errors.New("process name already exists")
-	}
-
-	tx := db.Create(&process)
-	if tx.Error != nil {
-		log.Logger.Error(tx.Error)
-		return 0, tx.Error
-	}
-
-	return process.Uuid, nil
-}
-
-func (p *processRepository) DeleteProcessConfig(uuid int) error {
-	return db.Delete(&model.Process{
-		Uuid: uuid,
-	}).Error
-}
-
-func (p *processRepository) GetProcessConfigById(uuid int) model.Process {
-	result := model.Process{}
-	tx := db.Model(&model.Process{}).Where(&model.Process{Uuid: uuid}).First(&result)
-	if tx.Error != nil {
-		log.Logger.Error(tx.Error)
-		return model.Process{}
+		return nil
 	}
 	return result
+}
+
+func (p *ProcessRepository) UpdateProcessConfig(process model.Process) error {
+	return p.query.Process.Save(&process)
+}
+
+func (p *ProcessRepository) AddProcessConfig(process model.Process) (id int, err error) {
+	err = p.query.Process.Create(&process)
+	id = process.UUID
+	return
+}
+
+func (p *ProcessRepository) DeleteProcessConfig(uuid int) error {
+	_, err := p.query.Process.Where(p.query.Process.UUID.Eq(uuid)).Delete()
+	return err
+}
+
+func (p *ProcessRepository) GetProcessConfigByID(uuid int) (data *model.Process, err error) {
+	data, err = p.query.Process.Where(p.query.Process.UUID.Eq(uuid)).First()
+	return
 }

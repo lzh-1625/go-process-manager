@@ -1,43 +1,57 @@
 package repository
 
 import (
+	"context"
+
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 )
 
-type logRepository struct{}
-
-var LogRepository = new(logRepository)
-
-func (l *logRepository) InsertLog(data model.ProcessLog) {
-	if err := db.Create(&data).Error; err != nil {
-		log.Logger.Errorw("日志插入失败", "err", err)
+func NewLogRepository(query *query.Query) *LogRepository {
+	return &LogRepository{
+		query: query,
 	}
 }
 
-func (l *logRepository) SearchLog(query model.GetLogReq) (result []model.ProcessLog, total int64) {
-	tx := db.Model(&model.ProcessLog{}).Where(&model.ProcessLog{
-		Name:  query.Match.Name,
-		Using: query.Match.Using,
-	})
-	if query.Match.Log != "" {
-		tx.Where("log like ?", "%"+query.Match.Log+"%")
+type LogRepository struct {
+	query *query.Query
+}
+
+func (l *LogRepository) InsertLog(data model.ProcessLog) error {
+	return l.query.ProcessLog.Create(&data)
+}
+
+func (l *LogRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) (result []*model.ProcessLog, total int64) {
+	q := l.query.ProcessLog.WithContext(context.TODO())
+	if req.Match.Name != "" {
+		q = q.Where(l.query.ProcessLog.Name.Eq(req.Match.Name))
 	}
-	if query.Sort == "desc" {
-		tx.Order("time desc")
+	if req.Match.Using != "" {
+		q = q.Where(l.query.ProcessLog.Using.Eq(req.Match.Using))
 	}
-	if query.TimeRange.StartTime != 0 {
-		tx.Where("time > ?", query.TimeRange.StartTime)
+
+	for _, v := range logQuery {
+		switch v.Cond {
+		case search.Match, search.WildCard:
+			q = q.Where(l.query.ProcessLog.Log.Like("%" + v.Content + "%"))
+		case search.NotMatch, search.NotWildCard:
+			q = q.Where(l.query.ProcessLog.Log.NotLike("%" + v.Content + "%"))
+		}
 	}
-	if query.TimeRange.EndTime != 0 {
-		tx.Where("time < ?", query.TimeRange.EndTime)
+
+	if req.Sort == "desc" {
+		q = q.Order(l.query.ProcessLog.Time.Desc())
 	}
-	if len(query.FilterName) != 0 {
-		tx.Where("name in ?", query.FilterName)
+	if req.TimeRange.StartTime != 0 {
+		q = q.Where(l.query.ProcessLog.Time.Gte(req.TimeRange.StartTime))
 	}
-	tx.Count(&total)
-	tx.Limit(query.Page.Size)
-	tx.Offset(query.Page.From)
-	tx.Find(&result)
+	if req.TimeRange.EndTime != 0 {
+		q = q.Where(l.query.ProcessLog.Time.Lt(req.TimeRange.EndTime))
+	}
+	if len(req.FilterName) != 0 {
+		q = q.Where(l.query.ProcessLog.Name.In(req.FilterName...))
+	}
+	result, total, _ = q.FindByPage(req.Page.From, req.Page.Size)
 	return
 }

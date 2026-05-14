@@ -1,80 +1,64 @@
 package middle
 
 import (
-	"errors"
 	"slices"
 	"strings"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/config"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/utils"
-
-	"github.com/gin-gonic/gin"
 )
 
-// code -1为失败,-2为token失效
-func rErr(ctx *gin.Context, code int, message string, err error) {
-	var statusCode int
-	switch code {
-	case -1:
-		statusCode = 500
-	case -2:
-		statusCode = 401
-	default:
-		statusCode = 200
-	}
-	if err != nil {
-		log.Logger.Warn(err)
-	}
-	ctx.JSON(statusCode, map[string]any{
-		"code": code,
-		"msg":  message,
-	})
-	ctx.Abort()
+var whiteList = []string{
+	"/api/user/login",
+	"/api/user/register/admin",
+	"/api/task/api-key/",
+	"/api/ws/share",
 }
 
-func CheckToken() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		whiteList := []string{
-			"/api/user/login",
-			"/api/user/register/admin",
-			"/api/task/api-key/",
-		}
+func NewAuthMiddleware(userLogic *logic.UserLogic) *AuthMiddleware {
+	return &AuthMiddleware{
+		userLogic: userLogic,
+	}
+}
+
+type AuthMiddleware struct {
+	userLogic *logic.UserLogic
+}
+
+func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c *echo.Context) error {
+		path := c.Request().URL.Path
+		// 白名单放行
 		if !slices.ContainsFunc(whiteList, func(s string) bool {
-			return strings.HasPrefix(c.Request.URL.Path, s)
+			return strings.HasPrefix(path, s)
 		}) {
-			var token string
-			if c.Request.Header.Get("token") != "" {
-				token = c.Request.Header.Get("token")
-			} else {
-				token = c.Query("token")
-			}
-			if _, err := utils.ParseToken(token); err != nil {
-				rErr(c, -2, "token校验失败", err)
-				return
-			}
-			if username, err := getUser(c); err != nil {
-				rErr(c, -1, "无法获取user信息", err)
-			} else {
-				c.Set(constants.CTXFLG_USER_NAME, username)
-				c.Set(constants.CTXFLG_ROLE, repository.UserRepository.GetUserByName(username).Role)
-			}
-		}
-		c.Next()
-	}
-}
 
-func getUser(ctx *gin.Context) (string, error) {
-	var token string
-	if ctx.Request.Header.Get("token") != "" {
-		token = ctx.Request.Header.Get("token")
-	} else {
-		token = ctx.Query("token")
-	}
-	if mc, err := utils.ParseToken(token); err == nil && mc != nil {
-		return mc.UserName, nil
-	} else {
-		return "", errors.Join(errors.New("用户信息获取失败"), err)
+			var token string
+			auth := c.Request().Header.Get("Authorization")
+
+			if auth != "" {
+				token = strings.TrimPrefix(auth, "bearer ")
+			} else {
+				token = c.QueryParam("token")
+			}
+
+			mc, err := utils.VerifyToken(token, config.CF.SecretKey)
+			if err != nil {
+				return c.JSON(401, model.Response[struct{}]{
+					Code:    -1,
+					Message: "invalid token",
+				})
+			}
+			c.Set(eum.CtxUserName, mc.Username)
+			c.Set(
+				eum.CtxRole,
+				a.userLogic.GetUserByName(mc.Username).Role,
+			)
+		}
+		return next(c)
 	}
 }

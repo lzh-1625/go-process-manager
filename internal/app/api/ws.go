@@ -2,41 +2,57 @@ package api
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
-	"github.com/lzh-1625/go_process_manager/internal/app/middle"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/log"
-	"github.com/lzh-1625/go_process_manager/utils"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-type wsApi struct{}
+type WsApi struct {
+	processCtlLogic *logic.ProcessCtlLogic
+	wsShareLogic    *logic.WsShareLogic
+	eventLogic      *logic.EventLogic
+	permissionApi   *PermissionApi
+}
 
-var WsApi = new(wsApi)
+func NewWsApi(
+	processCtlLogic *logic.ProcessCtlLogic,
+	wsShareLogic *logic.WsShareLogic,
+	eventLogic *logic.EventLogic,
+	permissionApi *PermissionApi) *WsApi {
+	return &WsApi{
+		processCtlLogic: processCtlLogic,
+		wsShareLogic:    wsShareLogic,
+		eventLogic:      eventLogic,
+		permissionApi:   permissionApi,
+	}
+}
 
 type WsConnetInstance struct {
 	WsConnect  *websocket.Conn
 	wsLock     sync.Mutex
 	CancelFunc context.CancelFunc
+	timer      *time.Timer
 }
 
 func (w *WsConnetInstance) Write(b []byte) {
 	w.wsLock.Lock()
 	defer w.wsLock.Unlock()
-	w.WsConnect.WriteMessage(websocket.BinaryMessage, b)
+	w.timer.Reset(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
+	w.WsConnect.WriteMessage(websocket.TextMessage, b)
 }
 
-func (w *WsConnetInstance) WriteString(s string) {
-	w.wsLock.Lock()
-	defer w.wsLock.Unlock()
-	w.WsConnect.WriteMessage(websocket.TextMessage, []byte(s))
-}
 func (w *WsConnetInstance) Cancel() {
 	w.CancelFunc()
 }
@@ -44,61 +60,152 @@ func (w *WsConnetInstance) Cancel() {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // 允许所有跨域请求
+	},
 }
 
-func (w *wsApi) WebsocketHandle(ctx *gin.Context) {
+func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
+	var req model.WebsocketHandleReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	if !w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
+		return errors.New("not permission")
+	}
 	reqUser := getUserName(ctx)
-	uuid := getQueryInt(ctx, "uuid")
-	proc, err := logic.ProcessCtlLogic.GetProcess(uuid)
-	errCheck(ctx, err != nil, "Operation failed!")
-	errCheck(ctx, proc.HasWsConn(reqUser), "A connection already exists; unable to establish a new one!")
-	errCheck(ctx, proc.State.State != 1, "The process is currently running.")
-	errCheck(ctx, proc.Control.Controller != reqUser && !proc.VerifyControl(), "Insufficient permissions; please check your access rights!")
-	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-	errCheck(ctx, err != nil, "WebSocket connection upgrade failed!")
+	proc, err := w.processCtlLogic.GetProcess(req.UUID)
+	if err != nil {
+		return err
+	}
+	if proc.HasWsConn(reqUser) {
+		return errors.New("connection already exists")
+	}
+	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
+		return errors.New("insufficient permissions")
+	}
+	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	log.Logger.Infow("ws connection success", "user", reqUser, "process", proc.Name)
 
-	log.Logger.AddAdditionalInfo("processName", proc.Name)
-	log.Logger.AddAdditionalInfo("userName", reqUser)
-	defer log.Logger.DeleteAdditionalInfo(2)
+	wsCtx, cancel := context.WithCancel(ctx.Request().Context())
+	defer cancel()
 
-	log.Logger.Infow("ws连接成功")
-
-	proc.SetTerminalSize(utils.GetIntByString(ctx.Query("cols")), utils.GetIntByString(ctx.Query("rows")))
-	wsCtx, cancel := context.WithCancel(context.Background())
+	timer := time.NewTimer(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
+	defer timer.Stop()
 	wci := &WsConnetInstance{
 		WsConnect:  conn,
 		CancelFunc: cancel,
 		wsLock:     sync.Mutex{},
+		timer:      timer,
 	}
-	proc.ReadCache(wci)
-	w.startWsConnect(wci, cancel, proc, hasOprPermission(ctx, uuid, constants.OPERATION_TERMINAL_WRITE))
-	proc.AddConn(reqUser, wci)
-	defer middle.ProcessWaitCond.Trigger()
-	defer proc.DeleteConn(reqUser)
+	if err := proc.ReadCache(wci); err != nil {
+		return nil
+	}
+	if proc.State.State == eum.ProcessStateRunning {
+		proc.SetTerminalSize(req.Cols, req.Rows)
+		write := w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
+		w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
+		w.startWsConnect(wci, cancel, proc, write)
+		proc.AddConn(reqUser, wci)
+		defer proc.DeleteConn(reqUser)
+	}
 	conn.SetCloseHandler(func(_ int, _ string) error {
-		middle.ProcessWaitCond.Trigger()
 		cancel()
 		return nil
 	})
-	middle.ProcessWaitCond.Trigger()
 	select {
-	case <-proc.StopChan:
-		log.Logger.Infow("ws连接断开", "操作类型", "进程已停止，强制断开ws连接")
-	case <-time.After(time.Minute * time.Duration(config.CF.TerminalConnectTimeout)):
-		log.Logger.Infow("ws连接断开", "操作类型", "连接时间超过最大时长限制")
+	case <-timer.C:
+		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
 	case <-wsCtx.Done():
-		log.Logger.Infow("ws连接断开", "操作类型", "tcp连接建立已被关闭")
+		log.Logger.Infow("ws connection closed", "reason", "tcp connection closed")
 	}
-	conn.Close()
+	return
 }
 
-func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc logic.Process, write bool) {
-	log.Logger.Debugw("ws读取线程已启动")
+func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
+	var req model.WebsocketHandleReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	data, err := w.wsShareLogic.GetWsShareDataByToken(req.Token)
+	if err != nil {
+		return err
+	}
+	if data.ExpireTime.Before(time.Now()) {
+		return errors.New("share expired")
+	}
+	proc, err := w.processCtlLogic.GetProcess(data.Pid)
+	if err != nil {
+		return err
+	}
+	guestName := "guest-" + strconv.Itoa(int(data.ID)) // construct guest username
+	if proc.HasWsConn(guestName) {
+		return errors.New("connection already exists")
+	}
+	if proc.State.State != eum.ProcessStateRunning {
+		return errors.New("process not is running")
+	}
+	if !proc.VerifyControl() {
+		return errors.New("insufficient permissions")
+	}
+	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	log.Logger.Infow("ws connection success", "user", data.CreateBy, "process", proc.Name)
+	data.LastLink = time.Now()
+	w.wsShareLogic.Edit(data)
+
+	proc.SetTerminalSize(req.Cols, req.Rows)
+	wsCtx, cancel := context.WithCancel(ctx.Request().Context())
+	defer cancel()
+
+	timer := time.NewTimer(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
+	defer timer.Stop()
+
+	wci := &WsConnetInstance{
+		WsConnect:  conn,
+		CancelFunc: cancel,
+		wsLock:     sync.Mutex{},
+		timer:      timer,
+	}
+	if err := proc.ReadCache(wci); err != nil {
+		return nil
+	}
+	w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
+	w.startWsConnect(wci, cancel, proc, data.Write)
+	proc.AddConn(guestName, wci)
+	defer proc.DeleteConn(guestName)
+	conn.SetCloseHandler(func(_ int, _ string) error {
+		cancel()
+		return nil
+	})
+	select {
+	case <-proc.StopChan:
+		log.Logger.Infow("ws connection closed", "reason", "process stopped, force close ws connection")
+	case <-timer.C:
+		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
+	case <-wsCtx.Done():
+		log.Logger.Infow("ws connection closed", "reason", "tcp connection closed")
+	case <-time.After(time.Until(data.ExpireTime)):
+		log.Logger.Infow("ws connection closed", "reason", "share time expired")
+	}
+	return
+}
+
+func (w *WsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *process.ProcessPty, write bool) {
+	log.Logger.Debugw("ws read thread started")
 	go func() {
 		for {
 			_, b, err := wci.WsConnect.ReadMessage()
 			if err != nil {
-				log.Logger.Debugw("ws读取线程已退出", "info", err)
+				log.Logger.Debugw("ws read thread exited", "info", err)
+				cancel()
 				return
 			}
 			if write {
@@ -131,4 +238,22 @@ func (w *wsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 		}
 	}()
 
+}
+
+func (w *WsApi) GetWsShareList(ctx *echo.Context) error {
+	return ctx.JSON(http.StatusOK, model.Response[[]*model.WsShare]{
+		Data:    w.wsShareLogic.GetWsShareList(),
+		Message: "success",
+		Code:    0,
+	})
+}
+
+func (w *WsApi) DeleteWsShareByID(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return w.wsShareLogic.DeleteByID(req.ID)
 }

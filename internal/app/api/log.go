@@ -1,37 +1,60 @@
 package api
 
 import (
+	"errors"
+	"net/http"
 	"slices"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/constants"
+	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-
-	"github.com/gin-gonic/gin"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 )
 
-type logApi struct{}
+type LogApi struct {
+	permissionLogic *logic.PermissionLogic
+	ILogLogic       search.ILogLogic
+	logHandler      *logic.LogHandler
+}
 
-var LogApi = new(logApi)
+func NewLogApi(permissionLogic *logic.PermissionLogic, ILogLogic search.ILogLogic) *LogApi {
+	return &LogApi{
+		permissionLogic: permissionLogic,
+		ILogLogic:       ILogLogic,
+	}
+}
 
-func (a *logApi) GetLog(ctx *gin.Context) {
-	req := bind[model.GetLogReq](ctx)
+func (a *LogApi) GetLog(ctx *echo.Context) error {
+	var req model.GetLogReq
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
 	if isAdmin(ctx) {
-		rOk(ctx, "Query successful!", logic.LogLogicImpl.Search(req, req.FilterName...))
+		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
+			Data:    a.ILogLogic.Search(req, req.FilterName...),
+			Message: "success",
+			Code:    0,
+		})
 	} else {
-		processNameList := repository.PermissionRepository.GetProcessNameByPermission(getUserName(ctx), constants.OPERATION_LOG)
+		processNameList := a.permissionLogic.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
 		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
 			return !slices.Contains(processNameList, s)
 		})
 		if len(filterName) == 0 {
 			filterName = processNameList
 		}
-		errCheck(ctx, len(filterName) == 0, "No information found!")
-		rOk(ctx, "Query successful!", logic.LogLogicImpl.Search(req, filterName...))
+		if len(filterName) == 0 {
+			return errors.New("no information found")
+		}
+		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
+			Data:    a.ILogLogic.Search(req, filterName...),
+			Message: "success",
+			Code:    0,
+		})
 	}
 }
 
-func (a *logApi) GetRunningLog(ctx *gin.Context) {
-	rOk(ctx, "Query successful!", logic.Loghandler.GetRunning())
+func (a *LogApi) GetRunningLog(ctx *echo.Context) error {
+	return ctx.JSON(http.StatusOK, a.logHandler.GetRunning())
 }

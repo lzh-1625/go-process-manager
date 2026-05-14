@@ -1,42 +1,67 @@
 package api
 
 import (
-	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
-type pushApi struct{}
-
-var PushApi = new(pushApi)
-
-func (p *pushApi) GetPushList(ctx *gin.Context) {
-	rOk(ctx, "Query successful!", repository.PushRepository.GetPushList())
+type PushApi struct {
+	pushLogic *logic.PushLogic
 }
 
-func (p *pushApi) GetPushById(ctx *gin.Context) {
-	id := getQueryInt(ctx, "id")
-	rOk(ctx, "Query successful!", repository.PushRepository.GetPushConfigById(id))
+func NewPushApi(pushLogic *logic.PushLogic) *PushApi {
+	return &PushApi{
+		pushLogic: pushLogic,
+	}
 }
 
-func (p *pushApi) AddPushConfig(ctx *gin.Context) {
-	req := bind[model.Push](ctx)
-	err := repository.PushRepository.AddPushConfig(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *PushApi) GetPushList(ctx *echo.Context) error {
+	return ctx.JSON(http.StatusOK, model.Response[[]*model.Push]{
+		Data:    p.pushLogic.GetPushList(),
+		Message: "success",
+		Code:    0,
+	})
 }
 
-func (p *pushApi) UpdatePushConfig(ctx *gin.Context) {
-	req := bind[model.Push](ctx)
-	err := repository.PushRepository.UpdatePushConfig(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *PushApi) GetPushByID(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return ctx.JSON(http.StatusOK, model.Response[*model.Push]{
+		Data:    p.pushLogic.GetPushConfigByID(req.ID),
+		Message: "success",
+		Code:    0,
+	})
 }
 
-func (p *pushApi) DeletePushConfig(ctx *gin.Context) {
-	id := getQueryInt(ctx, "id")
-	err := repository.PushRepository.DeletePushConfig(id)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (p *PushApi) AddPushConfig(ctx *echo.Context) error {
+	var req model.Push
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return p.pushLogic.AddPushConfig(req)
+}
+
+func (p *PushApi) UpdatePushConfig(ctx *echo.Context) error {
+	var req model.Push
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return p.pushLogic.UpdatePushConfig(req)
+}
+
+func (p *PushApi) DeletePushConfig(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return p.pushLogic.DeletePushConfig(req.ID)
 }

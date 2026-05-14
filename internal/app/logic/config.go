@@ -6,18 +6,18 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 )
 
-type configLogic struct{}
+func NewConfigLogic() *ConfigLogic {
+	return &ConfigLogic{}
+}
 
-var (
-	ConfigLogic = new(configLogic)
-)
+type ConfigLogic struct {
+}
 
-func (c *configLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
+func (c *ConfigLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
 	result := []model.SystemConfigurationVo{}
-	typeElem := reflect.TypeOf(config.CF).Elem()
+	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)
@@ -49,8 +49,8 @@ func (c *configLogic) GetSystemConfiguration() []model.SystemConfigurationVo {
 	return result
 }
 
-func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
-	typeElem := reflect.TypeOf(config.CF).Elem()
+func (c *ConfigLogic) SetSystemConfiguration(kv map[string]string) error {
+	typeElem := reflect.TypeFor[config.Configuration]()
 	valueElem := reflect.ValueOf(config.CF).Elem()
 	for i := 0; i < typeElem.NumField(); i++ {
 		typeField := typeElem.Field(i)
@@ -85,60 +85,8 @@ func (c *configLogic) SetSystemConfiguration(kv map[string]string) error {
 				if err != nil {
 					return err
 				}
-				err = repository.ConfigRepository.SetConfigValue(k, v)
-				if err != nil {
-					return err
-				}
 			}
 		}
 	}
-	return nil
-}
-
-// reset system config to default
-func (c *configLogic) ResetSystemConfiguration() error {
-	typeElem := reflect.TypeOf(config.CF).Elem()
-	valueElem := reflect.ValueOf(config.CF).Elem()
-	for i := 0; i < typeElem.NumField(); i++ {
-		typeField := typeElem.Field(i)
-		valueField := valueElem.Field(i)
-		var err error
-		defaultValue := typeField.Tag.Get("default")
-		if defaultValue == "-" {
-			continue
-		}
-		switch typeField.Type.Kind() {
-		case reflect.String:
-			valueField.SetString(defaultValue)
-		case reflect.Bool:
-			value, errV := strconv.ParseBool(defaultValue)
-			err = errV
-			if err == nil {
-				valueField.SetBool(value)
-			}
-		case reflect.Float64:
-			value, errV := strconv.ParseFloat(defaultValue, 64)
-			err = errV
-			if err == nil {
-				valueField.SetFloat(value)
-			}
-		case reflect.Int64, reflect.Int:
-			value, errV := strconv.ParseInt(defaultValue, 10, 64)
-			err = errV
-			if err == nil {
-				valueField.SetInt(value)
-			}
-		default:
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		err = repository.ConfigRepository.SetConfigValue(typeField.Name, defaultValue)
-		if err != nil {
-			return err
-		}
-
-	}
-	return nil
+	return config.DumpConfig()
 }

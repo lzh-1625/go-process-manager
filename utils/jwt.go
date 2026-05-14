@@ -1,67 +1,52 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
-	"github.com/lzh-1625/go_process_manager/config"
-
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-var mySecret []byte
-
-func SetSecret(secret []byte) {
-	mySecret = secret
-}
-
-func keyFunc(_ *jwt.Token) (i interface{}, err error) {
-	return mySecret, nil
-}
-
 type MyClaims struct {
-	UserName string `json:"user_name"`
-	jwt.StandardClaims
+	Username string `json:"username"`
+	jwt.RegisteredClaims
 }
 
-func GenToken(UserName string) (string, error) {
-	// 创建一个我们自己的声明的数据
-	c := MyClaims{
-		UserName,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(
-				time.Duration(config.CF.TokenExpirationTime) * time.Hour).Unix(), // 过期时间
-			Issuer: "jwt", // 签发人
+func GenerateToken(username string, secretKey string, expirationTime time.Time) (string, error) {
+
+	claims := &MyClaims{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
-	// 使用指定的签名方法创建签名对象
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-	return token.SignedString(mySecret)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
-func ParseToken(tokenString string) (*MyClaims, error) {
-	var mc = new(MyClaims)
-	token, err := jwt.ParseWithClaims(tokenString, mc, keyFunc)
+func VerifyToken(tokenString string, secretKey string) (*MyClaims, error) {
+	claims := &MyClaims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+		return []byte(secretKey), nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	if token.Valid {
-		return mc, nil
-	}
-	return nil, errors.New("invalid token")
-}
 
-func RefreshToken(aToken, rToken string) (newAToken, newRToken string, err error) {
-	if _, err = jwt.Parse(rToken, keyFunc); err != nil {
-		return
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
 	}
-	var claims MyClaims
-	_, err = jwt.ParseWithClaims(aToken, &claims, keyFunc)
-	v, _ := err.(*jwt.ValidationError)
 
-	if v.Errors == jwt.ValidationErrorExpired {
-		token, _ := GenToken(claims.UserName)
-		return token, "", nil
-	}
-	return
+	return claims, nil
 }

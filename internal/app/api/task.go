@@ -1,73 +1,111 @@
 package api
 
 import (
+	"net/http"
+
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/repository"
-
-	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 )
 
-type taskApi struct{}
-
-var TaskApi = new(taskApi)
-
-func (t *taskApi) CreateTask(ctx *gin.Context) {
-	req := bind[model.Task](ctx)
-	err := logic.TaskLogic.CreateTask(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+type TaskApi struct {
+	taskLogic *logic.TaskLogic
 }
 
-func (t *taskApi) GetTaskById(ctx *gin.Context) {
-	result, err := repository.TaskRepository.GetTaskById(getQueryInt(ctx, "id"))
-	errCheck(ctx, err != nil, "Query failed!")
-	rOk(ctx, "Operation successful!", result)
+func NewTaskApi(taskLogic *logic.TaskLogic) *TaskApi {
+	return &TaskApi{
+		taskLogic: taskLogic,
+	}
 }
 
-func (t *taskApi) GetTaskList(ctx *gin.Context) {
-	result := logic.TaskLogic.GetAllTaskJob()
-	rOk(ctx, "Operation successful!", result)
+func (t *TaskApi) CreateTask(ctx *echo.Context) error {
+	var req model.Task
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return t.taskLogic.CreateTask(req)
 }
 
-func (t *taskApi) DeleteTaskById(ctx *gin.Context) {
-	err := logic.TaskLogic.DeleteTask(getQueryInt(ctx, "id"))
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) GetTaskByID(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	result, err := t.taskLogic.GetTaskByID(req.ID)
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(http.StatusOK, model.Response[*model.Task]{
+		Data:    result,
+		Message: "success",
+		Code:    0,
+	})
 }
 
-func (t *taskApi) StartTask(ctx *gin.Context) {
-	go logic.TaskLogic.RunTaskById(getQueryInt(ctx, "id"))
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) GetTaskList(ctx *echo.Context) error {
+	return ctx.JSON(http.StatusOK, model.Response[[]model.TaskVo]{
+		Data:    t.taskLogic.GetAllTaskJob(),
+		Message: "success",
+		Code:    0,
+	})
 }
 
-func (t *taskApi) StopTask(ctx *gin.Context) {
-	errCheck(ctx, logic.TaskLogic.StopTaskJob(getQueryInt(ctx, "id")) != nil, "Operation failed!")
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) DeleteTaskByID(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return t.taskLogic.DeleteTask(req.ID)
 }
 
-func (t *taskApi) EditTask(ctx *gin.Context) {
-	req := bind[model.Task](ctx)
-	err := logic.TaskLogic.EditTask(req)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) StartTask(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	go t.taskLogic.RunTaskByID(req.ID)
+	return nil
 }
 
-func (t *taskApi) EditTaskEnable(ctx *gin.Context) {
-	req := bind[model.Task](ctx)
-	err := logic.TaskLogic.EditTaskEnable(req.Id, req.Enable)
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) StopTask(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return t.taskLogic.StopTaskJob(req.ID)
 }
 
-func (t *taskApi) RunTaskByKey(ctx *gin.Context) {
-	err := logic.TaskLogic.RunTaskByKey(ctx.Param("key"))
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) EditTask(ctx *echo.Context) error {
+	var req model.Task
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+
+	if _, err := cron.ParseStandard(req.CronExpression); err != nil && req.CronExpression != "" { // cron expression validation
+		return err
+	}
+	return t.taskLogic.EditTask(&req)
 }
 
-func (t *taskApi) CreateTaskApiKey(ctx *gin.Context) {
-	err := logic.TaskLogic.CreateApiKey(getQueryInt(ctx, "id"))
-	errCheck(ctx, err != nil, err)
-	rOk(ctx, "Operation successful!", nil)
+func (t *TaskApi) RunTaskByKey(ctx *echo.Context) error {
+	return t.taskLogic.RunTaskByKey(ctx.Param("key"))
+}
+
+func (t *TaskApi) CreateTaskApiKey(ctx *echo.Context) error {
+	var req struct {
+		ID int `query:"id"`
+	}
+	if err := ctx.Bind(&req); err != nil {
+		return err
+	}
+	return t.taskLogic.CreateApiKey(req.ID)
 }
