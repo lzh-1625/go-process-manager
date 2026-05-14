@@ -12,6 +12,18 @@ Supports Web UI / CLI / Webhook / cgroup resource limiting / log retrieval / ter
 </p>
 
 ## [中文](./README_CN.md)
+
+---
+
+# 🌐 Online Demo
+## Demo Address
+http://106.54.154.228:8790/
+
+## Test Account
+| Username | Password |
+|---|---|
+| root | root |
+
 ---
 
 # ✨ Project Introduction
@@ -168,17 +180,6 @@ Configure via:
 - Timeout thresholds
 - Log level
 - Global system parameters
-
----
-
-# 🌐 Online Demo
-## Demo Address
-http://106.54.154.228:8790/
-
-## Test Account
-| Username | Password |
-|---|---|
-| root | root |
 
 ---
 
