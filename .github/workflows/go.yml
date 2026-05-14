@@ -22,11 +22,11 @@ jobs:
 
       # resource 目录执行 npm install 和 build
       - name: Install frontend deps
-        working-directory: resource
+        working-directory: resources
         run: npm install
 
       - name: Build frontend
-        working-directory: resource
+        working-directory: resources
         run: npm run build
 
       # 安装 Go
