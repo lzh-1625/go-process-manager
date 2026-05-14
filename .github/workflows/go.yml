@@ -45,3 +45,12 @@ jobs:
           name: gpm_linux_amd64
           path: gpm  # 你指定的二进制文件路径
           if-no-files-found: error # 如果文件不存在，直接报错，方便排查
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./gpm
+          name: Release ${{ github.sha }}
+          tag_name: v${{ github.run_number }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
