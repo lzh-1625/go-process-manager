@@ -251,18 +251,6 @@ View full command documentation.
 
 ---
 
-# 🛣️ Roadmap
-- [ ] Docker container management
-- [ ] Kubernetes integration
-- [ ] Multi-node cluster support
-- [ ] Prometheus metrics integration
-- [ ] OpenAPI documentation
-- [ ] Plugin system
-- [ ] WebSocket real-time push
-- [ ] Multi-tenant isolation
-
----
-
 # 🤝 Contribution
 Welcome to submit:
 - Issues

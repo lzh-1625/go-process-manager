@@ -306,19 +306,6 @@ chmod +x ./gpm
 
 ---
 
-# 🛣️ Roadmap
-
-* [ ] Docker 管理支持
-* [ ] Kubernetes 集成
-* [ ] 多节点集群
-* [ ] Prometheus 指标支持
-* [ ] OpenAPI 文档
-* [ ] 插件系统
-* [ ] WebSocket 实时推送
-* [ ] 多租户支持
-
----
-
 # 🤝 贡献
 
 欢迎提交：
