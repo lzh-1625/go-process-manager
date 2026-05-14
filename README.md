@@ -92,6 +92,28 @@ Automatically collect and centrally store process logs.
 - Unified log management for multiple processes
 - Full-text indexing (Elasticsearch / Bleve)
 
+### Log search query syntax
+
+The log search box parses your input like a shell command line: tokens are split on spaces, and you can use double quotes to keep spaces inside one term (via [`shlex`](https://pkg.go.dev/github.com/google/shlex)). Multiple terms are combined with **AND**—every positive term must match, and negative terms exclude matches.
+
+| Prefix | Meaning |
+|--------|---------|
+| *(none)* | **Match** — default full-text style match (same as `^`). |
+| `^` | **Match** — explicit full-text match on the log field. |
+| `~` | **Wildcard** — substring match; internally treated as `*your text*` on the keyword field (Elasticsearch / Bleve). |
+| `!` | **Not match** — exclude lines that match the remainder as full text (after the single `!`). |
+| `!^` or `^!` | **Not match** — same as not-match, with an explicit marker. |
+| `!~` or `~!` | **Not wildcard** — exclude lines whose log matches the wildcard pattern `*remainder*`. |
+
+Examples (spaces separate independent conditions):
+
+- `error timeout` — both *error* and *timeout* must appear (match semantics).
+- `"out of memory"` — one phrase containing a space.
+- `~GET /api` — wildcard-style substring containing `GET` and `/api` in the pattern (see backend implementation for exact wildcard rules).
+- `error !debug` — must match *error* and must **not** match *debug*.
+
+Behavior is implemented in `internal/app/repository/search` and may differ slightly between **SQLite** (simple string conditions), **Elasticsearch**, and **Bleve** (full-text / wildcard queries).
+
 ---
 
 ## 📡 Status Push
