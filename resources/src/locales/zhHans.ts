@@ -496,6 +496,7 @@ export default {
     terminalInitFailed: "终端容器初始化失败",
     terminalDisconnected: "终端连接已断开",
     terminalError: "终端连接发生错误",
+    noShares: "暂无分享链接",
   },
   errorPage: {
     oops: "Opps!!!",

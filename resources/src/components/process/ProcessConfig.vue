@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { getProcessConfig, putProcessConfig } from "~/src/api/process";
 import { getPushList } from "~/src/api/push";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { ProcessConfig, ProcessItem } from "~/src/types/process/process";
 
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
 const configForm = ref<Partial<ProcessConfig>>({});
@@ -115,7 +117,7 @@ const initPushItem = () => {
     <v-card>
       <v-card-title class="text-h5 grey lighten-2">
         <v-icon left>mdi-cog</v-icon>
-        设置
+        {{ t("processCreatePage.title") }}
       </v-card-title>
 
       <v-card-text>
@@ -123,7 +125,7 @@ const initPushItem = () => {
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
-                label="进程名称"
+                :label="t('processCreatePage.processName')"
                 v-model="configForm.name"
                 variant="outlined"
                 density="compact"
@@ -131,7 +133,7 @@ const initPushItem = () => {
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
-                label="工作目录"
+                :label="t('processCreatePage.workingDirectory')"
                 v-model="configForm.cwd"
                 variant="outlined"
                 density="compact"
@@ -140,7 +142,7 @@ const initPushItem = () => {
 
             <v-col cols="12" md="12">
               <v-text-field
-                label="启动命令"
+                :label="t('processCreatePage.startCommand')"
                 v-model="configForm.cmd"
                 variant="outlined"
                 density="compact"
@@ -154,7 +156,7 @@ const initPushItem = () => {
           <v-row>
             <v-col cols="12">
               <div class="d-flex align-center mb-2">
-                <span class="text-subtitle-2">环境变量</span>
+                <span class="text-subtitle-2">{{ t("processCreatePage.environmentVariables") }}</span>
                 <v-btn
                   size="small"
                   icon="mdi-plus"
@@ -175,21 +177,21 @@ const initPushItem = () => {
           >
             <v-col cols="12" sm="5">
               <v-text-field
-                label="变量名"
+                :label="t('processCreatePage.variableName')"
                 v-model="env.key"
                 variant="outlined"
                 density="compact"
-                placeholder="例如: PATH"
+                :placeholder="t('processCreatePage.variableNamePlaceholder')"
                 hide-details
               ></v-text-field>
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field
-                label="变量值"
+                :label="t('processCreatePage.variableValue')"
                 v-model="env.value"
                 variant="outlined"
                 density="compact"
-                placeholder="例如: /usr/bin"
+                :placeholder="t('processCreatePage.variableValuePlaceholder')"
                 hide-details
               ></v-text-field>
             </v-col>
@@ -212,7 +214,7 @@ const initPushItem = () => {
             item-title="label"
             item-value="value"
             chips
-            label="状态推送"
+            :label="t('processCreatePage.statusPush')"
             multiple
             variant="outlined"
             density="compact"
@@ -224,7 +226,7 @@ const initPushItem = () => {
               <v-switch
                 :disabled="props.data.state?.state === 1"
                 v-model="configForm.cgroupEnable"
-                label="资源限制"
+                :label="t('processCreatePage.resourceLimit')"
                 color="primary"
                 hide-details
               ></v-switch>
@@ -234,7 +236,7 @@ const initPushItem = () => {
                 :disabled="
                   !configForm.cgroupEnable || props.data.state?.state === 3
                 "
-                label="CPU 限制 (%)"
+                :label="t('processCreatePage.cpuLimit')"
                 type="number"
                 v-model.number="configForm.cpuLimit"
                 variant="outlined"
@@ -247,7 +249,7 @@ const initPushItem = () => {
                 :disabled="
                   !configForm.cgroupEnable || props.data.state?.state === 3
                 "
-                label="内存限制 (MB)"
+                :label="t('processCreatePage.memoryLimit')"
                 type="number"
                 v-model.number="configForm.memoryLimit"
                 variant="outlined"
@@ -263,7 +265,7 @@ const initPushItem = () => {
             <v-col cols="12" sm="4">
               <v-switch
                 v-model="configForm.autoRestart"
-                label="自动重启"
+                :label="t('processCreatePage.autoRestart')"
                 color="primary"
                 hide-details
               ></v-switch>
@@ -272,7 +274,7 @@ const initPushItem = () => {
               <v-switch
                 :disabled="!configForm.autoRestart"
                 v-model="configForm.compulsoryRestart"
-                label="强制重启"
+                :label="t('processCreatePage.compulsoryRestart')"
                 color="primary"
                 hide-details
               ></v-switch>
@@ -280,7 +282,7 @@ const initPushItem = () => {
             <v-col cols="12" sm="4">
               <v-switch
                 v-model="configForm.logReport"
-                label="日志上报"
+                :label="t('processCreatePage.logReport')"
                 color="primary"
                 hide-details
               ></v-switch>
@@ -295,11 +297,11 @@ const initPushItem = () => {
         <v-spacer></v-spacer>
         <v-btn variant="text" color="grey-darken-1" @click="dialog = false">
           <v-icon left>mdi-close</v-icon>
-          取消
+          {{ t("processCreatePage.cancel") }}
         </v-btn>
         <v-btn variant="flat" color="primary" @click="editConfig">
           <v-icon left>mdi-check</v-icon>
-          确认
+          {{ t("processCreatePage.confirm") }}
         </v-btn>
       </v-card-actions>
     </v-card>

@@ -503,6 +503,7 @@ export default {
     terminalInitFailed: "Terminal container initialization failed",
     terminalDisconnected: "Terminal connection disconnected",
     terminalError: "Terminal connection error",
+    noShares: "No share links",
   },
   errorPage: {
     oops: "Oops!!!",
