@@ -13,7 +13,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/log"
-	"github.com/lzh-1625/go_process_manager/utils"
 
 	"github.com/runletapp/go-console"
 )
@@ -131,9 +130,7 @@ func (p *ProcessPty) ReadCache(ws ConnectInstance) error {
 
 func (p *ProcessPty) bufHandle(b []byte) {
 	log := strings.TrimSpace(string(b))
-	if utils.RemoveANSI(log) != "" {
-		p.logReportHandler(log)
-	}
+	p.logReportHandler(log)
 	p.cacheBytesBuf.Write(b)
 	p.cacheBytesBuf.Next(len(b))
 }
