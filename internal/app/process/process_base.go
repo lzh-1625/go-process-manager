@@ -74,7 +74,7 @@ type ProcessBase struct {
 	StateHook   func(p *ProcessBase, state eum.ProcessState)
 	AddCoonHook func(p *ProcessBase, user string, c ConnectInstance)
 	DelCoonHook func(p *ProcessBase, user string)
-	LogHandle   func(p *ProcessBase, log string)
+	LogHandle   func(p *ProcessBase, log []byte)
 	PushHandle  func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
 }
 type ConnectInstance interface {
@@ -156,7 +156,7 @@ func (p *ProcessBase) DeleteConn(user string) {
 	}
 }
 
-func (p *ProcessBase) logReportHandler(log string) {
+func (p *ProcessBase) logReportHandler(log []byte) {
 	if p.LogHandle != nil {
 		p.LogHandle(p, log)
 	}
@@ -320,7 +320,7 @@ func SetDelCoonHook(fn func(p *ProcessBase, user string)) ProcessOptions {
 }
 
 // log handle hook
-func SetLogHandle(fn func(p *ProcessBase, log string)) ProcessOptions {
+func SetLogHandle(fn func(p *ProcessBase, log []byte)) ProcessOptions {
 	return func(p *ProcessBase) {
 		p.LogHandle = fn
 	}

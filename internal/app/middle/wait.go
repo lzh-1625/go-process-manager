@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
@@ -34,7 +35,7 @@ func (p *WaitCondMiddle) WaitGetMiddel(next echo.HandlerFunc) echo.HandlerFunc {
 				Message: "version is invalid",
 			})
 		}
-		ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*30)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*time.Duration(config.CF.CondWaitTime))
 		defer cancel()
 
 		p.wc.Wait(ctx, version)

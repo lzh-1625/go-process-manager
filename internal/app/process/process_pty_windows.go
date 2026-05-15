@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -129,8 +128,7 @@ func (p *ProcessPty) ReadCache(ws ConnectInstance) error {
 }
 
 func (p *ProcessPty) bufHandle(b []byte) {
-	log := strings.TrimSpace(string(b))
-	p.logReportHandler(log)
+	p.logReportHandler(b)
 	p.cacheBytesBuf.Write(b)
 	p.cacheBytesBuf.Next(len(b))
 }

@@ -17,9 +17,17 @@ type LogHandler struct {
 }
 
 func NewLogHandler(ILogLogic search.ILogLogic) *LogHandler {
-	antsPool, _ := ants.NewPool(config.CF.LogHandlerPoolSize, ants.WithNonblocking(true), ants.WithExpiryDuration(3*time.Second), ants.WithPanicHandler(func(i any) {
+	options := []ants.Option{}
+	options = append(options, ants.WithExpiryDuration(time.Minute*10))
+	options = append(options, ants.WithPanicHandler(func(i any) {
 		log.Logger.Warnw("log storage failed", "err", i)
 	}))
+	if config.CF.LogHandlerMaxBlockingTasks > 0 {
+		options = append(options, ants.WithMaxBlockingTasks(config.CF.LogHandlerMaxBlockingTasks))
+	} else {
+		options = append(options, ants.WithNonblocking(true))
+	}
+	antsPool, _ := ants.NewPool(config.CF.LogHandlerPoolSize, options...)
 	return &LogHandler{
 		antsPool:  antsPool,
 		ILogLogic: ILogLogic,
@@ -36,4 +44,11 @@ func (l *LogHandler) AddLog(data model.ProcessLog) {
 
 func (l *LogHandler) GetRunning() int {
 	return l.antsPool.Running()
+}
+
+func (l *LogHandler) Close() {
+	err := l.antsPool.ReleaseTimeout(time.Second * 10)
+	if err != nil {
+		log.Logger.Warnw("log handler close failed", "err", err)
+	}
 }

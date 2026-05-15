@@ -3,149 +3,186 @@ package logic
 import (
 	"context"
 	"errors"
-	"strconv"
+	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/log"
-	"github.com/robfig/cron/v3"
+	"github.com/lzh-1625/go_process_manager/utils"
 )
 
-type TaskJob struct {
-	Cron       *cron.Cron         `json:"-"`
-	TaskConfig *model.Task        `json:"task"`
-	Running    bool               `json:"running"`
-	Cancel     context.CancelFunc `json:"-"`
-	StartTime  time.Time          `json:"startTime"`
-	EndTime    time.Time          `json:"endTime"`
-
+type TaskLogic struct {
+	taskRepository  *repository.TaskRepository
+	taskJobMap      sync.Map
 	eventLogic      *EventLogic
 	processCtlLogic *ProcessCtlLogic
-	taskLogic       *TaskLogic
+	eventBus        *EventBus
 }
 
-func NewTaskJob(data *model.Task, eventLogic *EventLogic, processCtlLogic *ProcessCtlLogic, taskLogic *TaskLogic) (*TaskJob, error) {
-	tj := &TaskJob{
-		TaskConfig:      data,
-		StartTime:       time.Now(),
+func NewTaskLogic(
+	taskRepository *repository.TaskRepository,
+	eventLogic *EventLogic,
+	processCtlLogic *ProcessCtlLogic,
+	eventBus *EventBus,
+) *TaskLogic {
+	t := &TaskLogic{
+		taskRepository:  taskRepository,
+		taskJobMap:      sync.Map{},
 		eventLogic:      eventLogic,
 		processCtlLogic: processCtlLogic,
-		taskLogic:       taskLogic,
+		eventBus:        eventBus,
 	}
-	if data.Enable {
-		if err := tj.InitCronHandle(); err != nil {
-			log.Logger.Warnw("cron task start failed", "err", err, "task", data.ID)
-		}
-	}
-	return tj, nil
+	return t
 }
 
-func (t *TaskJob) Run(ctx context.Context) (err error) {
-	logger := log.Logger.With("taskID", t.TaskConfig.ID)
-	if ctx.Value(eum.CtxTaskTraceID{}) == nil {
-		ctx = context.WithValue(ctx, eum.CtxTaskTraceID{}, uuid.NewString())
+func (t *TaskLogic) getTaskJob(id int) (*TaskJob, error) {
+	c, ok := t.taskJobMap.Load(id)
+	if !ok {
+		return nil, errors.New("don't exist this task id")
 	}
-	t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
-	defer func() {
-		t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
-	}()
-	logger = logger.With("traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
-	t.Running = true
-	t.StartTime = time.Now()
-	TaskWaitCond.Trigger()
-	defer func() {
-		t.Running = false
-		TaskWaitCond.Trigger()
-	}()
+	return c.(*TaskJob), nil
+}
 
-	proc, err := t.processCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
+func (t *TaskLogic) InitTaskJob() {
+	for _, v := range t.taskRepository.GetAllTask() {
+		tj, err := NewTaskJob(v, t.eventLogic, t.processCtlLogic, t)
+		if err != nil {
+			log.Logger.Warnw("task initialization failed", "err", err)
+			continue
+		}
+		t.taskJobMap.Store(v.ID, tj)
+	}
+}
+
+func (t *TaskLogic) StopTaskJob(id int) error {
+	taskJob, err := t.getTaskJob(id)
 	if err != nil {
-		logger.Debugw("process not found, task execution failed")
 		return err
 	}
+	if taskJob.Running {
+		taskJob.Cancel()
+	}
+	if taskJob.Cron != nil {
+		taskJob.Cron.Stop()
+	}
+	return nil
+}
 
-	var ok bool
-	// check if the condition is satisfied
-	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessID == 0 {
-		ok = true
-	} else {
-		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
-	}
-	logger.Debugw("task condition check", "pass", ok)
-	if !ok {
-		return
-	}
-	// execute operation
-	logger.Infow("task execute started")
-	if !GetOperationHandle()[t.TaskConfig.Operation](t.TaskConfig, proc) {
-		logger.Warnw("task execution failed")
-		return errors.New("task execution failed")
-	}
-	logger.Infow("task execution success", "target", t.TaskConfig.OperationTarget)
-
-	if t.TaskConfig.NextID != nil {
-		var nextTask *TaskJob
-		nextTask, err = t.taskLogic.getTaskJob(*t.TaskConfig.NextID)
+func (t *TaskLogic) GetAllTaskJob() []model.TaskVo {
+	result := t.taskRepository.GetAllTaskWithProcessName()
+	for i, v := range result {
+		task, err := t.getTaskJob(v.ID)
 		if err != nil {
-			logger.Warnw("cannot get next node, task execution failed", "nextID", t.TaskConfig.NextID)
-			return err
+			continue
 		}
-		select {
-		case <-ctx.Done():
-			logger.Infow("task flow manually ended")
-		default:
-			logger.Debugw("execute next node", "nextID", t.TaskConfig.NextID)
-			if nextTask.Running {
-				logger.Warnw("next node is running, task execution failed", "nextID", t.TaskConfig.NextID)
-				return
-			}
-			ctx, cancel := context.WithCancel(ctx)
-			defer cancel()
-			nextTask.Cancel = cancel
-			return nextTask.Run(ctx)
+		result[i].ID = task.TaskConfig.ID
+		result[i].Running = task.Running
+		result[i].Enable = task.TaskConfig.Enable
+		result[i].StartTime = task.StartTime.Format(time.DateTime)
+	}
+	return result
+}
+
+func (t *TaskLogic) GetTaskByID(id int) (*model.Task, error) {
+	return t.taskRepository.GetTaskByID(id)
+}
+
+func (t *TaskLogic) DeleteTask(id int) (err error) {
+
+	if tj, err := t.getTaskJob(id); err == nil {
+		if tj.Running {
+			return errors.New("task is running, can't delete")
 		}
-	} else {
-		logger.Infow("task flow ended")
+	}
+	t.StopTaskJob(id)
+	t.taskJobMap.Delete(id)
+	err = t.taskRepository.DeleteTask(id)
+	if err != nil {
+		return
 	}
 	return
 }
 
-func (t *TaskJob) InitCronHandle() error {
-	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron expression validation
-		log.Logger.Errorw("cron parse failed", "cron", t.TaskConfig.CronExpression, "err", err)
-		return err
-	}
-	c := cron.New()
-	_, err := c.AddFunc(t.TaskConfig.CronExpression, func() {
-		log.Logger.Infow("cron task start")
-		if t.Running {
-			log.Logger.Infow("task is running, skip current task")
-			return
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		t.Cancel = cancel
-		t.Run(ctx)
-		log.Logger.Infow("cron task ended")
-	})
+func (t *TaskLogic) CreateTask(data model.Task) error {
+	tj, err := NewTaskJob(&data, t.eventLogic, t.processCtlLogic, t)
 	if err != nil {
 		return err
 	}
-	c.Start()
-	t.Cron = c
+	taskID, err := t.taskRepository.AddTask(data)
+	if err != nil {
+		return err
+	}
+	tj.TaskConfig.ID = taskID
+	t.taskJobMap.Store(taskID, tj)
 	return nil
 }
 
-func (t *TaskJob) EditStatus(status bool) error {
-	if t.Cron != nil { // stop cron
-		t.Cron.Stop()
+func (t *TaskLogic) EditTask(data *model.Task) error {
+	tj, err := t.getTaskJob(data.ID)
+	if err != nil {
+		return err
 	}
-	if status { // start cron
-		if err := t.InitCronHandle(); err != nil {
-			return err
-		}
+
+	if tj.Running {
+		return errors.New("can't edit running task")
 	}
+
+	if err := tj.EditStatus(data.Enable); err != nil {
+		return err
+	}
+
+	if data.ApiEnable && data.Key == nil {
+		data.Key = new(utils.RandString(10))
+	}
+
+	tj.TaskConfig = data
+	return t.taskRepository.EditTask(data)
+}
+
+func (t *TaskLogic) CreateApiKey(id int) error {
+	data, err := t.taskRepository.GetTaskByID(id)
+	if err != nil {
+		return err
+	}
+	data.Key = new(utils.RandString(10))
+	t.EditTask(data)
+	return nil
+}
+
+func (t *TaskLogic) RunTaskByKey(key string) error {
+	data, err := t.taskRepository.GetTaskByKey(key)
+	if err != nil {
+		return errors.New("don't exist key")
+	}
+	go t.RunTaskByID(data.ID)
+	return nil
+}
+
+func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessState) {
+	taskList := t.taskRepository.GetTriggerTask(processName, event)
+	if len(taskList) == 0 {
+		return
+	}
+	log.Logger.Infow("get trigger task", "count", len(taskList), "prcess", processName, "trigger event", event)
+	for _, v := range taskList {
+		log.Logger.Infow("execute trigger task", "taskID", v.ID)
+		t.RunTaskByID(v.ID)
+	}
+}
+
+func (t *TaskLogic) RunTaskByID(id int) error {
+	task, err := t.getTaskJob(id)
+	if err != nil {
+		return err
+	}
+	if task.Running {
+		return errors.New("task is running")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	task.Cancel = cancel
+	task.Run(ctx)
 	return nil
 }
