@@ -2,6 +2,7 @@ package logic
 
 import (
 	"errors"
+	"io"
 	"runtime"
 	"slices"
 	"strconv"
@@ -245,7 +246,7 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
 	return process.NewProcessPty(cf,
-		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c process.ConnectInstance) {
+		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c io.WriteCloser) {
 			ProcessWaitCond.Trigger()
 		}),
 		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {

@@ -36,7 +36,7 @@ type ProcessBase struct {
 		Controller       string
 		changControlTime time.Time
 	}
-	ws     map[string]ConnectInstance
+	ws     map[string]io.WriteCloser
 	wsLock sync.RWMutex
 	Config struct {
 		AutoRestart       bool
@@ -75,13 +75,9 @@ type ProcessBase struct {
 
 	LogHandler  IProcessLogHandler
 	StateHook   func(p *ProcessBase, state eum.ProcessState)
-	AddCoonHook func(p *ProcessBase, user string, c ConnectInstance)
+	AddCoonHook func(p *ProcessBase, user string, c io.WriteCloser)
 	DelCoonHook func(p *ProcessBase, user string)
 	PushHandle  func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
-}
-type ConnectInstance interface {
-	Write([]byte)
-	Cancel()
 }
 
 func (p *ProcessBase) SetOpertor(operator string) {
@@ -134,7 +130,7 @@ func (p *ProcessBase) HasWsConn(userName string) bool {
 	return p.ws[userName] != nil
 }
 
-func (p *ProcessBase) AddConn(user string, c ConnectInstance) {
+func (p *ProcessBase) AddConn(user string, c io.WriteCloser) {
 	p.wsLock.Lock()
 	defer p.wsLock.Unlock()
 
@@ -172,7 +168,7 @@ func (p *ProcessBase) ProcessControl(name string) {
 	p.Control.changControlTime = time.Now()
 	p.Control.Controller = name
 	for _, ws := range p.ws {
-		ws.Cancel()
+		ws.Close()
 	}
 }
 
@@ -308,7 +304,7 @@ func SetStateHook(fn func(p *ProcessBase, state eum.ProcessState)) ProcessOption
 }
 
 // ws connect hook
-func SetAddCoonHook(fn func(p *ProcessBase, user string, c ConnectInstance)) ProcessOptions {
+func SetAddCoonHook(fn func(p *ProcessBase, user string, c io.WriteCloser)) ProcessOptions {
 	return func(p *ProcessBase) {
 		p.AddCoonHook = fn
 	}
