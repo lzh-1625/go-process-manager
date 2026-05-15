@@ -151,12 +151,6 @@ func (p *ProcessPty) pInit() {
 
 func (p *ProcessPty) watchDog() {
 	state, _ := p.op.Wait()
-	if p.cgroup.enable && p.cgroup.delete != nil {
-		err := p.cgroup.delete()
-		if err != nil {
-			log.Logger.Errorw("cgroup delete failed", "err", err, "process name", p.Name)
-		}
-	}
 	if p.LogHandler != nil {
 		p.LogHandler.Close()
 	}
