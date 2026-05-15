@@ -1,7 +1,9 @@
 package logic
 
 import (
+	"bufio"
 	"errors"
+	"io"
 	"runtime"
 	"slices"
 	"strconv"
@@ -10,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/shlex"
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
@@ -242,7 +245,15 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 	return
 }
 
-func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.ProcessPty) {
+func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
+	if config.CF.LogReportOptimization {
+		return p.createProcessWithLogOptimization(cf)
+	} else {
+		return p.createProcessCommon(cf)
+	}
+}
+
+func (p *ProcessCtlLogic) createProcessCommon(config model.Process) (proc *process.ProcessPty) {
 	return process.NewProcessPty(config,
 		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c process.ConnectInstance) {
 			ProcessWaitCond.Trigger()
@@ -250,12 +261,9 @@ func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.Pro
 		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {
 			ProcessWaitCond.Trigger()
 		}),
-		process.SetLogHandle(func(proc *process.ProcessBase, log string) {
-			if utils.RemoveANSI(log) == "" {
-				return
-			}
+		process.SetLogHandle(func(proc *process.ProcessBase, log []byte) {
 			p.logHandler.AddLog(model.ProcessLog{
-				Log:   log,
+				Log:   string(log),
 				Using: proc.GetUserString(),
 				Name:  proc.Name,
 				Time:  time.Now().UnixMilli(),
@@ -265,6 +273,59 @@ func (p *ProcessCtlLogic) createProcess(config model.Process) (proc *process.Pro
 			p.pushLogic.Push(pushIDs, messagePlaceholders)
 		}),
 		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
+			ProcessWaitCond.Trigger()
+			p.createEvent(proc, state)
+			p.eventBus.Publish(Event{
+				Proc:  proc,
+				State: state,
+			})
+		}),
+	)
+}
+
+// optimization log format, prevent truncation
+func (p *ProcessCtlLogic) createProcessWithLogOptimization(config model.Process) (proc *process.ProcessPty) {
+	var pr *io.PipeReader
+	var pw *io.PipeWriter
+	return process.NewProcessPty(config,
+		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c process.ConnectInstance) {
+			ProcessWaitCond.Trigger()
+		}),
+		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {
+			ProcessWaitCond.Trigger()
+		}),
+		process.SetLogHandle(func(proc *process.ProcessBase, log []byte) {
+			if pw == nil {
+				return
+			}
+			_, _ = pw.Write(log)
+		}),
+		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
+			p.pushLogic.Push(pushIDs, messagePlaceholders)
+		}),
+		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
+
+			// do on process stop
+			if state == eum.ProcessStateStop || state == eum.ProcessStateWarnning {
+				pr.Close()
+			}
+
+			// do on process start
+			if state == eum.ProcessStateStart {
+				pr, pw = io.Pipe()
+				go func() {
+					scanner := bufio.NewScanner(pr)
+					for scanner.Scan() {
+						log := scanner.Text()
+						p.logHandler.AddLog(model.ProcessLog{
+							Log:   log,
+							Using: proc.GetUserString(),
+							Name:  proc.Name,
+							Time:  time.Now().UnixMilli(),
+						})
+					}
+				}()
+			}
 			ProcessWaitCond.Trigger()
 			p.createEvent(proc, state)
 			p.eventBus.Publish(Event{
