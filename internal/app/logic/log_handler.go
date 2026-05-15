@@ -45,3 +45,10 @@ func (l *LogHandler) AddLog(data model.ProcessLog) {
 func (l *LogHandler) GetRunning() int {
 	return l.antsPool.Running()
 }
+
+func (l *LogHandler) Close() {
+	err := l.antsPool.ReleaseTimeout(time.Second * 10)
+	if err != nil {
+		log.Logger.Warnw("log handler close failed", "err", err)
+	}
+}

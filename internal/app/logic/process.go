@@ -315,6 +315,10 @@ func (p *ProcessCtlLogic) createProcessWithLogOptimization(config model.Process)
 				pr, pw = io.Pipe()
 				go func() {
 					scanner := bufio.NewScanner(pr)
+					if err := scanner.Err(); err != nil {
+						log.Logger.Errorw("log scanner failed", "err", err)
+						return
+					}
 					for scanner.Scan() {
 						log := scanner.Text()
 						p.logHandler.AddLog(model.ProcessLog{

@@ -90,6 +90,7 @@ var runCmd = &cobra.Command{
 				lc fx.Lifecycle,
 				processCtlLogic *logic.ProcessCtlLogic,
 				taskLogic *logic.TaskLogic,
+				logHandler *logic.LogHandler,
 				eventLogic *logic.EventLogic,
 				eventBus *logic.EventBus,
 			) {
@@ -126,6 +127,7 @@ var runCmd = &cobra.Command{
 						c.Stop()
 						log.Logger.Infow("waiting for all process to stop")
 						processCtlLogic.KillAllProcess()
+						logHandler.Close()
 						eventBus.Close()
 						print(stopTitle)
 						return nil
