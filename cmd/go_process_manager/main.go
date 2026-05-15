@@ -84,6 +84,7 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fx.New(
 			fx.NopLogger,
+			fx.StopTimeout(time.Second*5+time.Duration(config.CF.KillWaitTime)*time.Second),
 			app.Module,
 			fx.Invoke(func(
 				r *echo.Echo,
