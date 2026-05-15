@@ -57,7 +57,7 @@ const initWebSocketPty = () => {
 
 const initSocket = (url: string) => {
   socket = new WebSocket(url);
-
+  socket.binaryType = "arraybuffer";
   socket.onopen = () => {
     // WebSocket 连接成功后，初始化 Terminal
     initTerm();

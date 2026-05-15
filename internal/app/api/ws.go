@@ -50,7 +50,7 @@ func (w *WsConnetInstance) Write(b []byte) {
 	w.wsLock.Lock()
 	defer w.wsLock.Unlock()
 	w.timer.Reset(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
-	w.WsConnect.WriteMessage(websocket.TextMessage, b)
+	w.WsConnect.WriteMessage(websocket.BinaryMessage, b)
 }
 
 func (w *WsConnetInstance) Cancel() {
