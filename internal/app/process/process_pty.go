@@ -154,6 +154,9 @@ func (p *ProcessPty) watchDog() {
 			log.Logger.Errorw("cgroup delete failed", "err", err, "process name", p.Name)
 		}
 	}
+	if p.LogHandler != nil {
+		p.LogHandler.Close()
+	}
 	if !p.SetState(eum.ProcessStateStop, func() bool {
 		// process is already stopped or warning state, no need to repeat set state
 		if eum.ProcessStateStop == p.State.State || eum.ProcessStateWarnning == p.State.State {

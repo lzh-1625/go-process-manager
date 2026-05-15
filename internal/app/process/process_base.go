@@ -1,7 +1,9 @@
 package process
 
 import (
+	"bufio"
 	"errors"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -71,10 +73,10 @@ type ProcessBase struct {
 		time time.Time
 	}
 
+	LogHandler  IProcessLogHandler
 	StateHook   func(p *ProcessBase, state eum.ProcessState)
 	AddCoonHook func(p *ProcessBase, user string, c ConnectInstance)
 	DelCoonHook func(p *ProcessBase, user string)
-	LogHandle   func(p *ProcessBase, log []byte)
 	PushHandle  func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
 }
 type ConnectInstance interface {
@@ -157,8 +159,8 @@ func (p *ProcessBase) DeleteConn(user string) {
 }
 
 func (p *ProcessBase) logReportHandler(log []byte) {
-	if p.LogHandle != nil {
-		p.LogHandle(p, log)
+	if p.LogHandler != nil {
+		p.LogHandler.Write(log)
 	}
 }
 
@@ -320,9 +322,9 @@ func SetDelCoonHook(fn func(p *ProcessBase, user string)) ProcessOptions {
 }
 
 // log handle hook
-func SetLogHandle(fn func(p *ProcessBase, log []byte)) ProcessOptions {
+func SetLogHandler(fn func(p *ProcessBase) IProcessLogHandler) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.LogHandle = fn
+		p.LogHandler = fn(p)
 	}
 }
 
@@ -349,4 +351,62 @@ func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty
 
 	p.setProcessConfig(pconfig)
 	return p
+}
+
+type IProcessLogHandler interface {
+	io.WriteCloser
+}
+
+type processLogHandlerByPipe struct {
+	pr *io.PipeReader
+	pw *io.PipeWriter
+	fn func([]byte)
+}
+
+func (p *processLogHandlerByPipe) Write(log []byte) (int, error) {
+	return p.pw.Write(log)
+}
+
+func (p *processLogHandlerByPipe) Close() error {
+	p.pr.Close()
+	p.pw.Close()
+	return nil
+}
+
+func NewProcessLogHandlerByPipe(fn func([]byte)) IProcessLogHandler {
+	pr, pw := io.Pipe()
+	pl := &processLogHandlerByPipe{
+		pr: pr,
+		pw: pw,
+	}
+	go func() {
+		scanner := bufio.NewScanner(pr)
+		for scanner.Scan() {
+			if fn == nil {
+				continue
+			}
+			fn(scanner.Bytes())
+		}
+		log.Logger.Debugw("process log handler by pipe closed")
+	}()
+	return pl
+}
+
+type processLogHandler struct {
+	fn func([]byte)
+}
+
+func (p *processLogHandler) Write(log []byte) (int, error) {
+	p.fn(log)
+	return len(log), nil
+}
+
+func (p *processLogHandler) Close() error {
+	return nil
+}
+
+func NewProcessLogHandler(fn func([]byte)) IProcessLogHandler {
+	return &processLogHandler{
+		fn: fn,
+	}
 }

@@ -1,9 +1,7 @@
 package logic
 
 import (
-	"bufio"
 	"errors"
-	"io"
 	"runtime"
 	"slices"
 	"strconv"
@@ -246,90 +244,38 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 }
 
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
-	if config.CF.LogReportOptimization && cf.LogReport {
-		return p.createProcessWithLogOptimization(cf)
-	} else {
-		return p.createProcessCommon(cf)
-	}
-}
-
-func (p *ProcessCtlLogic) createProcessCommon(config model.Process) (proc *process.ProcessPty) {
-	return process.NewProcessPty(config,
+	return process.NewProcessPty(cf,
 		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c process.ConnectInstance) {
 			ProcessWaitCond.Trigger()
 		}),
 		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {
 			ProcessWaitCond.Trigger()
 		}),
-		process.SetLogHandle(func(proc *process.ProcessBase, log []byte) {
-			p.logHandler.AddLog(model.ProcessLog{
-				Log:   string(log),
-				Using: proc.GetUserString(),
-				Name:  proc.Name,
-				Time:  time.Now().UnixMilli(),
-			})
+		process.SetLogHandler(func(proc *process.ProcessBase) process.IProcessLogHandler {
+			if config.CF.LogReportOptimization && cf.LogReport {
+				return process.NewProcessLogHandlerByPipe(func(log []byte) {
+					p.logHandler.AddLog(model.ProcessLog{
+						Using: proc.GetUserString(),
+						Name:  proc.Name,
+						Log:   string(log),
+						Time:  time.Now().UnixMilli(),
+					})
+				})
+			} else {
+				return process.NewProcessLogHandler(func(log []byte) {
+					p.logHandler.AddLog(model.ProcessLog{
+						Using: proc.GetUserString(),
+						Name:  proc.Name,
+						Log:   string(log),
+						Time:  time.Now().UnixMilli(),
+					})
+				})
+			}
 		}),
 		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
 			p.pushLogic.Push(pushIDs, messagePlaceholders)
 		}),
 		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
-			ProcessWaitCond.Trigger()
-			p.createEvent(proc, state)
-			p.eventBus.Publish(Event{
-				Proc:  proc,
-				State: state,
-			})
-		}),
-	)
-}
-
-// optimization log format, prevent truncation
-func (p *ProcessCtlLogic) createProcessWithLogOptimization(config model.Process) (proc *process.ProcessPty) {
-	var pr *io.PipeReader
-	var pw *io.PipeWriter
-	return process.NewProcessPty(config,
-		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c process.ConnectInstance) {
-			ProcessWaitCond.Trigger()
-		}),
-		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {
-			ProcessWaitCond.Trigger()
-		}),
-		process.SetLogHandle(func(proc *process.ProcessBase, log []byte) {
-			if pw == nil {
-				return
-			}
-			_, _ = pw.Write(log)
-		}),
-		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
-			p.pushLogic.Push(pushIDs, messagePlaceholders)
-		}),
-		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
-
-			// do on process stop
-			if state == eum.ProcessStateStop || state == eum.ProcessStateWarnning {
-				pr.Close()
-			}
-
-			// do on process start
-			if state == eum.ProcessStateStart {
-				pr, pw = io.Pipe()
-				go func() {
-					scanner := bufio.NewScanner(pr)
-					if err := scanner.Err(); err != nil {
-						log.Logger.Errorw("log scanner failed", "err", err)
-						return
-					}
-					for scanner.Scan() {
-						log := scanner.Text()
-						p.logHandler.AddLog(model.ProcessLog{
-							Log:   log,
-							Using: proc.GetUserString(),
-							Name:  proc.Name,
-							Time:  time.Now().UnixMilli(),
-						})
-					}
-				}()
-			}
 			ProcessWaitCond.Trigger()
 			p.createEvent(proc, state)
 			p.eventBus.Publish(Event{
