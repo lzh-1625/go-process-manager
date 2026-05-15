@@ -42,39 +42,58 @@ jobs:
       # 执行 make（go build）
       - name: Build Go project Linux AMD64
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_linux_amd64 ./cmd/go_process_manager
+      - name: Compress Linux AMD64
+        run: gzip -9 gpm_linux_amd64
       - name: Build Go project Windows AMD64
         run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_windows_amd64.exe ./cmd/go_process_manager
+      - name: Compress Windows AMD64
+        run: gzip -9 gpm_windows_amd64.exe
       - name: Build Go project Darwin AMD64
         run: CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_darwin_amd64 ./cmd/go_process_manager
+      - name: Compress Darwin AMD64
+        run: gzip -9 gpm_darwin_amd64
       - name: Build Go project Darwin ARM64
         run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o gpm_darwin_arm64 ./cmd/go_process_manager
+      - name: Compress Darwin ARM64
+        run: gzip -9 gpm_darwin_arm64
       - name: Build Go project Linux ARM64
         run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o gpm_linux_arm64 ./cmd/go_process_manager
+      - name: Compress Linux ARM64
+        run: gzip -9 gpm_linux_arm64
       - name: Build Go project Linux AMD64 Slim
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_linux_amd64_slim ./cmd/go_process_manager
+      - name: Compress Linux AMD64 Slim
+        run: gzip -9 gpm_linux_amd64_slim
       - name: Build Go project Windows AMD64 Slim
         run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_windows_amd64_slim.exe ./cmd/go_process_manager
+      - name: Compress Windows AMD64 Slim
+        run: gzip -9 gpm_windows_amd64_slim.exe
       - name: Build Go project Darwin AMD64 Slim
         run: CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_darwin_amd64_slim ./cmd/go_process_manager
+      - name: Compress Darwin AMD64 Slim
+        run: gzip -9 gpm_darwin_amd64_slim
       - name: Build Go project Darwin ARM64 Slim
         run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_darwin_arm64_slim ./cmd/go_process_manager
+      - name: Compress Darwin ARM64 Slim
+        run: gzip -9 gpm_darwin_arm64_slim
       - name: Build Go project Linux ARM64 Slim
         run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_linux_arm64_slim ./cmd/go_process_manager
-     
+      - name: Compress Linux ARM64 Slim 
+        run: gzip -9 gpm_linux_arm64_slim
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            gpm_linux_amd64
-            gpm_windows_amd64.exe
-            gpm_darwin_amd64
-            gpm_darwin_arm64
-            gpm_linux_arm64
-            gpm_linux_amd64_slim
-            gpm_windows_amd64_slim.exe
-            gpm_darwin_amd64_slim
-            gpm_darwin_arm64_slim
-            gpm_linux_arm64_slim
+            gpm_linux_amd64.gz
+            gpm_windows_amd64.exe.gz
+            gpm_darwin_amd64.gz
+            gpm_darwin_arm64.gz
+            gpm_linux_arm64.gz
+            gpm_linux_amd64_slim.gz
+            gpm_windows_amd64_slim.exe.gz
+            gpm_darwin_amd64_slim.gz
+            gpm_darwin_arm64_slim.gz
+            gpm_linux_arm64_slim.gz
           name: Release ${{ github.sha }}
           tag_name: v${{ github.run_number }}
           generate_release_notes: true
