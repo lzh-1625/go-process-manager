@@ -46,15 +46,16 @@ type WsConnetInstance struct {
 	timer      *time.Timer
 }
 
-func (w *WsConnetInstance) Write(b []byte) {
+func (w *WsConnetInstance) Write(b []byte) (int, error) {
 	w.wsLock.Lock()
 	defer w.wsLock.Unlock()
 	w.timer.Reset(time.Minute * time.Duration(config.CF.TerminalConnectTimeout))
-	w.WsConnect.WriteMessage(websocket.BinaryMessage, b)
+	return 0, w.WsConnect.WriteMessage(websocket.BinaryMessage, b)
 }
 
-func (w *WsConnetInstance) Cancel() {
+func (w *WsConnetInstance) Close() error {
 	w.CancelFunc()
+	return nil
 }
 
 var upgrader = websocket.Upgrader{

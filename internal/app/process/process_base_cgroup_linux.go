@@ -3,6 +3,8 @@
 package process
 
 import (
+	"fmt"
+
 	"github.com/containerd/cgroups/v3"
 	"github.com/containerd/cgroups/v3/cgroup1"
 	"github.com/containerd/cgroups/v3/cgroup2"
@@ -49,12 +51,15 @@ func (p *ProcessBase) initCgroupV1() {
 		}
 		resources.Memory = memResources
 	}
-	control, err := cgroup1.New(cgroup1.StaticPath("/"+p.Name), resources)
+	control, err := cgroup1.New(cgroup1.StaticPath(fmt.Sprintf("/GPM%d", p.UUID)), resources)
 	if err != nil {
 		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
 	}
-	control.AddProc(uint64(p.Pid))
+	if err := control.AddProc(uint64(p.Pid)); err != nil {
+		log.Logger.Errorw("add process to cgroup failed", "err", err, "name", p.Name)
+		return
+	}
 	p.cgroup.delete = control.Delete
 	p.cgroup.enable = true
 }
@@ -78,12 +83,15 @@ func (p *ProcessBase) initCgroupV2() {
 		}
 		resources.Memory = memResources
 	}
-	control, err := cgroup2.NewSystemd("/", p.Name+".slice", -1, resources)
+	control, err := cgroup2.NewSystemd("/", fmt.Sprintf("GPM%d.slice", p.UUID), -1, resources)
 	if err != nil {
 		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
 	}
-	control.AddProc(uint64(p.Pid))
+	if err := control.AddProc(uint64(p.Pid)); err != nil {
+		log.Logger.Errorw("add process to cgroup failed", "err", err, "name", p.Name)
+		return
+	}
 	p.cgroup.delete = control.DeleteSystemd
 	p.cgroup.enable = true
 }

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"time"
@@ -67,7 +68,7 @@ func (p *ProcessPty) pInit() {
 	p.StopChan = make(chan struct{})
 	p.State.manualStopFlag = false
 	p.State.StartTime = time.Now()
-	p.ws = make(map[string]ConnectInstance)
+	p.ws = make(map[string]io.WriteCloser)
 	p.Pid = p.op.Pid
 	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
 	p.InitPerformanceStatus()
@@ -132,12 +133,12 @@ func (p *ProcessPty) readInit() {
 	}
 }
 
-func (p *ProcessPty) ReadCache(ws ConnectInstance) error {
+func (p *ProcessPty) ReadCache(ws io.WriteCloser) error {
 	if p.cacheBytesBuf == nil {
 		return errors.New("cache is null")
 	}
-	ws.Write(p.cacheBytesBuf.Bytes())
-	return nil
+	_, err := ws.Write(p.cacheBytesBuf.Bytes())
+	return err
 }
 
 func (p *ProcessPty) bufHandle(b []byte) {
