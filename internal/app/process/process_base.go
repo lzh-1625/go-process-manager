@@ -115,9 +115,9 @@ func (p *ProcessBase) GetUserString() string {
 }
 
 func (p *ProcessBase) GetUserList() []string {
-	userList := make([]string, 0, len(p.ws))
 	p.wsLock.RLock()
 	defer p.wsLock.RUnlock()
+	userList := make([]string, 0, len(p.ws))
 	for i := range p.ws {
 		userList = append(userList, i)
 	}
