@@ -377,6 +377,10 @@ func NewProcessLogHandlerByPipe(fn func([]byte)) IProcessLogHandler {
 	}
 	go func() {
 		scanner := bufio.NewScanner(pr)
+		if err := scanner.Err(); err != nil {
+			log.Logger.Warn(err)
+			return
+		}
 		for scanner.Scan() {
 			if fn == nil {
 				continue
