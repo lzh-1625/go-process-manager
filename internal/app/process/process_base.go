@@ -297,6 +297,9 @@ func (p *ProcessBase) Kill() error {
 }
 
 func (p *ProcessBase) initLogHandler() {
+	if p.Config.logHandlerFn == nil {
+		return
+	}
 	if p.Config.logHandlerPipe {
 		p.logHandler = newProcessLogHandlerByPipe(func(b []byte) {
 			p.Config.logHandlerFn(p, b)
