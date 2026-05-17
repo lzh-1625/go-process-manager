@@ -25,6 +25,8 @@ export interface EventListReq {
   endTime?: number;
   type?: EventType;
   name?: string;
+  key?: string;
+  value?: string;
 }
 
 // 事件列表响应

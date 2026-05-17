@@ -65,6 +65,27 @@
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
+                  :label="$t('eventPage.additionalKey')"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.key"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  :label="$t('eventPage.additionalValue')"
+                  variant="outlined"
+                  :disabled="!searchForm.key||searchForm.key==''"
+                  density="compact"
+                  v-model="searchForm.value"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
                   :label="$t('common.startTime')"
                   variant="outlined"
                   density="compact"
@@ -212,6 +233,8 @@ const searchForm = ref({
   type: "" as EventType | "",
   startTime: "",
   endTime: "",
+  key: "",
+  value: "",
 });
 
 // 计算总页数
@@ -306,6 +329,12 @@ const buildQuery = (): EventListReq => {
   if (searchForm.value.endTime) {
     query.endTime = new Date(searchForm.value.endTime).getTime();
   }
+  if (searchForm.value.key) {
+    query.key = searchForm.value.key;
+  }
+  if (searchForm.value.value) {
+    query.value = searchForm.value.value;
+  }
 
   return query;
 };
@@ -344,6 +373,8 @@ const resetSearch = () => {
     type: "",
     startTime: "",
     endTime: "",
+    key: "",
+    value: "",
   };
   currentPage.value = 1;
   loadEvents();
