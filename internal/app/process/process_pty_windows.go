@@ -145,6 +145,7 @@ func (p *ProcessPty) pInit() {
 	p.InitPerformanceStatus()
 	p.initPsutil()
 	p.initCgroup()
+	p.initLogHandler()
 	go p.watchDog()
 	go p.readInit()
 	go p.monitorHandler()
@@ -152,8 +153,8 @@ func (p *ProcessPty) pInit() {
 
 func (p *ProcessPty) watchDog() {
 	state, _ := p.op.Wait()
-	if p.LogHandler != nil {
-		p.LogHandler.Close()
+	if p.logHandler != nil {
+		p.logHandler.Close()
 	}
 	if !p.SetState(eum.ProcessStateStop, func() bool {
 		// process is already stopped or warning state, no need to repeat set state
