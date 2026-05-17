@@ -252,9 +252,6 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 			ProcessWaitCond.Trigger()
 		}),
 		process.SetLogHandler(config.CF.LogReportOptimization, func(proc *process.ProcessBase, log []byte) {
-			if !proc.Config.LogReport {
-				return
-			}
 			logStr := string(log)
 			if strings.TrimSpace(utils.RemoveANSI(logStr)) == "" {
 				return

@@ -157,7 +157,7 @@ func (p *ProcessBase) DeleteWriter(user string) {
 }
 
 func (p *ProcessBase) logReportHandler(log []byte) {
-	if p.logHandler != nil {
+	if p.Config.LogReport && p.logHandler != nil {
 		p.logHandler.Write(log)
 	}
 }
@@ -297,6 +297,9 @@ func (p *ProcessBase) Kill() error {
 }
 
 func (p *ProcessBase) initLogHandler() {
+	if p.Config.logHandlerFn == nil {
+		return
+	}
 	if p.Config.logHandlerPipe {
 		p.logHandler = newProcessLogHandlerByPipe(func(b []byte) {
 			p.Config.logHandlerFn(p, b)
