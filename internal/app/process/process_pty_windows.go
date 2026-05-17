@@ -72,7 +72,7 @@ func (p *ProcessPty) Start() (err error) {
 }
 
 func (p *ProcessPty) SetTerminalSize(cols, rows int) {
-	if cols == 0 || rows == 0 || len(p.ws) != 0 {
+	if cols == 0 || rows == 0 || len(p.writers) != 0 {
 		return
 	}
 	p.pty.SetSize(cols, rows)
@@ -107,14 +107,14 @@ func (p *ProcessPty) readInit() {
 					return
 				}
 				p.bufHandle(buf[:n])
-				if len(p.ws) == 0 {
+				if len(p.writers) == 0 {
 					continue
 				}
-				p.wsLock.RLock()
-				for _, v := range p.ws {
+				p.wlock.RLock()
+				for _, v := range p.writers {
 					v.Write(buf[:n])
 				}
-				p.wsLock.RUnlock()
+				p.wlock.RUnlock()
 			}
 		}
 	}
@@ -139,7 +139,7 @@ func (p *ProcessPty) pInit() {
 	p.StopChan = make(chan struct{})
 	p.State.manualStopFlag = false
 	p.State.StartTime = time.Now()
-	p.ws = make(map[string]io.WriteCloser)
+	p.writers = make(map[string]io.WriteCloser)
 	p.Pid = p.op.Pid
 	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
 	p.InitPerformanceStatus()

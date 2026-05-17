@@ -36,9 +36,9 @@ type ProcessBase struct {
 		Controller       string
 		changControlTime time.Time
 	}
-	ws     map[string]io.WriteCloser
-	wsLock sync.RWMutex
-	Config struct {
+	writers map[string]io.WriteCloser
+	wlock   sync.RWMutex
+	Config  struct {
 		AutoRestart       bool
 		CompulsoryRestart bool
 		PushIDs           []int64
@@ -73,11 +73,11 @@ type ProcessBase struct {
 		time time.Time
 	}
 
-	LogHandler  IProcessLogHandler
-	StateHook   func(p *ProcessBase, state eum.ProcessState)
-	AddCoonHook func(p *ProcessBase, user string, c io.WriteCloser)
-	DelCoonHook func(p *ProcessBase, user string)
-	PushHandle  func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
+	LogHandler    IProcessLogHandler
+	StateHook     func(p *ProcessBase, state eum.ProcessState)
+	AddWriterHook func(p *ProcessBase, user string, c io.WriteCloser)
+	DelWriterHook func(p *ProcessBase, user string)
+	PushHandle    func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
 }
 
 func (p *ProcessBase) SetOpertor(operator string) {
@@ -115,42 +115,42 @@ func (p *ProcessBase) GetUserString() string {
 }
 
 func (p *ProcessBase) GetUserList() []string {
-	p.wsLock.RLock()
-	defer p.wsLock.RUnlock()
-	userList := make([]string, 0, len(p.ws))
-	for i := range p.ws {
+	p.wlock.RLock()
+	defer p.wlock.RUnlock()
+	userList := make([]string, 0, len(p.writers))
+	for i := range p.writers {
 		userList = append(userList, i)
 	}
 	return userList
 }
 
-func (p *ProcessBase) HasWsConn(userName string) bool {
-	p.wsLock.RLock()
-	defer p.wsLock.RUnlock()
-	return p.ws[userName] != nil
+func (p *ProcessBase) HasWriter(userName string) bool {
+	p.wlock.RLock()
+	defer p.wlock.RUnlock()
+	return p.writers[userName] != nil
 }
 
-func (p *ProcessBase) AddConn(user string, c io.WriteCloser) {
-	p.wsLock.Lock()
-	defer p.wsLock.Unlock()
+func (p *ProcessBase) AddWriter(user string, c io.WriteCloser) {
+	p.wlock.Lock()
+	defer p.wlock.Unlock()
 
-	if p.ws[user] != nil {
+	if p.writers[user] != nil {
 		log.Logger.Error("connection already exists")
 		return
 	}
 
-	p.ws[user] = c
-	if p.AddCoonHook != nil {
-		p.AddCoonHook(p, user, c)
+	p.writers[user] = c
+	if p.AddWriterHook != nil {
+		p.AddWriterHook(p, user, c)
 	}
 }
 
-func (p *ProcessBase) DeleteConn(user string) {
-	p.wsLock.Lock()
-	defer p.wsLock.Unlock()
-	delete(p.ws, user)
-	if p.DelCoonHook != nil {
-		p.DelCoonHook(p, user)
+func (p *ProcessBase) DeleteWriter(user string) {
+	p.wlock.Lock()
+	defer p.wlock.Unlock()
+	delete(p.writers, user)
+	if p.DelWriterHook != nil {
+		p.DelWriterHook(p, user)
 	}
 }
 
@@ -167,7 +167,7 @@ func (p *ProcessBase) GetStartTimeFormat() string {
 func (p *ProcessBase) ProcessControl(name string) {
 	p.Control.changControlTime = time.Now()
 	p.Control.Controller = name
-	for _, ws := range p.ws {
+	for _, ws := range p.writers {
 		ws.Close()
 	}
 }
@@ -304,16 +304,16 @@ func SetStateHook(fn func(p *ProcessBase, state eum.ProcessState)) ProcessOption
 }
 
 // ws connect hook
-func SetAddCoonHook(fn func(p *ProcessBase, user string, c io.WriteCloser)) ProcessOptions {
+func SetAddWriterHook(fn func(p *ProcessBase, user string, c io.WriteCloser)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.AddCoonHook = fn
+		p.AddWriterHook = fn
 	}
 }
 
 // ws disconnect hook
-func SetDelCoonHook(fn func(p *ProcessBase, user string)) ProcessOptions {
+func SetDelWriterHook(fn func(p *ProcessBase, user string)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.DelCoonHook = fn
+		p.DelWriterHook = fn
 	}
 }
 
