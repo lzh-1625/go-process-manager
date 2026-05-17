@@ -157,7 +157,7 @@ func (p *ProcessBase) DeleteWriter(user string) {
 }
 
 func (p *ProcessBase) logReportHandler(log []byte) {
-	if p.logHandler != nil {
+	if p.Config.LogReport && p.logHandler != nil {
 		p.logHandler.Write(log)
 	}
 }
