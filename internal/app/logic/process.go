@@ -36,7 +36,6 @@ func NewProcessCtlLogic(
 	permissionRepository *repository.PermissionRepository,
 	eventLogic *EventLogic,
 	pushLogic *PushLogic,
-	// taskLogic *TaskLogic,
 	logHandler *LogHandler,
 	eventBus *EventBus,
 ) *ProcessCtlLogic {
