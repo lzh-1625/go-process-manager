@@ -255,10 +255,14 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 		process.SetLogHandler(func(proc *process.ProcessBase) process.IProcessLogHandler {
 			if config.CF.LogReportOptimization && cf.LogReport {
 				return process.NewProcessLogHandlerByPipe(func(log []byte) {
+					logStr := string(log)
+					if strings.TrimSpace(utils.RemoveANSI(logStr)) == "" {
+						return
+					}
 					p.logHandler.AddLog(model.ProcessLog{
 						Using: proc.GetUserString(),
 						Name:  proc.Name,
-						Log:   string(log),
+						Log:   logStr,
 						Time:  time.Now().UnixMilli(),
 					})
 				})
