@@ -6,6 +6,8 @@ import (
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
+	"gorm.io/datatypes"
+	"gorm.io/gen"
 )
 
 func NewEventRepository(query *query.Query) *EventRepository {
@@ -37,6 +39,17 @@ func (e *EventRepository) GetList(req model.EventListReq) ([]*model.Event, int64
 	if req.Name != "" {
 		tx = tx.Where(e.query.Event.Name.Like("%" + req.Name + "%"))
 	}
+	if req.Key != "" && req.Value == "" {
+		tx = tx.Where(
+			gen.Cond(datatypes.JSONQuery(e.query.Event.Additional.ColumnName().String()).HasKey(req.Key))...,
+		)
+	}
+	if req.Key != "" && req.Value != "" {
+		tx = tx.Where(
+			gen.Cond(datatypes.JSONQuery(e.query.Event.Additional.ColumnName().String()).Equals(req.Value, req.Key))...,
+		)
+	}
+
 	return tx.Order(e.query.Event.CreatedTime.Desc()).FindByPage((req.Page-1)*req.Size, req.Size)
 }
 

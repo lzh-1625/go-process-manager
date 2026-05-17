@@ -25,6 +25,8 @@ type EventListReq struct {
 	EndTime   int64         `query:"endTime"`
 	Type      eum.EventType `query:"type"`
 	Name      string        `query:"name"`
+	Key       string        `query:"key"`
+	Value     string        `query:"value"`
 }
 
 type EventListResp struct {

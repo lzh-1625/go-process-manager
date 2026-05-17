@@ -17,7 +17,7 @@
         <!-- 标题栏 -->
         <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
-          <span class="flex-fill">{{ $t('logPage.title') }}</span>
+          <span class="flex-fill">{{ $t("logPage.title") }}</span>
           <v-btn icon variant="text" size="small" @click="refreshLogs">
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -123,10 +123,10 @@
                   variant="elevated"
                   @click="searchLogs"
                 >
-                  {{ $t('common.search') }}
+                  {{ $t("common.search") }}
                 </v-btn>
                 <v-btn size="small" variant="tonal" @click="resetSearch">
-                  {{ $t('common.reset') }}
+                  {{ $t("common.reset") }}
                 </v-btn>
               </v-col>
             </v-row>
@@ -170,7 +170,7 @@
             </tr>
             <tr v-if="logData.length === 0">
               <td colspan="5" class="text-center text-secondary pa-8">
-                {{ $t('common.noData') }}
+                {{ $t("common.noData") }}
               </td>
             </tr>
           </tbody>
@@ -186,7 +186,7 @@
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
-            {{ $t('logPage.totalLogs', { n: totalLogs }) }}
+            {{ $t("logPage.totalLogs", { n: totalLogs }) }}
           </div>
         </div>
       </div>
@@ -249,7 +249,7 @@ const searchForm = ref({
   log: "",
   using: "",
   startTime: getDefaultStartTime(),
-  endTime: "",
+  endTime: formatDatetimeLocal(new Date()),
   sort: "desc",
 });
 

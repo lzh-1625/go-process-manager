@@ -347,6 +347,8 @@ export default {
     title: "System Events",
     eventType: "Event Type",
     additionalInfo: "Additional Info",
+    additionalKey:"Additional Key",
+    additionalValue:"Additional Value",
     totalEvents: "Total {n} events",
     loadEventsFailed: "Failed to load events",
     loadEventsError: "Error loading events",

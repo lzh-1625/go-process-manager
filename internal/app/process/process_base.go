@@ -36,9 +36,9 @@ type ProcessBase struct {
 		Controller       string
 		changControlTime time.Time
 	}
-	ws     map[string]io.WriteCloser
-	wsLock sync.RWMutex
-	Config struct {
+	writers map[string]io.WriteCloser
+	wlock   sync.RWMutex
+	Config  struct {
 		AutoRestart       bool
 		CompulsoryRestart bool
 		PushIDs           []int64
@@ -46,6 +46,8 @@ type ProcessBase struct {
 		CgroupEnable      bool
 		MemoryLimit       *float32
 		CpuLimit          *float32
+		logHandlerPipe    bool
+		logHandlerFn      func(p *ProcessBase, log []byte)
 	}
 	State struct {
 		StartTime      time.Time
@@ -73,11 +75,11 @@ type ProcessBase struct {
 		time time.Time
 	}
 
-	LogHandler  IProcessLogHandler
-	StateHook   func(p *ProcessBase, state eum.ProcessState)
-	AddCoonHook func(p *ProcessBase, user string, c io.WriteCloser)
-	DelCoonHook func(p *ProcessBase, user string)
-	PushHandle  func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
+	logHandler    io.WriteCloser
+	stateHook     func(p *ProcessBase, state eum.ProcessState)
+	addWriterHook func(p *ProcessBase, user string, c io.WriteCloser)
+	delWriterHook func(p *ProcessBase, user string)
+	pushHandle    func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
 }
 
 func (p *ProcessBase) SetOpertor(operator string) {
@@ -104,8 +106,8 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 		}
 	}
 	p.State.State = state
-	if p.StateHook != nil {
-		p.StateHook(p, state)
+	if p.stateHook != nil {
+		p.stateHook(p, state)
 	}
 	return true
 }
@@ -115,48 +117,48 @@ func (p *ProcessBase) GetUserString() string {
 }
 
 func (p *ProcessBase) GetUserList() []string {
-	userList := make([]string, 0, len(p.ws))
-	p.wsLock.RLock()
-	defer p.wsLock.RUnlock()
-	for i := range p.ws {
+	p.wlock.RLock()
+	defer p.wlock.RUnlock()
+	userList := make([]string, 0, len(p.writers))
+	for i := range p.writers {
 		userList = append(userList, i)
 	}
 	return userList
 }
 
-func (p *ProcessBase) HasWsConn(userName string) bool {
-	p.wsLock.RLock()
-	defer p.wsLock.RUnlock()
-	return p.ws[userName] != nil
+func (p *ProcessBase) HasWriter(userName string) bool {
+	p.wlock.RLock()
+	defer p.wlock.RUnlock()
+	return p.writers[userName] != nil
 }
 
-func (p *ProcessBase) AddConn(user string, c io.WriteCloser) {
-	p.wsLock.Lock()
-	defer p.wsLock.Unlock()
+func (p *ProcessBase) AddWriter(user string, c io.WriteCloser) {
+	p.wlock.Lock()
+	defer p.wlock.Unlock()
 
-	if p.ws[user] != nil {
+	if p.writers[user] != nil {
 		log.Logger.Error("connection already exists")
 		return
 	}
 
-	p.ws[user] = c
-	if p.AddCoonHook != nil {
-		p.AddCoonHook(p, user, c)
+	p.writers[user] = c
+	if p.addWriterHook != nil {
+		p.addWriterHook(p, user, c)
 	}
 }
 
-func (p *ProcessBase) DeleteConn(user string) {
-	p.wsLock.Lock()
-	defer p.wsLock.Unlock()
-	delete(p.ws, user)
-	if p.DelCoonHook != nil {
-		p.DelCoonHook(p, user)
+func (p *ProcessBase) DeleteWriter(user string) {
+	p.wlock.Lock()
+	defer p.wlock.Unlock()
+	delete(p.writers, user)
+	if p.delWriterHook != nil {
+		p.delWriterHook(p, user)
 	}
 }
 
 func (p *ProcessBase) logReportHandler(log []byte) {
-	if p.LogHandler != nil {
-		p.LogHandler.Write(log)
+	if p.logHandler != nil {
+		p.logHandler.Write(log)
 	}
 }
 
@@ -167,7 +169,7 @@ func (p *ProcessBase) GetStartTimeFormat() string {
 func (p *ProcessBase) ProcessControl(name string) {
 	p.Control.changControlTime = time.Now()
 	p.Control.Controller = name
-	for _, ws := range p.ws {
+	for _, ws := range p.writers {
 		ws.Close()
 	}
 }
@@ -199,8 +201,8 @@ func (p *ProcessBase) push(message string) {
 			"{$message}": message,
 			"{$status}":  strconv.Itoa(int(p.State.State)),
 		}
-		if p.PushHandle != nil {
-			p.PushHandle(p, p.Config.PushIDs, messagePlaceholders)
+		if p.pushHandle != nil {
+			p.pushHandle(p, p.Config.PushIDs, messagePlaceholders)
 		}
 	}
 }
@@ -294,40 +296,53 @@ func (p *ProcessBase) Kill() error {
 	}
 }
 
+func (p *ProcessBase) initLogHandler() {
+	if p.Config.logHandlerPipe {
+		p.logHandler = newProcessLogHandlerByPipe(func(b []byte) {
+			p.Config.logHandlerFn(p, b)
+		})
+	} else {
+		p.logHandler = newProcessLogHandler(func(b []byte) {
+			p.Config.logHandlerFn(p, b)
+		})
+	}
+}
+
 type ProcessOptions func(*ProcessBase)
 
 // state change hook
 func SetStateHook(fn func(p *ProcessBase, state eum.ProcessState)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.StateHook = fn
+		p.stateHook = fn
 	}
 }
 
 // ws connect hook
-func SetAddCoonHook(fn func(p *ProcessBase, user string, c io.WriteCloser)) ProcessOptions {
+func SetAddWriterHook(fn func(p *ProcessBase, user string, c io.WriteCloser)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.AddCoonHook = fn
+		p.addWriterHook = fn
 	}
 }
 
 // ws disconnect hook
-func SetDelCoonHook(fn func(p *ProcessBase, user string)) ProcessOptions {
+func SetDelWriterHook(fn func(p *ProcessBase, user string)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.DelCoonHook = fn
+		p.delWriterHook = fn
 	}
 }
 
 // log handle hook
-func SetLogHandler(fn func(p *ProcessBase) IProcessLogHandler) ProcessOptions {
+func SetLogHandler(pipe bool, fn func(p *ProcessBase, log []byte)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.LogHandler = fn(p)
+		p.Config.logHandlerFn = fn
+		p.Config.logHandlerPipe = pipe
 	}
 }
 
 // push handle hook
 func SetPushHandle(fn func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)) ProcessOptions {
 	return func(p *ProcessBase) {
-		p.PushHandle = fn
+		p.pushHandle = fn
 	}
 }
 
@@ -344,13 +359,8 @@ func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty
 	for _, option := range options {
 		option(p.ProcessBase)
 	}
-
 	p.setProcessConfig(pconfig)
 	return p
-}
-
-type IProcessLogHandler interface {
-	io.WriteCloser
 }
 
 type processLogHandlerByPipe struct {
@@ -369,7 +379,7 @@ func (p *processLogHandlerByPipe) Close() error {
 	return nil
 }
 
-func NewProcessLogHandlerByPipe(fn func([]byte)) IProcessLogHandler {
+func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 	pr, pw := io.Pipe()
 	pl := &processLogHandlerByPipe{
 		pr: pr,
@@ -405,7 +415,7 @@ func (p *processLogHandler) Close() error {
 	return nil
 }
 
-func NewProcessLogHandler(fn func([]byte)) IProcessLogHandler {
+func newProcessLogHandler(fn func([]byte)) io.WriteCloser {
 	return &processLogHandler{
 		fn: fn,
 	}

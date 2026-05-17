@@ -36,7 +36,6 @@ func NewProcessCtlLogic(
 	permissionRepository *repository.PermissionRepository,
 	eventLogic *EventLogic,
 	pushLogic *PushLogic,
-	// taskLogic *TaskLogic,
 	logHandler *LogHandler,
 	eventBus *EventBus,
 ) *ProcessCtlLogic {
@@ -246,32 +245,26 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
 	return process.NewProcessPty(cf,
-		process.SetAddCoonHook(func(p *process.ProcessBase, user string, c io.WriteCloser) {
+		process.SetAddWriterHook(func(p *process.ProcessBase, user string, c io.WriteCloser) {
 			ProcessWaitCond.Trigger()
 		}),
-		process.SetDelCoonHook(func(p *process.ProcessBase, user string) {
+		process.SetDelWriterHook(func(p *process.ProcessBase, user string) {
 			ProcessWaitCond.Trigger()
 		}),
-		process.SetLogHandler(func(proc *process.ProcessBase) process.IProcessLogHandler {
-			if config.CF.LogReportOptimization && cf.LogReport {
-				return process.NewProcessLogHandlerByPipe(func(log []byte) {
-					p.logHandler.AddLog(model.ProcessLog{
-						Using: proc.GetUserString(),
-						Name:  proc.Name,
-						Log:   string(log),
-						Time:  time.Now().UnixMilli(),
-					})
-				})
-			} else {
-				return process.NewProcessLogHandler(func(log []byte) {
-					p.logHandler.AddLog(model.ProcessLog{
-						Using: proc.GetUserString(),
-						Name:  proc.Name,
-						Log:   string(log),
-						Time:  time.Now().UnixMilli(),
-					})
-				})
+		process.SetLogHandler(config.CF.LogReportOptimization, func(proc *process.ProcessBase, log []byte) {
+			if !proc.Config.LogReport {
+				return
 			}
+			logStr := string(log)
+			if strings.TrimSpace(utils.RemoveANSI(logStr)) == "" {
+				return
+			}
+			p.logHandler.AddLog(model.ProcessLog{
+				Using: proc.GetUserString(),
+				Name:  proc.Name,
+				Log:   logStr,
+				Time:  time.Now().UnixMilli(),
+			})
 		}),
 		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
 			p.pushLogic.Push(pushIDs, messagePlaceholders)

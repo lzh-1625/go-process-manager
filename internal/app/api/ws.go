@@ -79,7 +79,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	if proc.HasWsConn(reqUser) {
+	if proc.HasWriter(reqUser) {
 		return errors.New("connection already exists")
 	}
 	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
@@ -111,8 +111,8 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 		write := w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
 		w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
-		proc.AddConn(reqUser, wci)
-		defer proc.DeleteConn(reqUser)
+		proc.AddWriter(reqUser, wci)
+		defer proc.DeleteWriter(reqUser)
 	}
 	conn.SetCloseHandler(func(_ int, _ string) error {
 		cancel()
@@ -144,7 +144,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 		return err
 	}
 	guestName := "guest-" + strconv.Itoa(int(data.ID)) // construct guest username
-	if proc.HasWsConn(guestName) {
+	if proc.HasWriter(guestName) {
 		return errors.New("connection already exists")
 	}
 	if proc.State.State != eum.ProcessStateRunning {
@@ -180,8 +180,8 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	}
 	w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
-	proc.AddConn(guestName, wci)
-	defer proc.DeleteConn(guestName)
+	proc.AddWriter(guestName, wci)
+	defer proc.DeleteWriter(guestName)
 	conn.SetCloseHandler(func(_ int, _ string) error {
 		cancel()
 		return nil
