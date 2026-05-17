@@ -144,7 +144,6 @@ func (p *ProcessPty) pInit() {
 	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
 	p.InitPerformanceStatus()
 	p.initPsutil()
-	p.initCgroup()
 	p.initLogHandler()
 	go p.watchDog()
 	go p.readInit()
