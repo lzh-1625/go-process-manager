@@ -30,9 +30,9 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 	queue := diskqueue.New(
 		"log",
 		dirPath,
-		1024*1024*512*1,
-		4,
 		1024*1024*10,
+		4,
+		1024*1024,
 		1000,
 		5*time.Second,
 		func(lvl diskqueue.LogLevel, f string, args ...any) {
