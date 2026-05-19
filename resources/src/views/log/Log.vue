@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="py-6 px-8">
+  <v-container fluid class="log-page py-4 py-sm-6 px-3 px-sm-6 px-md-8">
     <v-card class="rounded-lg">
       <!-- loading spinner -->
       <div
@@ -15,7 +15,7 @@
 
       <div v-else>
         <!-- 标题栏 -->
-        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+        <h6 class="log-page__title text-h6 font-weight-bold pa-4 pa-sm-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
           <span class="flex-fill">{{ $t("logPage.title") }}</span>
           <v-btn icon variant="text" size="small" @click="refreshLogs">
@@ -33,7 +33,7 @@
 
         <!-- 筛选条件 -->
         <v-expand-transition>
-          <div v-show="showFilter" class="px-5 pb-4">
+          <div v-show="showFilter" class="px-4 px-sm-5 pb-4">
             <v-row dense>
               <!-- 进程名筛选 -->
               <v-col cols="12" sm="6" md="3">
@@ -134,7 +134,7 @@
         </v-expand-transition>
 
         <!-- 日志列表 -->
-        <v-table class="pa-3 log-table">
+        <v-table v-if="!smAndDown" class="pa-3 log-table">
           <thead>
             <tr>
               <th
@@ -169,19 +169,51 @@
               </td>
             </tr>
             <tr v-if="logData.length === 0">
-              <td colspan="5" class="text-center text-secondary pa-8">
+              <td colspan="4" class="text-center text-secondary pa-8">
                 {{ $t("common.noData") }}
               </td>
             </tr>
           </tbody>
         </v-table>
 
+        <div v-else class="log-list-mobile px-2 pb-2">
+          <div
+            v-for="item in logData"
+            :key="item.id"
+            class="log-card-mobile"
+          >
+            <div class="log-card-mobile__meta">
+              <span class="log-card-mobile__time text-caption text-medium-emphasis">
+                {{ formatTime(item.time) }}
+              </span>
+              <div class="log-card-mobile__chips">
+                <v-chip color="primary" size="x-small" class="font-weight-bold">
+                  {{ item.name }}
+                </v-chip>
+                <v-chip color="secondary" size="x-small" class="font-weight-bold">
+                  {{ item.using || "-" }}
+                </v-chip>
+              </div>
+            </div>
+            <div
+              class="log-content log-content--mobile"
+              v-html="convertAnsiToHtml(item.log)"
+            ></div>
+          </div>
+          <div
+            v-if="logData.length === 0"
+            class="text-center text-secondary pa-8"
+          >
+            {{ $t("common.noData") }}
+          </div>
+        </div>
+
         <!-- 分页 -->
-        <div class="text-center pa-4">
+        <div class="text-center pa-3 pa-sm-4">
           <v-pagination
             v-model="currentPage"
             :length="totalPages > 500 ? 500 : totalPages"
-            :total-visible="7"
+            :total-visible="paginationVisible"
             density="compact"
             @update:model-value="handlePageChange"
           ></v-pagination>
@@ -196,6 +228,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useDisplay } from "vuetify";
 import { useI18n } from "vue-i18n";
 import { getLog } from "~/src/api/log";
 import type { GetLogReq, ProcessLog } from "~/src/types/log/log";
@@ -204,7 +237,10 @@ import { AnsiUp } from "ansi_up";
 import { getProcessList } from "~/src/api/process";
 
 const { t } = useI18n();
+const { smAndDown } = useDisplay();
 const snackbarStore = useSnackbarStore();
+
+const paginationVisible = computed(() => (smAndDown.value ? 3 : 7));
 const ansiConverter = new AnsiUp();
 
 const processList = ref<string[]>([]);
@@ -398,6 +434,9 @@ const loadProcessList = async () => {
 
 // 初始化
 onMounted(() => {
+  if (smAndDown.value) {
+    showFilter.value = false;
+  }
   loadProcessList();
   loadLogs();
 });
@@ -410,18 +449,72 @@ onMounted(() => {
   border-radius: 0;
   font-family: "Consolas", "Monaco", "Courier New", monospace;
   max-width: 100%;
-  line-height: 1.2;
+  line-height: 1.35;
   display: block;
   margin: -1px 0;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.log-content--mobile {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ANSI 颜色样式 */
 :deep(.log-content span) {
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.log-list-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.log-card-mobile {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgb(var(--v-theme-surface));
+}
+
+.log-card-mobile__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.log-card-mobile__time {
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.log-card-mobile__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.log-page__title {
+  font-size: 1.1rem !important;
+}
+
+@media (max-width: 600px) {
+  .log-page__title {
+    font-size: 1rem !important;
+  }
 }
 
 .v-table {
@@ -444,9 +537,11 @@ onMounted(() => {
           box-shadow 0.2s,
           transform 0.2s;
 
-        &:not(.v-data-table__selected):hover {
-          box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
-          transform: translateY(-4px);
+        @media (hover: hover) {
+          &:not(.v-data-table__selected):hover {
+            box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+          }
         }
       }
     }
@@ -458,5 +553,7 @@ onMounted(() => {
   padding: 0 !important;
   height: auto !important;
   line-height: 1 !important;
+  max-width: 0;
+  width: 55%;
 }
 </style>

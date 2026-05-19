@@ -9,7 +9,7 @@ import LogMetricCard from "@/components/dashboard/LogMetricCard.vue";
     <!-- ---------------------------------------------- -->
     <v-row dense>
       <v-col cols="12">
-        <v-card class="card-shadow" height="420">
+        <v-card class="card-shadow performance-card">
           <performance-card></performance-card>
         </v-card>
       </v-col>
@@ -26,4 +26,9 @@ import LogMetricCard from "@/components/dashboard/LogMetricCard.vue";
     </v-row>
   </div>
 </template>
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.performance-card {
+  min-height: 420px;
+  height: auto !important;
+}
+</style>
