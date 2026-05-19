@@ -228,6 +228,12 @@ const getDefaultStartTime = () => {
   return formatDatetimeLocal(date);
 };
 
+const getDefaultEndTime = () => {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() + 1);
+  return formatDatetimeLocal(date);
+};
+
 const headers = computed(() => [
   { title: t("logPage.logContent"), key: "log", sortable: false },
   { title: t("common.time"), key: "time", width: "150px" },
@@ -249,7 +255,7 @@ const searchForm = ref({
   log: "",
   using: "",
   startTime: getDefaultStartTime(),
-  endTime: formatDatetimeLocal(new Date()),
+  endTime: getDefaultEndTime(),
   sort: "desc",
 });
 
