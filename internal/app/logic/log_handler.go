@@ -1,10 +1,10 @@
 package logic
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -19,7 +19,8 @@ import (
 type LogHandler struct {
 	queue     diskqueue.Interface
 	ILogLogic search.ILogLogic
-	wg        *sync.WaitGroup
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
 func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
@@ -45,18 +46,26 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 				log.Logger.Errorf(f, args...)
 			}
 		})
-
-	wg := &sync.WaitGroup{}
+	ctx, cancel := context.WithCancel(context.Background())
 	for range max(1, config.CF.LogHandlerPoolSize) {
-		wg.Go(func() {
+		go func() {
 			var pl model.ProcessLog
-			for msg := range queue.ReadChan() {
-				_ = json.Unmarshal(msg, &pl)
-				logLogic.Insert(pl.Log, pl.Name, pl.Using, pl.Time)
+			log.Logger.Infow("log handler started")
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case msg, ok := <-queue.ReadChan():
+					if !ok {
+						return
+					}
+					_ = json.Unmarshal(msg, &pl)
+					logLogic.Insert(pl.Log, pl.Name, pl.Using, pl.Time)
+				}
 			}
-		})
+		}()
 	}
-	return &LogHandler{queue: queue, ILogLogic: logLogic, wg: wg}
+	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel}
 }
 
 func (l *LogHandler) AddLog(data model.ProcessLog) {
@@ -69,5 +78,5 @@ func (l *LogHandler) GetRunning() int {
 
 func (l *LogHandler) Close() {
 	l.queue.Close()
-	l.wg.Wait()
+	l.cancel()
 }
