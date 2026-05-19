@@ -29,6 +29,15 @@
           >
             <v-icon>mdi-filter</v-icon>
           </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :color="showOnlyContent ? 'primary' : undefined"
+            @click="showOnlyContent = !showOnlyContent"
+          >
+            <v-icon>{{ showOnlyContent ? "mdi-text-box" : "mdi-text-box-outline" }}</v-icon>
+          </v-btn>
         </h6>
 
         <!-- 筛选条件 -->
@@ -134,82 +143,65 @@
         </v-expand-transition>
 
         <!-- 日志列表 -->
-        <v-table v-if="!smAndDown" class="pa-3 log-table">
-          <thead>
-            <tr>
-              <th
-                class="text-left"
-                v-for="header in headers"
-                :key="header.title"
-              >
-                {{ header.title }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in logData" :key="item.id">
-              <td class="log-cell">
-                <div
-                  class="log-content"
-                  v-html="convertAnsiToHtml(item.log)"
-                ></div>
-              </td>
-              <td>
-                <span class="text-caption">{{ formatTime(item.time) }}</span>
-              </td>
-              <td>
-                <v-chip color="primary" size="small" class="font-weight-bold">
-                  {{ item.name }}
-                </v-chip>
-              </td>
-              <td>
-                <v-chip color="secondary" size="small" class="font-weight-bold">
-                  {{ item.using || "-" }}
-                </v-chip>
-              </td>
-            </tr>
-            <tr v-if="logData.length === 0">
-              <td colspan="4" class="text-center text-secondary pa-8">
-                {{ $t("common.noData") }}
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+        <div
+          class="log-stream px-2 px-sm-4 pb-2 pb-sm-4"
+          :class="{ 'log-stream--content-only': showOnlyContent }"
+        >
+          <div class="log-stream__header" v-if="!smAndDown && !showOnlyContent">
+            <span>{{ $t("common.time") }}</span>
+            <span>{{ $t("logPage.processName") }} / {{ $t("logPage.user") }}</span>
+            <span>{{ $t("logPage.logContent") }}</span>
+          </div>
 
-        <div v-else class="log-list-mobile px-2 pb-2">
           <div
             v-for="item in logData"
             :key="item.id"
-            class="log-card-mobile"
+            class="log-stream__row"
+            :class="{ 'log-stream__row--content-only': showOnlyContent }"
           >
-            <div class="log-card-mobile__meta">
-              <span class="log-card-mobile__time text-caption text-medium-emphasis">
-                {{ formatTime(item.time) }}
-              </span>
-              <div class="log-card-mobile__chips">
-                <v-chip color="primary" size="x-small" class="font-weight-bold">
-                  {{ item.name }}
-                </v-chip>
-                <v-chip color="secondary" size="x-small" class="font-weight-bold">
-                  {{ item.using || "-" }}
-                </v-chip>
-              </div>
-            </div>
             <div
-              class="log-content log-content--mobile"
-              v-html="convertAnsiToHtml(item.log)"
-            ></div>
+              v-if="!showOnlyContent"
+              class="log-stream__time text-caption text-medium-emphasis"
+            >
+              {{ formatTime(item.time) }}
+            </div>
+            <div v-if="!showOnlyContent" class="log-stream__labels">
+              <v-chip color="primary" size="x-small" variant="tonal">
+                {{ item.name }}
+              </v-chip>
+              <v-chip color="secondary" size="x-small" variant="tonal">
+                {{ item.using || "-" }}
+              </v-chip>
+            </div>
+            <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
           </div>
+
           <div
             v-if="logData.length === 0"
-            class="text-center text-secondary pa-8"
+            class="text-center text-secondary py-10"
           >
             {{ $t("common.noData") }}
+          </div>
+
+          <div
+            v-if="showOnlyContent"
+            class="log-stream__next-page-action log-stream__next-page-action--bottom"
+          >
+            <v-btn
+              icon
+              size="small"
+              variant="tonal"
+              :loading="loading"
+              :disabled="loading || !canContinueNextPage"
+              @click="goToNextPage"
+            >
+              <v-icon>mdi-chevron-down</v-icon>
+            </v-btn>
           </div>
         </div>
 
         <!-- 分页 -->
-        <div class="text-center pa-3 pa-sm-4">
+        <div v-if="!showOnlyContent" class="text-center pa-3 pa-sm-4">
           <v-pagination
             v-model="currentPage"
             :length="totalPages > 500 ? 500 : totalPages"
@@ -270,20 +262,14 @@ const getDefaultEndTime = () => {
   return formatDatetimeLocal(date);
 };
 
-const headers = computed(() => [
-  { title: t("logPage.logContent"), key: "log", sortable: false },
-  { title: t("common.time"), key: "time", width: "150px" },
-  { title: t("logPage.processName"), key: "name", width: "30px" },
-  { title: t("logPage.user"), key: "using", width: "30px" },
-]);
-
 // 数据
 const logData = ref<ProcessLog[]>([]);
 const totalLogs = ref(0);
 const currentPage = ref(1);
-const pageSize = ref(20);
+const pageSize = ref(50);
 const loading = ref(false);
 const showFilter = ref(true);
+const showOnlyContent = ref(false);
 
 // 搜索表单
 const searchForm = ref({
@@ -299,6 +285,9 @@ const searchForm = ref({
 const totalPages = computed(() => {
   return Math.ceil(totalLogs.value / pageSize.value);
 });
+const canContinueNextPage = computed(
+  () => totalPages.value > 0 && currentPage.value < totalPages.value,
+);
 
 // 转换 ANSI 颜色代码为 HTML
 const convertAnsiToHtml = (text: string) => {
@@ -323,10 +312,10 @@ const formatTime = (timestamp: number) => {
 };
 
 // 构建查询参数
-const buildQuery = (): GetLogReq => {
+const buildQuery = (page: number = currentPage.value): GetLogReq => {
   const query: GetLogReq = {
     page: {
-      from: (currentPage.value - 1) * pageSize.value,
+      from: (page - 1) * pageSize.value,
       size: pageSize.value,
     },
   };
@@ -366,14 +355,18 @@ const buildQuery = (): GetLogReq => {
 };
 
 // 加载日志
-const loadLogs = async () => {
+const loadLogs = async (options?: { append?: boolean; page?: number }) => {
+  const append = options?.append ?? false;
+  const targetPage = options?.page ?? currentPage.value;
   loading.value = true;
   try {
-    const query = buildQuery();
+    const query = buildQuery(targetPage);
     const response = await getLog(query);
 
     if (response.code === 0 && response.data) {
-      logData.value = response.data.data || [];
+      const incomingLogs = response.data.data || [];
+      logData.value = append ? [...logData.value, ...incomingLogs] : incomingLogs;
+      currentPage.value = targetPage;
       totalLogs.value = response.data.total || 0;
     } else {
       snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
@@ -388,8 +381,7 @@ const loadLogs = async () => {
 
 // 搜索日志
 const searchLogs = () => {
-  currentPage.value = 1; // 重置到第一页
-  loadLogs();
+  loadLogs({ page: 1 });
 };
 
 // 重置搜索
@@ -402,8 +394,7 @@ const resetSearch = () => {
     endTime: "",
     sort: "",
   };
-  currentPage.value = 1;
-  loadLogs();
+  loadLogs({ page: 1 });
 };
 
 // 刷新日志
@@ -413,8 +404,12 @@ const refreshLogs = () => {
 
 // 处理页码变化
 const handlePageChange = (page: number) => {
-  currentPage.value = page;
-  loadLogs();
+  loadLogs({ page });
+};
+
+const goToNextPage = () => {
+  if (!canContinueNextPage.value) return;
+  loadLogs({ append: true, page: currentPage.value + 1 });
 };
 
 // 加载进程列表
@@ -444,28 +439,17 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .log-content {
-  font-size: 0.8rem;
-  padding: 3px 10px;
+  font-size: 0.78rem;
+  padding: 2px 0;
   border-radius: 0;
   font-family: "Consolas", "Monaco", "Courier New", monospace;
   max-width: 100%;
-  line-height: 1.35;
+  line-height: 1.32;
   display: block;
-  margin: -1px 0;
+  margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
-}
-
-.log-content--mobile {
-  font-size: 0.75rem;
-  line-height: 1.45;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* ANSI 颜色样式 */
@@ -473,38 +457,6 @@ onMounted(() => {
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
-}
-
-.log-list-mobile {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.log-card-mobile {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 8px;
-  overflow: hidden;
-  background: rgb(var(--v-theme-surface));
-}
-
-.log-card-mobile__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.log-card-mobile__time {
-  line-height: 1.3;
-  word-break: break-word;
-}
-
-.log-card-mobile__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 .log-page__title {
@@ -517,43 +469,108 @@ onMounted(() => {
   }
 }
 
-.v-table {
-  table {
-    padding: 4px;
-    padding-bottom: 8px;
+.log-stream {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgb(var(--v-theme-surface));
+}
 
-    th {
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
+.log-stream__header {
+  display: grid;
+  grid-template-columns: 180px 210px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(var(--v-theme-on-surface), 0.62);
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgba(var(--v-theme-on-surface), 0.03);
+}
 
-    td {
-      border-bottom: 0 !important;
-    }
+.log-stream__row {
+  display: grid;
+  grid-template-columns: 180px 210px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.36);
+  font-variant-numeric: tabular-nums;
+}
 
-    tbody {
-      tr {
-        transition:
-          box-shadow 0.2s,
-          transform 0.2s;
+.log-stream__row:last-child {
+  border-bottom: none;
+}
 
-        @media (hover: hover) {
-          &:not(.v-data-table__selected):hover {
-            box-shadow: 0 3px 15px -2px rgba(0, 0, 0, 0.12);
-            transform: translateY(-4px);
-          }
-        }
-      }
-    }
+.log-stream__row--content-only {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  border-bottom: none;
+}
+
+.log-stream--content-only .log-stream__row {
+  padding: 0;
+}
+
+.log-stream--content-only .log-stream__row:hover {
+  background: transparent;
+}
+
+.log-stream--content-only .log-content {
+  padding: 0;
+  line-height: 1.28;
+}
+
+.log-stream__row:hover {
+  background: rgba(var(--v-theme-on-surface), 0.03);
+}
+
+.log-stream__time {
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.log-stream__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 1px;
+}
+
+.log-stream__next-page-action {
+  display: flex;
+  justify-content: center;
+}
+
+.log-stream__next-page-action--top {
+  padding: 8px 0 2px;
+}
+
+.log-stream__next-page-action--bottom {
+  padding: 4px 0 8px;
+}
+
+@media (max-width: 960px) {
+  .log-stream__row {
+    grid-template-columns: 160px 170px minmax(0, 1fr);
   }
 }
 
-/* 日志内容列样式 */
-.log-cell {
-  padding: 0 !important;
-  height: auto !important;
-  line-height: 1 !important;
-  max-width: 0;
-  width: 55%;
+@media (max-width: 600px) {
+  .log-stream {
+    border-radius: 6px;
+  }
+
+  .log-stream__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .log-stream__time {
+    font-size: 0.7rem !important;
+  }
 }
 </style>
