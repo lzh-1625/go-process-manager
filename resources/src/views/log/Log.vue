@@ -104,6 +104,7 @@
                   variant="outlined"
                   density="compact"
                   type="datetime-local"
+                  step="1"
                   v-model="searchForm.startTime"
                   clearable
                   hide-details
@@ -117,6 +118,7 @@
                   variant="outlined"
                   density="compact"
                   type="datetime-local"
+                  step="1"
                   v-model="searchForm.endTime"
                   clearable
                   hide-details
@@ -247,7 +249,7 @@ const formatDatetimeLocal = (date: Date) => {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate(),
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 };
 
 const getDefaultStartTime = () => {
@@ -257,9 +259,7 @@ const getDefaultStartTime = () => {
 };
 
 const getDefaultEndTime = () => {
-  const date = new Date();
-  date.setMinutes(date.getMinutes() + 1);
-  return formatDatetimeLocal(date);
+  return formatDatetimeLocal(new Date());
 };
 
 // 数据
