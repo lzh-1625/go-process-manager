@@ -18,7 +18,14 @@
         <h6 class="log-page__title text-h6 font-weight-bold pa-4 pa-sm-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
           <span class="flex-fill">{{ $t("logPage.title") }}</span>
-          <v-btn icon variant="text" size="small" @click="refreshLogs">
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :loading="loading"
+            :disabled="loading"
+            @click="refreshLogs"
+          >
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
           <v-btn
@@ -132,11 +139,18 @@
                   size="small"
                   elevation="4"
                   variant="elevated"
+                  :loading="loading"
+                  :disabled="loading"
                   @click="searchLogs"
                 >
                   {{ $t("common.search") }}
                 </v-btn>
-                <v-btn size="small" variant="tonal" @click="resetSearch">
+                <v-btn
+                  size="small"
+                  variant="tonal"
+                  :disabled="loading"
+                  @click="resetSearch"
+                >
                   {{ $t("common.reset") }}
                 </v-btn>
               </v-col>
@@ -149,10 +163,21 @@
           class="log-stream px-2 px-sm-4 pb-2 pb-sm-4"
           :class="{ 'log-stream--content-only': showOnlyContent }"
         >
+          <v-overlay
+            :model-value="loading && logData.length > 0"
+            contained
+            class="align-center justify-center"
+            persistent
+          >
+            <v-progress-circular
+              indeterminate
+              color="primary"
+            ></v-progress-circular>
+          </v-overlay>
+
           <div class="log-stream__header" v-if="!smAndDown && !showOnlyContent">
-            <span>{{ $t("common.time") }}</span>
-            <span>{{ $t("logPage.processName") }} / {{ $t("logPage.user") }}</span>
             <span>{{ $t("logPage.logContent") }}</span>
+            <span>{{ $t("common.time") }} / {{ $t("logPage.processName") }} / {{ $t("logPage.user") }}</span>
           </div>
 
           <div
@@ -161,21 +186,20 @@
             class="log-stream__row"
             :class="{ 'log-stream__row--content-only': showOnlyContent }"
           >
-            <div
-              v-if="!showOnlyContent"
-              class="log-stream__time text-caption text-medium-emphasis"
-            >
-              {{ formatTime(item.time) }}
-            </div>
-            <div v-if="!showOnlyContent" class="log-stream__labels">
-              <v-chip color="primary" size="x-small" variant="tonal">
-                {{ item.name }}
-              </v-chip>
-              <v-chip color="secondary" size="x-small" variant="tonal">
-                {{ item.using || "-" }}
-              </v-chip>
-            </div>
             <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
+            <div v-if="!showOnlyContent" class="log-stream__meta">
+              <div class="log-stream__labels">
+                <v-chip color="info" size="x-small" variant="tonal">
+                  {{ formatTime(item.time) }}
+                </v-chip>
+                <v-chip color="primary" size="x-small" variant="tonal">
+                  {{ item.name }}
+                </v-chip>
+                <v-chip color="secondary" size="x-small" variant="tonal">
+                  {{ item.using || "-" }}
+                </v-chip>
+              </div>
+            </div>
           </div>
 
           <div
@@ -209,6 +233,7 @@
             :length="totalPages > 500 ? 500 : totalPages"
             :total-visible="paginationVisible"
             density="compact"
+            :disabled="loading"
             @update:model-value="handlePageChange"
           ></v-pagination>
           <div class="mt-2 text-caption text-secondary">
@@ -266,7 +291,7 @@ const getDefaultEndTime = () => {
 const logData = ref<ProcessLog[]>([]);
 const totalLogs = ref(0);
 const currentPage = ref(1);
-const pageSize = ref(50);
+const pageSize = ref(30);
 const loading = ref(false);
 const showFilter = ref(true);
 const showOnlyContent = ref(false);
@@ -470,6 +495,7 @@ onMounted(() => {
 }
 
 .log-stream {
+  position: relative;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
   overflow: hidden;
@@ -478,9 +504,10 @@ onMounted(() => {
 
 .log-stream__header {
   display: grid;
-  grid-template-columns: 180px 210px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 10px;
   align-items: center;
+  text-align: center;
   padding: 8px 10px;
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -492,7 +519,7 @@ onMounted(() => {
 
 .log-stream__row {
   display: grid;
-  grid-template-columns: 180px 210px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 250px;
   gap: 10px;
   align-items: start;
   padding: 6px 10px;
@@ -527,16 +554,22 @@ onMounted(() => {
   background: rgba(var(--v-theme-on-surface), 0.03);
 }
 
+.log-stream__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .log-stream__time {
   white-space: nowrap;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .log-stream__labels {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding-top: 1px;
 }
 
 .log-stream__next-page-action {
@@ -553,8 +586,9 @@ onMounted(() => {
 }
 
 @media (max-width: 960px) {
+  .log-stream__header,
   .log-stream__row {
-    grid-template-columns: 160px 170px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 240px;
   }
 }
 
