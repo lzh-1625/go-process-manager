@@ -33,13 +33,10 @@ func (p *ProcessBase) initCgroup() {
 func (p *ProcessBase) initCgroupV1() {
 	resources := &specs.LinuxResources{}
 	if p.Config.CpuLimit != nil {
-		period := uint64(config.CF.CgroupPeriod)
-		quota := int64(float32(config.CF.CgroupPeriod) * *p.Config.CpuLimit * 0.01)
-		cpuResources := &specs.LinuxCPU{
-			Period: &period,
-			Quota:  &quota,
+		resources.CPU = &specs.LinuxCPU{
+			Period: new(uint64(config.CF.CgroupPeriod)),
+			Quota:  new(int64(float32(config.CF.CgroupPeriod) * *p.Config.CpuLimit * 0.01)),
 		}
-		resources.CPU = cpuResources
 	}
 	if p.Config.MemoryLimit != nil {
 		limit := int64(*p.Config.MemoryLimit * 1024 * 1024)
