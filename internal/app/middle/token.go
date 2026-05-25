@@ -36,16 +36,13 @@ func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 		if !slices.ContainsFunc(whiteList, func(s string) bool {
 			return strings.HasPrefix(path, s)
 		}) {
-
-			var token string
-			auth := c.Request().Header.Get("Authorization")
-
-			if auth != "" {
-				token = strings.TrimPrefix(auth, "bearer ")
-			} else {
-				token = c.QueryParam("token")
+			token := c.Request().Header.Get("Authorization")
+			if token == "" {
+				if cookie, err := c.Cookie("Authorization"); err == nil && cookie != nil {
+					token = cookie.Value
+				}
 			}
-
+			token = strings.TrimPrefix(token, "bearer ")
 			mc, err := utils.VerifyToken(token, config.CF.SecretKey)
 			if err != nil {
 				return c.JSON(401, model.Response[struct{}]{

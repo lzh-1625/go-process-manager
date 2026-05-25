@@ -48,9 +48,7 @@ const initWebSocketPty = () => {
 
   const baseUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
   // const baseUrl = `ws://${window.location.hostname}:8797/api/ws`;
-  const url = `${baseUrl}?uuid=${props.data.uuid}&token=${localStorage.getItem(
-    "token"
-  )}&cols=${initialCols}&rows=${initialRows}`;
+  const url = `${baseUrl}?uuid=${props.data.uuid}&cols=${initialCols}&rows=${initialRows}`;
 
   initSocket(url);
 };
