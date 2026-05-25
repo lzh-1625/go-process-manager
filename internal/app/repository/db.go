@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"log"
+	"context"
 	"os"
 	"path"
 	"time"
@@ -10,7 +10,8 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
-
+	"github.com/lzh-1625/go_process_manager/log"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -29,27 +30,43 @@ var (
 	}
 )
 
+type GormLogger struct {
+	logger *zap.SugaredLogger
+}
+
+func (l *GormLogger) LogMode(level logger.LogLevel) logger.Interface {
+	return l
+}
+
+func (l *GormLogger) Info(ctx context.Context, msg string, data ...any) {
+	l.logger.Infow(msg, data...)
+}
+
+func (l *GormLogger) Warn(ctx context.Context, msg string, data ...any) {
+	l.logger.Warnw(msg, data...)
+}
+
+func (l *GormLogger) Error(ctx context.Context, msg string, data ...any) {
+	l.logger.Errorw(msg, data...)
+}
+
+func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	sql, rows := fc()
+	l.logger.Debugw(sql, "rows", rows, "time", time.Since(begin), "err", err)
+}
+
 func NewDB() *gorm.DB {
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags),
-		logger.Config{
-			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Silent,
-			IgnoreRecordNotFoundError: true,
-			ParameterizedQueries:      true,
-			Colorful:                  true,
-		},
-	)
 	home, _ := os.UserHomeDir()
+
 	gdb, err := gorm.Open(sqlite.Open(path.Join(home, ".gpm", "data.db")), &gorm.Config{
-		Logger: newLogger,
+		Logger: &GormLogger{logger: log.Logger},
 	})
 	if err != nil {
-		log.Panicf("sqlite database init failed! \nerror: %v", err)
+		log.Logger.Panicf("sqlite database init failed! \nerror: %v", err)
 	}
 	sqlDB, err := gdb.DB()
 	if err != nil {
-		log.Panicf("sqlite database init failed! \nerror: %v", err)
+		log.Logger.Panicf("sqlite database init failed! \nerror: %v", err)
 	}
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	db := gdb.Session(&defaultConfig)
