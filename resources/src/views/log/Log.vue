@@ -252,7 +252,7 @@ import { useI18n } from "vue-i18n";
 import { getLog } from "~/src/api/log";
 import type { GetLogReq, ProcessLog } from "~/src/types/log/log";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
-import { AnsiUp } from "ansi_up";
+import Convert from "ansi-to-html";
 import { getProcessList } from "~/src/api/process";
 
 const { t } = useI18n();
@@ -260,7 +260,7 @@ const { smAndDown } = useDisplay();
 const snackbarStore = useSnackbarStore();
 
 const paginationVisible = computed(() => (smAndDown.value ? 3 : 7));
-const ansiConverter = new AnsiUp();
+const ansiConverter = new Convert();
 
 const processList = ref<string[]>([]);
 
@@ -318,8 +318,10 @@ const canContinueNextPage = computed(
 const convertAnsiToHtml = (text: string) => {
   if (!text) return "";
   return ansiConverter
-    .ansi_to_html(text)
-    .replaceAll("color:rgb(255,255,255)", "color:rgb(160,160,160)");
+    .toHtml(text)
+    .replaceAll("color:rgb(255,255,255)", "color:rgb(160,160,160)")
+    .replaceAll("color:#ffffff", "color:#a0a0a0")
+    .replaceAll("color:#FFF", "color:#a0a0a0");
 };
 
 // 格式化时间
@@ -523,18 +525,16 @@ onMounted(() => {
   gap: 10px;
   align-items: start;
   padding: 6px 10px;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.36);
   font-variant-numeric: tabular-nums;
 }
 
-.log-stream__row:last-child {
-  border-bottom: none;
+.log-stream__row + .log-stream__row {
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .log-stream__row--content-only {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
-  border-bottom: none;
 }
 
 .log-stream--content-only .log-stream__row {
