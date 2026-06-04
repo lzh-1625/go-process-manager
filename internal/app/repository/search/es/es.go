@@ -49,8 +49,9 @@ func (e *esSearch) init() error {
 	return nil
 }
 
-func (e *esSearch) Insert(logContent string, processName string, using string, ts int64) {
+func (e *esSearch) Insert(id int64, logContent string, processName string, using string, ts int64) {
 	data := model.ProcessLog{
+		ID:    id,
 		Log:   logContent,
 		Name:  processName,
 		Using: using,
@@ -69,10 +70,10 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 		search = search.TrackTotalHits(true)
 	}
 	if req.Sort == "asc" {
-		search.Sort("time", true)
+		search.Sort("id", true)
 	}
 	if req.Sort == "desc" {
-		search.Sort("time", false)
+		search.Sort("id", false)
 	}
 
 	queryList := []elastic.Query{}

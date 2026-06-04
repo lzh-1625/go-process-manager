@@ -76,8 +76,9 @@ func (b *bleveSearch) init() error {
 	return nil
 }
 
-func (b *bleveSearch) Insert(logContent string, processName string, using string, ts int64) {
+func (b *bleveSearch) Insert(id int64, logContent string, processName string, using string, ts int64) {
 	if err := b.index.Index(uuid.NewString(), model.BleveProcessLog{
+		ID:         id,
 		Log:        logContent,
 		LogKeyword: logContent,
 		Name:       processName,
@@ -149,16 +150,16 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	sortArgs := ([]string{"-_score"})
 	if req.Sort == "desc" {
 
-		sortArgs = ([]string{"-time"})
+		sortArgs = ([]string{"-id"})
 	}
 	if req.Sort == "asc" {
-		sortArgs = ([]string{"time"})
+		sortArgs = ([]string{"id"})
 	}
 	hl := bleve.HighlightRequest{}
 	hl.AddField("log")
 	res, err := b.index.Search(&bleve.SearchRequest{
 		Query:  buildQuery,
-		Fields: []string{"log", "name", "using", "time"},
+		Fields: []string{"log", "name", "using", "time", "id"},
 		From:   req.Page.From,
 		Size:   req.Page.Size,
 		Sort:   search.ParseSortOrderStrings(sortArgs),

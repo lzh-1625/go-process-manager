@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"sync/atomic"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -21,6 +22,7 @@ type LogHandler struct {
 	ILogLogic search.ILogLogic
 	ctx       context.Context
 	cancel    context.CancelFunc
+	id        atomic.Int64
 }
 
 func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
@@ -60,15 +62,18 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 						return
 					}
 					_ = json.Unmarshal(msg, &pl)
-					logLogic.Insert(pl.Log, pl.Name, pl.Using, pl.Time)
+					logLogic.Insert(pl.ID, pl.Log, pl.Name, pl.Using, pl.Time)
 				}
 			}
 		}()
 	}
-	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel}
+	id := atomic.Int64{}
+	id.Store(time.Now().UnixMilli() + queue.Depth())
+	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel, id: id}
 }
 
 func (l *LogHandler) AddLog(data model.ProcessLog) {
+	data.ID = l.id.Add(1)
 	l.queue.Put(utils.Unwarp(json.Marshal(data)))
 }
 

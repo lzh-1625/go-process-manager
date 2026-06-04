@@ -88,7 +88,7 @@ type LogResp struct {
 }
 
 type ProcessLog struct {
-	ID    int    `json:"id,omitempty" gorm:"primaryKey;autoIncrement;column:id" `
+	ID    int64  `json:"id,omitempty" gorm:"primaryKey;autoIncrement;column:id" `
 	Log   string `json:"log" gorm:"column:log"`
 	Time  int64  `json:"time" gorm:"column:time"`
 	Name  string `json:"name" gorm:"column:name"`
@@ -100,7 +100,7 @@ func (n *ProcessLog) TableName() string {
 }
 
 type BleveProcessLog struct {
-	ID         string `json:"id,omitempty"`
+	ID         int64  `json:"id,omitempty"`
 	Log        string `json:"log"`
 	LogKeyword string `json:"log_keyword"`
 	Time       int64  `json:"time"`
