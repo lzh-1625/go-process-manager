@@ -230,7 +230,7 @@
         <div v-if="!showOnlyContent" class="text-center pa-3 pa-sm-4">
           <v-pagination
             v-model="currentPage"
-            :length="totalPages > 500 ? 500 : totalPages"
+            :length="totalPages > 400 ? 400 : totalPages"
             :total-visible="paginationVisible"
             density="compact"
             :disabled="loading"
@@ -291,7 +291,7 @@ const getDefaultEndTime = () => {
 const logData = ref<ProcessLog[]>([]);
 const totalLogs = ref(0);
 const currentPage = ref(1);
-const pageSize = ref(30);
+const pageSize = ref(25);
 const loading = ref(false);
 const showFilter = ref(true);
 const showOnlyContent = ref(false);
