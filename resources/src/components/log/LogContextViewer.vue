@@ -23,11 +23,11 @@
           variant="tonal"
           color="primary"
           :loading="loadingAbove"
-          :disabled="loadingAbove || !hasMoreAbove"
+          :disabled="loadingAbove"
           prepend-icon="mdi-chevron-double-up"
           @click="loadMoreAbove"
         >
-          {{ hasMoreAbove ? $t("logPage.loadMoreAbove") : $t("logPage.noMoreAbove") }}
+          {{ $t("logPage.loadMoreAbove") }}
         </v-btn>
       </div>
 
@@ -50,11 +50,11 @@
           variant="tonal"
           color="primary"
           :loading="loadingBelow"
-          :disabled="loadingBelow || !hasMoreBelow"
+          :disabled="loadingBelow"
           prepend-icon="mdi-chevron-double-down"
           @click="loadMoreBelow"
         >
-          {{ hasMoreBelow ? $t("logPage.loadMoreBelow") : $t("logPage.noMoreBelow") }}
+          {{  $t("logPage.loadMoreBelow") }}
         </v-btn>
       </div>
     </div>
@@ -85,8 +85,6 @@ let fitAddon: FitAddon | null = null;
 const initialLoading = ref(false);
 const loadingAbove = ref(false);
 const loadingBelow = ref(false);
-const hasMoreAbove = ref(false);
-const hasMoreBelow = ref(false);
 const allLogs = ref<ProcessLog[]>([]);
 const contextTopID = ref<number>(0);
 const contextBottomID = ref<number>(0);
@@ -112,8 +110,6 @@ defineExpose({
 const openContext = async (item: ProcessLog, direction: "above" | "below") => {
   allLogs.value = [];
   anchorLog.value = item;
-  hasMoreAbove.value = false;
-  hasMoreBelow.value = false;
   initialLoading.value = true;
 
   dialog.value = true;
@@ -143,8 +139,6 @@ const fetchInitialAbove = async (item: ProcessLog) => {
   allLogs.value = [...before, item];
   contextTopID.value = before.length > 0 ? before[0].id! : item.id!;
   contextBottomID.value = item.id!;
-  hasMoreAbove.value = fetched.length >= INIT_SIZE;
-  hasMoreBelow.value = true;
 
   writeAll();
   // 锚点在末尾，终端自然停在底部，正好显示锚点行
@@ -161,8 +155,6 @@ const fetchInitialBelow = async (item: ProcessLog) => {
   allLogs.value = [item, ...fetched];
   contextTopID.value = item.id!;
   contextBottomID.value = fetched.length > 0 ? fetched[fetched.length - 1].id! : item.id!;
-  hasMoreAbove.value = true;
-  hasMoreBelow.value = fetched.length >= INIT_SIZE;
 
   // 锚点在头部，内容渲染完成后再滚到顶
   writeAll(() => term?.scrollToTop());
@@ -209,7 +201,7 @@ const handleResize = () => fitAddon?.fit();
 
 // ── 加载更多上文 ────────────────────────────────────────────────────────────
 const loadMoreAbove = async () => {
-  if (loadingAbove.value || !hasMoreAbove.value) return;
+  if (loadingAbove.value) return;
   loadingAbove.value = true;
   try {
     const res = await getLog(buildCursorQuery(contextTopID.value, "desc", CHUNK_SIZE, anchorLog.value!.name));
@@ -217,14 +209,13 @@ const loadMoreAbove = async () => {
 
     const fetched = res.data.data || [];
     if (fetched.length === 0) {
-      hasMoreAbove.value = false;
+      snackbarStore.showMessage(t("logPage.noMoreAbove"));
       return;
     }
     const newLogs = [...fetched].reverse();
 
     allLogs.value = [...newLogs, ...allLogs.value];
     contextTopID.value = newLogs[0].id!;
-    hasMoreAbove.value = fetched.length >= CHUNK_SIZE;
 
     // 重写后滚到顶部，让用户直接看到新加载的上文
     rewriteTerminal();
@@ -237,7 +228,7 @@ const loadMoreAbove = async () => {
 
 // ── 加载更多下文 ────────────────────────────────────────────────────────────
 const loadMoreBelow = async () => {
-  if (loadingBelow.value || !hasMoreBelow.value) return;
+  if (loadingBelow.value) return;
   loadingBelow.value = true;
   try {
     const res = await getLog(buildCursorQuery(contextBottomID.value, "asc", CHUNK_SIZE, anchorLog.value!.name));
@@ -245,7 +236,6 @@ const loadMoreBelow = async () => {
 
     const fetched = res.data.data || [];
     if (fetched.length === 0) {
-      // hasMoreBelow.value = false;
       snackbarStore.showMessage(t("logPage.noMoreBelow"));
       return;
     }
