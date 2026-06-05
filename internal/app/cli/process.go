@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
 	"os"
 	"strconv"
@@ -111,13 +112,14 @@ func (p *ProcessCli) Exec(uuid int) error {
 		Host:   config.CF.Listen,
 		Path:   "/api/ws",
 		RawQuery: url.Values{
-			"uuid":  {strconv.Itoa(uuid)},
-			"token": {GetJwt()},
-			"cols":  {strconv.Itoa(width)},
-			"rows":  {strconv.Itoa(height)},
+			"uuid": {strconv.Itoa(uuid)},
+			"cols": {strconv.Itoa(width)},
+			"rows": {strconv.Itoa(height)},
 		}.Encode(),
 	}
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
+		"Authorization": {"bearer " + GetJwt()},
+	})
 	if err != nil {
 		return err
 	}
