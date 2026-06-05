@@ -79,15 +79,12 @@ func (b *bleveSearch) init() error {
 	return nil
 }
 
-func (b *bleveSearch) Insert(id int64, logContent string, processName string, using string, ts int64) {
-	if err := b.index.Index(strconv.FormatInt(id, 10), model.BleveProcessLog{
-		ID:         id,
-		Log:        logContent,
-		LogKeyword: logContent,
-		Name:       processName,
-		Using:      using,
-		Time:       ts,
-	}); err != nil {
+func (b *bleveSearch) Insert(logs ...model.ProcessLog) {
+	batch := b.index.NewBatch()
+	for _, v := range logs {
+		batch.Index(strconv.FormatInt(v.ID, 10), v)
+	}
+	if err := b.index.Batch(batch); err != nil {
 		logger.Logger.Warnw("bleve log insert failed", "err", err)
 	}
 }

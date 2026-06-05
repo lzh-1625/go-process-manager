@@ -39,14 +39,8 @@ func (l *sqliteSearch) Search(req model.GetLogReq, filterProcessName ...string) 
 	}
 }
 
-func (l *sqliteSearch) Insert(id int64, log string, processName string, using string, ts int64) {
-	if err := l.logRepository.InsertLog(model.ProcessLog{
-		ID:    id,
-		Log:   log,
-		Name:  processName,
-		Using: using,
-		Time:  ts,
-	}); err != nil {
+func (l *sqliteSearch) Insert(logs ...model.ProcessLog) {
+	if err := l.logRepository.InsertLog(logs...); err != nil {
 		logger.Logger.Errorw("Log insert failed", "err", err)
 	}
 }

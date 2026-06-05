@@ -49,15 +49,15 @@ func (e *esSearch) init() error {
 	return nil
 }
 
-func (e *esSearch) Insert(id int64, logContent string, processName string, using string, ts int64) {
-	data := model.ProcessLog{
-		ID:    id,
-		Log:   logContent,
-		Name:  processName,
-		Using: using,
-		Time:  ts,
+func (e *esSearch) Insert(logs ...model.ProcessLog) {
+	reqs := make([]elastic.BulkableRequest, 0, len(logs))
+	for _, v := range logs {
+		req := elastic.NewBulkCreateRequest()
+		req.Index(config.CF.EsIndex)
+		req.Doc(v)
+		reqs = append(reqs, req)
 	}
-	_, err := e.esClient.Index().Index(config.CF.EsIndex).BodyJson(data).Do(context.TODO())
+	_, err := e.esClient.Bulk().Add(reqs...).Do(context.TODO())
 	if err != nil {
 		log.Logger.Errorw("es insert failed", "err", err)
 	}
@@ -131,7 +131,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	result := model.LogResp{}
 	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
-		log.Logger.Errorw("es search failed", "err", err)
+		log.Logger.Warnw("es search failed", "err", err)
 		return result
 	}
 	// iterate response hits

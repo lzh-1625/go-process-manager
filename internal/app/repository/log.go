@@ -18,8 +18,12 @@ type LogRepository struct {
 	query *query.Query
 }
 
-func (l *LogRepository) InsertLog(data model.ProcessLog) error {
-	return l.query.ProcessLog.Create(&data)
+func (l *LogRepository) InsertLog(logs ...model.ProcessLog) error {
+	data := make([]*model.ProcessLog, len(logs))
+	for i, v := range logs {
+		data[i] = &v
+	}
+	return l.query.ProcessLog.CreateInBatches(data, len(data))
 }
 
 func (l *LogRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) (result []*model.ProcessLog, total int64) {

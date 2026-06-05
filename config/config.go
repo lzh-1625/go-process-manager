@@ -59,7 +59,7 @@ type Configuration struct {
 	EventStorageTime          int    `default:"1" describe:"event storage time (days)"`
 	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
 	SecretKey                 string `default:"-"`
-	ConfigDir                 string `default:"-"`
+	ConfigDir                 string `default:"-" json:"-"`
 }
 
 const configFileName = "config.json"

@@ -62,7 +62,7 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 						return
 					}
 					_ = json.Unmarshal(msg, &pl)
-					logLogic.Insert(pl.ID, pl.Log, pl.Name, pl.Using, pl.Time)
+					logLogic.Insert(pl)
 				}
 			}
 		}(i)
