@@ -68,7 +68,7 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 		}(i)
 	}
 	id := atomic.Int64{}
-	id.Store(time.Now().UnixMilli() + queue.Depth())
+	id.Store(time.Now().UnixMicro() + queue.Depth())
 	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel, id: &id}
 }
 
