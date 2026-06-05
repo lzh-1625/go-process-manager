@@ -335,6 +335,13 @@ export default {
     totalLogs: "共 {n} 条日志",
     loadLogsFailed: "加载日志失败",
     noLogsRetrieved: "未获取到日志",
+    viewContextAbove: "查看上文",
+    viewContextBelow: "查看下文",
+    loadMoreAbove: "加载更多上文",
+    loadMoreBelow: "加载更多下文",
+    contextMode: "上下文模式",
+    noMoreAbove: "已无更多上文",
+    noMoreBelow: "已无更多下文",
   },
   eventPage: {
     title: "系统事件",

@@ -18,6 +18,18 @@
         <h6 class="log-page__title text-h6 font-weight-bold pa-4 pa-sm-5 d-flex align-center">
           <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
           <span class="flex-fill">{{ $t("logPage.title") }}</span>
+          <!-- 上下文模式指示器 -->
+          <v-chip
+            v-if="isContextMode"
+            size="x-small"
+            color="primary"
+            variant="tonal"
+            class="mr-2"
+            closable
+            @click:close="exitContextMode"
+          >
+            {{ $t("logPage.contextMode") }}
+          </v-chip>
           <v-btn
             icon
             variant="text"
@@ -35,15 +47,6 @@
             @click="showFilter = !showFilter"
           >
             <v-icon>mdi-filter</v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            :color="showOnlyContent ? 'primary' : undefined"
-            @click="showOnlyContent = !showOnlyContent"
-          >
-            <v-icon>{{ showOnlyContent ? "mdi-text-box" : "mdi-text-box-outline" }}</v-icon>
           </v-btn>
         </h6>
 
@@ -161,7 +164,7 @@
         <!-- 日志列表 -->
         <div
           class="log-stream px-2 px-sm-4 pb-2 pb-sm-4"
-          :class="{ 'log-stream--content-only': showOnlyContent }"
+          :class="{ 'log-stream--context': isContextMode }"
         >
           <v-overlay
             :model-value="loading && logData.length > 0"
@@ -175,19 +178,41 @@
             ></v-progress-circular>
           </v-overlay>
 
-          <div class="log-stream__header" v-if="!smAndDown && !showOnlyContent">
+          <div class="log-stream__header" v-if="!smAndDown && !isContextMode">
             <span>{{ $t("logPage.logContent") }}</span>
             <span>{{ $t("common.time") }} / {{ $t("logPage.processName") }} / {{ $t("logPage.user") }}</span>
+          </div>
+
+          <!-- 上文加载按钮：仅在上下文模式下显示 -->
+          <div
+            v-if="isContextMode"
+            class="log-stream__next-page-action log-stream__next-page-action--top"
+          >
+            <v-btn
+              size="small"
+              variant="tonal"
+              :loading="loadingAbove"
+              :disabled="loadingAbove || !hasMoreAbove"
+              prepend-icon="mdi-chevron-double-up"
+              @click="loadMoreAbove"
+            >
+              {{ hasMoreAbove ? $t("logPage.loadMoreAbove") : $t("logPage.noMoreAbove") }}
+            </v-btn>
           </div>
 
           <div
             v-for="item in logData"
             :key="item.id"
             class="log-stream__row"
-            :class="{ 'log-stream__row--content-only': showOnlyContent }"
+            :class="{
+              'log-stream__row--context': isContextMode,
+              'log-stream__row--context-anchor': isContextMode && item.id === contextAnchorID,
+            }"
+            @mouseenter="hoveredRowId = item.id ?? null"
+            @mouseleave="hoveredRowId = null"
           >
             <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
-            <div v-if="!showOnlyContent" class="log-stream__meta">
+            <div v-if="!isContextMode" class="log-stream__meta">
               <div class="log-stream__labels">
                 <v-chip color="info" size="x-small" variant="tonal">
                   {{ formatTime(item.time) }}
@@ -200,6 +225,41 @@
                 </v-chip>
               </div>
             </div>
+
+            <!-- 悬停时浮层显示上下文操作图标，仅普通模式下可见 -->
+            <div
+              v-if="!isContextMode && hoveredRowId === item.id"
+              class="log-row__context-actions"
+            >
+              <v-tooltip :text="$t('logPage.viewContextAbove')" location="top">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    icon
+                    size="x-small"
+                    variant="elevated"
+                    density="compact"
+                    @click.stop="viewContextAbove(item)"
+                  >
+                    <v-icon size="14">mdi-arrow-up-circle-outline</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="$t('logPage.viewContextBelow')" location="top">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    icon
+                    size="x-small"
+                    variant="elevated"
+                    density="compact"
+                    @click.stop="viewContextBelow(item)"
+                  >
+                    <v-icon size="14">mdi-arrow-down-circle-outline</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+            </div>
           </div>
 
           <div
@@ -209,25 +269,26 @@
             {{ $t("common.noData") }}
           </div>
 
+          <!-- 下文加载按钮：仅在上下文模式下显示 -->
           <div
-            v-if="showOnlyContent"
+            v-if="isContextMode"
             class="log-stream__next-page-action log-stream__next-page-action--bottom"
           >
             <v-btn
-              icon
               size="small"
               variant="tonal"
-              :loading="loading"
-              :disabled="loading || !canContinueNextPage"
-              @click="goToNextPage"
+              :loading="loadingBelow"
+              :disabled="loadingBelow || !hasMoreBelow"
+              prepend-icon="mdi-chevron-double-down"
+              @click="loadMoreBelow"
             >
-              <v-icon>mdi-chevron-down</v-icon>
+              {{ hasMoreBelow ? $t("logPage.loadMoreBelow") : $t("logPage.noMoreBelow") }}
             </v-btn>
           </div>
         </div>
 
         <!-- 分页 -->
-        <div v-if="!showOnlyContent" class="text-center pa-3 pa-sm-4">
+        <div v-if="!isContextMode" class="text-center pa-3 pa-sm-4">
           <v-pagination
             v-model="currentPage"
             :length="totalPages > 400 ? 400 : totalPages"
@@ -294,7 +355,19 @@ const currentPage = ref(1);
 const pageSize = ref(25);
 const loading = ref(false);
 const showFilter = ref(true);
-const showOnlyContent = ref(false);
+
+// 上下文模式状态
+const isContextMode = ref(false);
+const contextTopID = ref<number>(0);
+const contextBottomID = ref<number>(0);
+const contextAnchorID = ref<number>(0);
+const hasMoreAbove = ref(false);
+const hasMoreBelow = ref(false);
+const hoveredRowId = ref<number | null>(null);
+const loadingAbove = ref(false);
+const loadingBelow = ref(false);
+const CONTEXT_INIT_SIZE = 50;
+const CONTEXT_CHUNK_SIZE = 25;
 
 // 搜索表单
 const searchForm = ref({
@@ -310,9 +383,6 @@ const searchForm = ref({
 const totalPages = computed(() => {
   return Math.ceil(totalLogs.value / pageSize.value);
 });
-const canContinueNextPage = computed(
-  () => totalPages.value > 0 && currentPage.value < totalPages.value,
-);
 
 // 转换 ANSI 颜色代码为 HTML
 const convertAnsiToHtml = (text: string) => {
@@ -347,14 +417,11 @@ const buildQuery = (page: number = currentPage.value): GetLogReq => {
     },
   };
 
-  // 添加排序
   if (searchForm.value.sort) {
     query.sort = searchForm.value.sort;
   }
-  // 添加匹配条件
   const match: any = {};
   if (searchForm.value.name && searchForm.value.name.length > 0) {
-    // 支持多选，将进程名数组传递给后端
     query.filterName = searchForm.value.name;
   }
   if (searchForm.value.log) {
@@ -366,8 +433,6 @@ const buildQuery = (page: number = currentPage.value): GetLogReq => {
   if (Object.keys(match).length > 0) {
     query.match = match;
   }
-
-  // 添加时间范围
   if (searchForm.value.startTime || searchForm.value.endTime) {
     query.time = {};
     if (searchForm.value.startTime) {
@@ -381,18 +446,24 @@ const buildQuery = (page: number = currentPage.value): GetLogReq => {
   return query;
 };
 
+// 构建上下文查询（仅基于游标，不带筛选条件）
+const buildContextQuery = (cursorID: number, sort: string, size: number): GetLogReq => {
+  return {
+    cursorID,
+    sort,
+    page: { from: 0, size },
+  };
+};
+
 // 加载日志
-const loadLogs = async (options?: { append?: boolean; page?: number }) => {
-  const append = options?.append ?? false;
+const loadLogs = async (options?: { page?: number }) => {
   const targetPage = options?.page ?? currentPage.value;
   loading.value = true;
   try {
     const query = buildQuery(targetPage);
     const response = await getLog(query);
-
     if (response.code === 0 && response.data) {
-      const incomingLogs = response.data.data || [];
-      logData.value = append ? [...logData.value, ...incomingLogs] : incomingLogs;
+      logData.value = response.data.data || [];
       currentPage.value = targetPage;
       totalLogs.value = response.data.total || 0;
     } else {
@@ -404,6 +475,112 @@ const loadLogs = async (options?: { append?: boolean; page?: number }) => {
   } finally {
     loading.value = false;
   }
+};
+
+// 进入上下文模式：查看指定日志的上文
+const viewContextAbove = async (item: ProcessLog) => {
+  isContextMode.value = true;
+  contextAnchorID.value = item.id!;
+  loading.value = true;
+  try {
+    const query = buildContextQuery(item.id!, "desc", CONTEXT_INIT_SIZE);
+    const response = await getLog(query);
+    if (response.code === 0 && response.data) {
+      const fetched = response.data.data || [];
+      // DESC 返回（ID 从大到小），翻转为正序展示，锚点行附在末尾
+      const logs = [...fetched].reverse();
+      logData.value = [...logs, item];
+      contextTopID.value = logs.length > 0 ? logs[0].id! : item.id!;
+      contextBottomID.value = item.id!;
+      hasMoreAbove.value = fetched.length >= CONTEXT_INIT_SIZE;
+      hasMoreBelow.value = true;
+    } else {
+      snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
+    }
+  } catch (error) {
+    console.error("加载上文错误:", error);
+    snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 进入上下文模式：查看指定日志的下文
+const viewContextBelow = async (item: ProcessLog) => {
+  isContextMode.value = true;
+  contextAnchorID.value = item.id!;
+  loading.value = true;
+  try {
+    const query = buildContextQuery(item.id!, "asc", CONTEXT_INIT_SIZE);
+    const response = await getLog(query);
+    if (response.code === 0 && response.data) {
+      const fetched = response.data.data || [];
+      // ASC 返回（ID 从小到大），锚点行置顶
+      logData.value = [item, ...fetched];
+      contextTopID.value = item.id!;
+      contextBottomID.value = fetched.length > 0 ? fetched[fetched.length - 1].id! : item.id!;
+      hasMoreAbove.value = true;
+      hasMoreBelow.value = fetched.length >= CONTEXT_INIT_SIZE;
+    } else {
+      snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
+    }
+  } catch (error) {
+    console.error("加载下文错误:", error);
+    snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 在上下文模式下加载更多上文（向上追加）
+const loadMoreAbove = async () => {
+  if (loadingAbove.value || !hasMoreAbove.value) return;
+  loadingAbove.value = true;
+  try {
+    const query = buildContextQuery(contextTopID.value, "desc", CONTEXT_CHUNK_SIZE);
+    const response = await getLog(query);
+    if (response.code === 0 && response.data) {
+      const fetched = response.data.data || [];
+      const logs = [...fetched].reverse();
+      logData.value = [...logs, ...logData.value];
+      if (logs.length > 0) {
+        contextTopID.value = logs[0].id!;
+      }
+      hasMoreAbove.value = fetched.length >= CONTEXT_CHUNK_SIZE;
+    }
+  } catch (error) {
+    console.error("加载更多上文错误:", error);
+  } finally {
+    loadingAbove.value = false;
+  }
+};
+
+// 在上下文模式下加载更多下文（向下追加）
+const loadMoreBelow = async () => {
+  if (loadingBelow.value || !hasMoreBelow.value) return;
+  loadingBelow.value = true;
+  try {
+    const query = buildContextQuery(contextBottomID.value, "asc", CONTEXT_CHUNK_SIZE);
+    const response = await getLog(query);
+    if (response.code === 0 && response.data) {
+      const fetched = response.data.data || [];
+      logData.value = [...logData.value, ...fetched];
+      if (fetched.length > 0) {
+        contextBottomID.value = fetched[fetched.length - 1].id!;
+      }
+      hasMoreBelow.value = fetched.length >= CONTEXT_CHUNK_SIZE;
+    }
+  } catch (error) {
+    console.error("加载更多下文错误:", error);
+  } finally {
+    loadingBelow.value = false;
+  }
+};
+
+// 退出上下文模式，回到普通分页视图
+const exitContextMode = () => {
+  isContextMode.value = false;
+  loadLogs();
 };
 
 // 搜索日志
@@ -434,17 +611,11 @@ const handlePageChange = (page: number) => {
   loadLogs({ page });
 };
 
-const goToNextPage = () => {
-  if (!canContinueNextPage.value) return;
-  loadLogs({ append: true, page: currentPage.value + 1 });
-};
-
 // 加载进程列表
 const loadProcessList = async () => {
   try {
     const response = await getProcessList();
     if (response.code === 0 && response.data) {
-      // 提取进程名，去重
       processList.value = Array.from(
         new Set(response.data.map((item) => item.name)),
       ).sort();
@@ -520,6 +691,7 @@ onMounted(() => {
 }
 
 .log-stream__row {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 250px;
   gap: 10px;
@@ -532,22 +704,27 @@ onMounted(() => {
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.log-stream__row--content-only {
+/* 上下文模式：单列布局，隐藏 meta */
+.log-stream__row--context {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
-}
-
-.log-stream--content-only .log-stream__row {
   padding: 0;
 }
 
-.log-stream--content-only .log-stream__row:hover {
+/* 上下文模式下 hover 无背景变化 */
+.log-stream--context .log-stream__row:hover {
   background: transparent;
 }
 
-.log-stream--content-only .log-content {
+.log-stream--context .log-content {
   padding: 0;
   line-height: 1.28;
+}
+
+/* 锚点行高亮 */
+.log-stream__row--context-anchor {
+  background: rgba(var(--v-theme-primary), 0.06) !important;
+  border-left: 2px solid rgb(var(--v-theme-primary));
 }
 
 .log-stream__row:hover {
@@ -561,15 +738,22 @@ onMounted(() => {
   min-width: 0;
 }
 
-.log-stream__time {
-  white-space: nowrap;
-  line-height: 1.4;
-}
-
 .log-stream__labels {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+/* 悬停时浮层显示的上下文操作按钮 */
+.log-row__context-actions {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+  pointer-events: auto;
 }
 
 .log-stream__next-page-action {
@@ -601,10 +785,6 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
     padding: 8px 10px;
-  }
-
-  .log-stream__time {
-    font-size: 0.7rem !important;
   }
 }
 </style>

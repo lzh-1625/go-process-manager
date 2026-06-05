@@ -22,6 +22,7 @@ export interface GetLogReq {
     size?: number;
   };
   sort?: string;
+  cursorID?: number;
 }
 
 export interface LogResp {

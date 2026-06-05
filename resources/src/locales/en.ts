@@ -342,6 +342,13 @@ export default {
     totalLogs: "Total {n} logs",
     loadLogsFailed: "Failed to load logs",
     noLogsRetrieved: "No logs retrieved",
+    viewContextAbove: "View Context Above",
+    viewContextBelow: "View Context Below",
+    loadMoreAbove: "Load More Above",
+    loadMoreBelow: "Load More Below",
+    contextMode: "Context Mode",
+    noMoreAbove: "No more logs above",
+    noMoreBelow: "No more logs below",
   },
   eventPage: {
     title: "System Events",
