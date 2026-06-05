@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -20,9 +21,10 @@ import (
 type LogHandler struct {
 	queue     diskqueue.Interface
 	ILogLogic search.ILogLogic
+	wg        *sync.WaitGroup
+	id        *atomic.Int64
 	ctx       context.Context
 	cancel    context.CancelFunc
-	id        *atomic.Int64
 }
 
 func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
@@ -48,12 +50,13 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 				log.Logger.Errorf(f, args...)
 			}
 		})
-	ctx, cancel := context.WithCancel(context.Background())
 	id := atomic.Int64{}
 	id.Store(time.Now().UnixMicro() + queue.Depth())
-	lh := &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel, id: &id}
+	wg := sync.WaitGroup{}
+	ctx, cancel := context.WithCancel(context.Background())
+	lh := &LogHandler{queue: queue, ILogLogic: logLogic, wg: &wg, id: &id, ctx: ctx, cancel: cancel}
 	for range config.CF.LogHandlerPoolSize {
-		go lh.worker(ctx)
+		wg.Go(lh.worker)
 	}
 	return lh
 }
@@ -70,23 +73,25 @@ func (l *LogHandler) GetRunning() int {
 func (l *LogHandler) Close() {
 	l.queue.Close()
 	l.cancel()
+	l.wg.Wait()
 }
 
-func (l *LogHandler) worker(ctx context.Context) {
+func (l *LogHandler) worker() {
 	logs := make([]model.ProcessLog, 0, 100)
+	defer func() {
+		if len(logs) > 0 {
+			l.ILogLogic.Insert(logs...)
+		}
+		log.Logger.Info("log handler worker exit")
+	}()
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-ctx.Done():
+		case <-l.ctx.Done():
 			return
-		case msg, ok := <-l.queue.ReadChan():
-			if !ok {
-				if len(logs) > 0 {
-					l.ILogLogic.Insert(logs...)
-				}
-				return
-			}
+		case msg := <-l.queue.ReadChan():
 			var pl model.ProcessLog
 			_ = json.Unmarshal(msg, &pl)
 			logs = append(logs, pl)
