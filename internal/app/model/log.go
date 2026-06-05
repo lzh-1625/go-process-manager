@@ -88,7 +88,7 @@ type LogResp struct {
 }
 
 type ProcessLog struct {
-	ID    int64  `json:"id,omitempty" gorm:"primaryKey;autoIncrement;column:id" `
+	ID    int64  `json:"id,omitempty" gorm:"primaryKey;column:id" `
 	Log   string `json:"log" gorm:"column:log"`
 	Time  int64  `json:"time" gorm:"column:time"`
 	Name  string `json:"name" gorm:"column:name"`

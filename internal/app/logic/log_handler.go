@@ -22,7 +22,7 @@ type LogHandler struct {
 	ILogLogic search.ILogLogic
 	ctx       context.Context
 	cancel    context.CancelFunc
-	id        atomic.Int64
+	id        *atomic.Int64
 }
 
 func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
@@ -69,7 +69,7 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 	}
 	id := atomic.Int64{}
 	id.Store(time.Now().UnixMilli() + queue.Depth())
-	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel, id: id}
+	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel, id: &id}
 }
 
 func (l *LogHandler) AddLog(data model.ProcessLog) {

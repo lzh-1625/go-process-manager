@@ -5,13 +5,13 @@ package bleve
 import (
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
 	_ "github.com/blevesearch/bleve/v2/search/highlight/highlighter/ansi"
 	"github.com/blevesearch/bleve/v2/search/query"
-	"github.com/google/uuid"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
@@ -49,6 +49,8 @@ func (b *bleveSearch) init() error {
 	mapping := bleve.NewDocumentMapping()
 	log := bleve.NewTextFieldMapping()
 	log.Index = true
+	id := bleve.NewNumericFieldMapping()
+	id.Index = true
 	logKeyword := bleve.NewKeywordFieldMapping()
 	logKeyword.Index = true
 	time := bleve.NewNumericFieldMapping()
@@ -58,6 +60,7 @@ func (b *bleveSearch) init() error {
 	using := bleve.NewKeywordFieldMapping()
 	using.Index = true
 	mapping.AddFieldMappingsAt("log", log)
+	mapping.AddFieldMappingsAt("id", id)
 	mapping.AddFieldMappingsAt("log_keyword", logKeyword)
 	mapping.AddFieldMappingsAt("time", time)
 	mapping.AddFieldMappingsAt("name", name)
@@ -77,7 +80,7 @@ func (b *bleveSearch) init() error {
 }
 
 func (b *bleveSearch) Insert(id int64, logContent string, processName string, using string, ts int64) {
-	if err := b.index.Index(uuid.NewString(), model.BleveProcessLog{
+	if err := b.index.Index(strconv.FormatInt(id, 10), model.BleveProcessLog{
 		ID:         id,
 		Log:        logContent,
 		LogKeyword: logContent,
@@ -181,6 +184,7 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 			log = v.Fields["log"].(string)
 		}
 		data = append(data, &model.ProcessLog{
+			ID:    utils.UnwarpIgnore(strconv.ParseInt(v.ID, 10, 64)),
 			Log:   log,
 			Time:  int64(v.Fields["time"].(float64)),
 			Using: v.Fields["using"].(string),
