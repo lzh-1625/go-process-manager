@@ -64,7 +64,6 @@ func (e *esSearch) Insert(id int64, logContent string, processName string, using
 }
 
 func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
-	// 检查 req 是否为 nil
 	search := e.esClient.Search(config.CF.EsIndex).From(req.Page.From).Size(req.Page.Size).TrackScores(true)
 	if !config.CF.EsWindowLimit {
 		search = search.TrackTotalHits(true)
@@ -86,6 +85,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	}
 	notQuery := []elastic.Query{}
 
+	// analyze query string
 	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
 		switch v.Cond {
 		case sr.Match:
@@ -117,7 +117,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 		queryList = append(queryList, idRange)
 	}
 
-	if len(filterProcessName) != 0 { // 过滤进程名
+	if len(filterProcessName) != 0 { // filter process name
 		shouldQueryList := []elastic.Query{}
 		for _, fpn := range filterProcessName {
 			shouldQueryList = append(shouldQueryList, elastic.NewMatchQuery("name", fpn))
@@ -134,8 +134,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 		log.Logger.Errorw("es search failed", "err", err)
 		return result
 	}
-
-	// 遍历响应结果
+	// iterate response hits
 	for _, v := range resp.Hits.Hits {
 		if v.Source != nil {
 			var data model.ProcessLog
