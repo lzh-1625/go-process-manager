@@ -131,7 +131,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	result := model.LogResp{}
 	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
-		log.Logger.Errorw("es查询失败", "err", err, "reason", resp.Error.Reason)
+		log.Logger.Errorw("es查询失败", "err", err)
 		return result
 	}
 
