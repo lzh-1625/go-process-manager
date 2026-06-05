@@ -59,7 +59,7 @@ func (e *esSearch) Insert(id int64, logContent string, processName string, using
 	}
 	_, err := e.esClient.Index().Index(config.CF.EsIndex).BodyJson(data).Do(context.TODO())
 	if err != nil {
-		log.Logger.Errorw("es数据插入失败", "err", err)
+		log.Logger.Errorw("es insert failed", "err", err)
 	}
 }
 
@@ -131,7 +131,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	result := model.LogResp{}
 	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
-		log.Logger.Errorw("es查询失败", "err", err)
+		log.Logger.Errorw("es search failed", "err", err)
 		return result
 	}
 
@@ -145,7 +145,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 				}
 				result.Data = append(result.Data, &data)
 			} else {
-				log.Logger.Errorw("JSON 解码失败", "err", err)
+				log.Logger.Warnw("json decode failed", "err", err)
 			}
 		}
 	}
