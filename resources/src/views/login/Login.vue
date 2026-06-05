@@ -28,7 +28,6 @@ const handleLogin = async () => {
         localStorage.setItem("token", e.data?.token!);
         localStorage.setItem("role", e.data?.role.toString()!);
         localStorage.setItem("name", e.data?.username!);
-        document.cookie = `Authorization=bearer ${e.data?.token!}; path=/api/ws; SameSite=Lax`
         router.push("/");
       }
     });
