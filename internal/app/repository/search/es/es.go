@@ -49,8 +49,9 @@ func (e *esSearch) init() error {
 	return nil
 }
 
-func (e *esSearch) Insert(logContent string, processName string, using string, ts int64) {
+func (e *esSearch) Insert(id int64, logContent string, processName string, using string, ts int64) {
 	data := model.ProcessLog{
+		ID:    id,
 		Log:   logContent,
 		Name:  processName,
 		Using: using,
@@ -58,21 +59,20 @@ func (e *esSearch) Insert(logContent string, processName string, using string, t
 	}
 	_, err := e.esClient.Index().Index(config.CF.EsIndex).BodyJson(data).Do(context.TODO())
 	if err != nil {
-		log.Logger.Errorw("es数据插入失败", "err", err)
+		log.Logger.Errorw("es insert failed", "err", err)
 	}
 }
 
 func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
-	// 检查 req 是否为 nil
 	search := e.esClient.Search(config.CF.EsIndex).From(req.Page.From).Size(req.Page.Size).TrackScores(true)
 	if !config.CF.EsWindowLimit {
 		search = search.TrackTotalHits(true)
 	}
 	if req.Sort == "asc" {
-		search.Sort("time", true)
+		search.Sort("id", true)
 	}
 	if req.Sort == "desc" {
-		search.Sort("time", false)
+		search.Sort("id", false)
 	}
 
 	queryList := []elastic.Query{}
@@ -85,6 +85,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	}
 	notQuery := []elastic.Query{}
 
+	// analyze query string
 	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
 		switch v.Cond {
 		case sr.Match:
@@ -105,7 +106,18 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	if req.Match.Using != "" {
 		queryList = append(queryList, elastic.NewMatchQuery("using", req.Match.Using))
 	}
-	if len(filterProcessName) != 0 { // 过滤进程名
+
+	if req.CursorID != 0 {
+		idRange := elastic.NewRangeQuery("id")
+		if req.Sort == "desc" {
+			idRange = idRange.Lt(req.CursorID)
+		} else {
+			idRange = idRange.Gt(req.CursorID)
+		}
+		queryList = append(queryList, idRange)
+	}
+
+	if len(filterProcessName) != 0 { // filter process name
 		shouldQueryList := []elastic.Query{}
 		for _, fpn := range filterProcessName {
 			shouldQueryList = append(shouldQueryList, elastic.NewMatchQuery("name", fpn))
@@ -119,11 +131,10 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	result := model.LogResp{}
 	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
-		log.Logger.Errorw("es查询失败", "err", err, "reason", resp.Error.Reason)
+		log.Logger.Errorw("es search failed", "err", err)
 		return result
 	}
-
-	// 遍历响应结果
+	// iterate response hits
 	for _, v := range resp.Hits.Hits {
 		if v.Source != nil {
 			var data model.ProcessLog
@@ -133,7 +144,7 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 				}
 				result.Data = append(result.Data, &data)
 			} else {
-				log.Logger.Errorw("JSON 解码失败", "err", err)
+				log.Logger.Warnw("json decode failed", "err", err)
 			}
 		}
 	}

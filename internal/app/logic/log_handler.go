@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"sync/atomic"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -21,10 +22,11 @@ type LogHandler struct {
 	ILogLogic search.ILogLogic
 	ctx       context.Context
 	cancel    context.CancelFunc
+	id        *atomic.Int64
 }
 
 func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
-	dirPath := path.Join(utils.UnwarpIgnore(os.UserHomeDir()), ".gpm", "log.diskqueue")
+	dirPath := path.Join(config.CF.ConfigDir, "log.diskqueue")
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		log.Logger.Panic(err)
 	}
@@ -47,10 +49,10 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 			}
 		})
 	ctx, cancel := context.WithCancel(context.Background())
-	for range max(1, config.CF.LogHandlerPoolSize) {
-		go func() {
+	for i := range max(1, config.CF.LogHandlerPoolSize) {
+		go func(id int) {
 			var pl model.ProcessLog
-			log.Logger.Infow("log handler started")
+			log.Logger.Infow("log handler started", "id", id)
 			for {
 				select {
 				case <-ctx.Done():
@@ -60,15 +62,18 @@ func NewLogHandler(logLogic search.ILogLogic) *LogHandler {
 						return
 					}
 					_ = json.Unmarshal(msg, &pl)
-					logLogic.Insert(pl.Log, pl.Name, pl.Using, pl.Time)
+					logLogic.Insert(pl.ID, pl.Log, pl.Name, pl.Using, pl.Time)
 				}
 			}
-		}()
+		}(i)
 	}
-	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel}
+	id := atomic.Int64{}
+	id.Store(time.Now().UnixMilli() + queue.Depth())
+	return &LogHandler{queue: queue, ILogLogic: logLogic, ctx: ctx, cancel: cancel, id: &id}
 }
 
 func (l *LogHandler) AddLog(data model.ProcessLog) {
+	data.ID = l.id.Add(1)
 	l.queue.Put(utils.Unwarp(json.Marshal(data)))
 }
 
