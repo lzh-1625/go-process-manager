@@ -106,6 +106,17 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 	if req.Match.Using != "" {
 		queryList = append(queryList, elastic.NewMatchQuery("using", req.Match.Using))
 	}
+
+	if req.CursorID != 0 {
+		idRange := elastic.NewRangeQuery("id")
+		if req.Sort == "desc" {
+			idRange = idRange.Lt(req.CursorID)
+		} else {
+			idRange = idRange.Gt(req.CursorID)
+		}
+		queryList = append(queryList, idRange)
+	}
+
 	if len(filterProcessName) != 0 { // 过滤进程名
 		shouldQueryList := []elastic.Query{}
 		for _, fpn := range filterProcessName {

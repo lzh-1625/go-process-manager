@@ -39,6 +39,13 @@ func (l *LogRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) 
 			q = q.Where(l.query.ProcessLog.Log.NotLike("%" + v.Content + "%"))
 		}
 	}
+	if req.CursorID != 0 {
+		if req.Sort == "desc" {
+			q = q.Where(l.query.ProcessLog.ID.Lt(req.CursorID))
+		} else {
+			q = q.Where(l.query.ProcessLog.ID.Gt(req.CursorID))
+		}
+	}
 
 	if req.Sort == "desc" {
 		q = q.Order(l.query.ProcessLog.ID.Desc())

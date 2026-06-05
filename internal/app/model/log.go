@@ -50,7 +50,8 @@ type GetLogReq struct {
 		From int `json:"from"`
 		Size int `json:"size"`
 	} `json:"page"`
-	Sort string `json:"sort"`
+	Sort     string `json:"sort"`
+	CursorID int64  `json:"cursorId"`
 }
 
 type EsResp struct {

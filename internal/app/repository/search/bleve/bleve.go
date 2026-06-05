@@ -125,6 +125,17 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 		buildQuery.AddMust(usingQuery)
 	}
 
+	if req.CursorID != 0 {
+		var query *query.NumericRangeQuery
+		if req.Sort == "desc" {
+			query = bleve.NewNumericRangeQuery(nil, new(float64(req.CursorID)))
+		} else {
+			query = bleve.NewNumericRangeQuery(new(float64(req.CursorID+1)), nil)
+		}
+		query.SetField("id")
+		buildQuery.AddMust(query)
+	}
+
 	st := new(0.1)
 	ed := new(float64(time.Now().UnixMilli()))
 
