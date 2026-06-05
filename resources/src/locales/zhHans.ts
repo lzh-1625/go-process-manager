@@ -342,6 +342,7 @@ export default {
     contextMode: "上下文模式",
     noMoreAbove: "已无更多上文",
     noMoreBelow: "已无更多下文",
+    contextScrollHint: "滚动到顶部 / 底部加载更多上下文",
   },
   eventPage: {
     title: "系统事件",

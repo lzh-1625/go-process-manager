@@ -349,6 +349,7 @@ export default {
     contextMode: "Context Mode",
     noMoreAbove: "No more logs above",
     noMoreBelow: "No more logs below",
+    contextScrollHint: "Scroll to top / bottom to load more context",
   },
   eventPage: {
     title: "System Events",
