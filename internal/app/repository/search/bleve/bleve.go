@@ -3,7 +3,6 @@
 package bleve
 
 import (
-	"os"
 	"path"
 	"strconv"
 	"time"
@@ -13,6 +12,7 @@ import (
 	_ "github.com/blevesearch/bleve/v2/search/highlight/highlighter/ansi"
 	"github.com/blevesearch/bleve/v2/search/query"
 
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	sr "github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
@@ -66,7 +66,7 @@ func (b *bleveSearch) init() error {
 	mapping.AddFieldMappingsAt("name", name)
 	mapping.AddFieldMappingsAt("using", using)
 	indexMapping.AddDocumentMapping("server_log_v1", mapping)
-	path := path.Join(utils.UnwarpIgnore(os.UserHomeDir()), ".gpm", "log.bleve")
+	path := path.Join(config.CF.ConfigDir, "log.bleve")
 	index, err := bleve.Open(path)
 	if err != nil {
 		index, err = bleve.New(path, indexMapping)

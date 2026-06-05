@@ -59,13 +59,20 @@ type Configuration struct {
 	EventStorageTime          int    `default:"1" describe:"event storage time (days)"`
 	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
 	SecretKey                 string `default:"-"`
+	ConfigDir                 string `default:"-"`
 }
 
 const configFileName = "config.json"
 
 func LoadConfig() error {
-	home, _ := os.UserHomeDir()
-	f, err := os.Open(path.Join(home, ".gpm", configFileName))
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Println("get user home dir failed", err)
+		log.Println("use current dir as config dir")
+		homeDir = "."
+	}
+	CF.ConfigDir = path.Join(homeDir, ".gpm")
+	f, err := os.Open(path.Join(CF.ConfigDir, configFileName))
 	if err != nil {
 		return err
 	}
@@ -78,13 +85,9 @@ func LoadConfig() error {
 }
 
 func DumpConfig() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Println("get user home dir failed", err)
-	}
-	filePath := path.Join(home, ".gpm", configFileName)
+	filePath := path.Join(CF.ConfigDir, configFileName)
 	log.Println("config file path", filePath)
-	if err = os.MkdirAll(path.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(path.Dir(filePath), 0755); err != nil {
 		log.Println("create config file dir failed", err)
 	}
 	f, err := os.Create(filePath)

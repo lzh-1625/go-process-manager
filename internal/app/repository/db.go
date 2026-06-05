@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"os"
 	"path"
 	"time"
 
@@ -56,9 +55,8 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 }
 
 func NewDB() *gorm.DB {
-	home, _ := os.UserHomeDir()
-
-	gdb, err := gorm.Open(sqlite.Open(path.Join(home, ".gpm", "data.db")), &gorm.Config{
+	dbPath := path.Join(config.CF.ConfigDir, "data.db")
+	gdb, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
 		Logger: &GormLogger{logger: log.Logger},
 	})
 	if err != nil {
