@@ -9,6 +9,7 @@
   "dependencies": {
     "@mdi/font": "7.4.47",
     "@xterm/addon-canvas": "^0.7.0",
+    "ansi_up": "^6.0.6",
     "ansi-to-html": "^0.7.2",
     "axios": "^1.7.5",
     "echarts": "^5.5.1",

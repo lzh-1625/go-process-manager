@@ -215,7 +215,7 @@ import { useI18n } from "vue-i18n";
 import { getLog } from "~/src/api/log";
 import type { GetLogReq, ProcessLog } from "~/src/types/log/log";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
-import Convert from "ansi-to-html";
+import { AnsiUp } from "ansi_up";
 import { getProcessList } from "~/src/api/process";
 import LogContextViewer from "~/src/components/log/LogContextViewer.vue";
 
@@ -223,8 +223,9 @@ const { t } = useI18n();
 const { smAndDown } = useDisplay();
 const snackbarStore = useSnackbarStore();
 
+const ansiConverter = new AnsiUp();
+
 const paginationVisible = computed(() => (smAndDown.value ? 3 : 7));
-const ansiConverter = new Convert();
 const processList = ref<string[]>([]);
 const contextViewer = ref<InstanceType<typeof LogContextViewer> | null>(null);
 const hoveredRowId = ref<number | null>(null);
@@ -269,10 +270,8 @@ const totalPages = computed(() => Math.ceil(totalLogs.value / pageSize.value));
 const convertAnsiToHtml = (text: string) => {
   if (!text) return "";
   return ansiConverter
-    .toHtml(text)
-    .replaceAll("color:rgb(255,255,255)", "color:rgb(160,160,160)")
-    .replaceAll("color:#ffffff", "color:#a0a0a0")
-    .replaceAll("color:#FFF", "color:#a0a0a0");
+    .ansi_to_html(text)
+    .replaceAll("color:rgb(255,255,255)", "color:rgb(160,160,160)");
 };
 
 const formatTime = (ts: number) => {
