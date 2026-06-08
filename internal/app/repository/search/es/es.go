@@ -63,7 +63,7 @@ func (e *esSearch) Insert(logs ...model.ProcessLog) {
 	}
 }
 
-func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
+func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 	search := e.esClient.Search(config.CF.EsIndex).From(req.Page.From).Size(req.Page.Size).TrackScores(true)
 	if !config.CF.EsWindowLimit {
 		search = search.TrackTotalHits(true)
@@ -117,9 +117,9 @@ func (e *esSearch) Search(req model.GetLogReq, filterProcessName ...string) mode
 		queryList = append(queryList, idRange)
 	}
 
-	if len(filterProcessName) != 0 { // filter process name
+	if len(req.FilterName) != 0 { // filter process name
 		shouldQueryList := []elastic.Query{}
-		for _, fpn := range filterProcessName {
+		for _, fpn := range req.FilterName {
 			shouldQueryList = append(shouldQueryList, elastic.NewMatchQuery("name", fpn))
 		}
 		if len(shouldQueryList) > 0 {

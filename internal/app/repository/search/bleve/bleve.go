@@ -89,7 +89,7 @@ func (b *bleveSearch) Insert(logs ...model.ProcessLog) {
 	}
 }
 
-func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (result model.LogResp) {
+func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 	buildQuery := bleve.NewBooleanQuery()
 	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
 		switch v.Cond {
@@ -147,9 +147,9 @@ func (b *bleveSearch) Search(req model.GetLogReq, filterProcessName ...string) (
 	// at least one of the time range must be specified
 	buildQuery.AddMust(timeQuery)
 
-	if len(filterProcessName) != 0 {
+	if len(req.FilterName) != 0 {
 		shouldQueryList := []query.Query{}
-		for _, v := range filterProcessName {
+		for _, v := range req.FilterName {
 			shouldQueryList = append(shouldQueryList, bleve.NewTermQuery(v))
 		}
 		if len(shouldQueryList) > 0 {

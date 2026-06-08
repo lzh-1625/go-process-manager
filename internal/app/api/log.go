@@ -32,7 +32,7 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 	}
 	if isAdmin(ctx) {
 		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.ILogLogic.Search(req, req.FilterName...),
+			Data:    a.ILogLogic.Search(req),
 			Message: "success",
 			Code:    0,
 		})
@@ -48,7 +48,7 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 			return errors.New("no information found")
 		}
 		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.ILogLogic.Search(req, filterName...),
+			Data:    a.ILogLogic.Search(req),
 			Message: "success",
 			Code:    0,
 		})

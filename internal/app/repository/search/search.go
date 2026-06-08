@@ -9,7 +9,7 @@ import (
 )
 
 type ILogLogic interface {
-	Search(req model.GetLogReq, filterProcessName ...string) model.LogResp
+	Search(req model.GetLogReq) model.LogResp
 	Insert(...model.ProcessLog)
 	Reload() error
 }

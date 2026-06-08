@@ -21,8 +21,7 @@ func NewSqliteSearch(logRepository *repository.LogRepository) search.ILogLogic {
 	}
 }
 
-func (l *sqliteSearch) Search(req model.GetLogReq, filterProcessName ...string) model.LogResp {
-	req.FilterName = filterProcessName
+func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
 	query := search.QueryStringAnalysis(req.Match.Log)
 	data, total := l.logRepository.SearchLog(req, query)
 	for _, v := range slices.DeleteFunc(query, func(q search.Query) bool {

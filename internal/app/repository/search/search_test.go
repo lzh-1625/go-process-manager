@@ -1,6 +1,8 @@
 package search
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestQueryStringAnalysis(t *testing.T) {
 	query := QueryStringAnalysis("test ^test")
