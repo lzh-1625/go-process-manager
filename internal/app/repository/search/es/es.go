@@ -69,9 +69,11 @@ func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 		search = search.TrackTotalHits(true)
 	}
 	if req.Sort == "asc" {
+		search.Sort("time", true)
 		search.Sort("id", true)
 	}
 	if req.Sort == "desc" {
+		search.Sort("time", false)
 		search.Sort("id", false)
 	}
 

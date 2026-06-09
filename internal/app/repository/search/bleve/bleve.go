@@ -161,10 +161,10 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 	sortArgs := ([]string{"-_score"})
 	if req.Sort == "desc" {
 
-		sortArgs = ([]string{"-id"})
+		sortArgs = ([]string{"-time", "-id"})
 	}
 	if req.Sort == "asc" {
-		sortArgs = ([]string{"id"})
+		sortArgs = ([]string{"time", "id"})
 	}
 	hl := bleve.HighlightRequest{}
 	hl.AddField("log")

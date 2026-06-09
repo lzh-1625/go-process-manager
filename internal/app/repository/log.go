@@ -52,7 +52,9 @@ func (l *LogRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) 
 	}
 
 	if req.Sort == "desc" {
-		q = q.Order(l.query.ProcessLog.ID.Desc())
+		q = q.Order(l.query.ProcessLog.Time.Desc(), l.query.ProcessLog.ID.Desc())
+	} else {
+		q = q.Order(l.query.ProcessLog.Time.Asc(), l.query.ProcessLog.ID.Asc())
 	}
 	if req.TimeRange.StartTime != 0 {
 		q = q.Where(l.query.ProcessLog.Time.Gte(req.TimeRange.StartTime))
