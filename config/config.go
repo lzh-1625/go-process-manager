@@ -56,7 +56,7 @@ type Configuration struct {
 	CgroupPeriod              int64  `default:"100000" describe:"CgroupPeriod"`
 	CgroupSwapLimit           bool   `default:"false" describe:"cgroup swap limit"`
 	CondWaitTime              int    `default:"30" describe:"long polling wait time (seconds)"`
-	EventStorageTime          int    `default:"1" describe:"event storage time (days)"`
+	EventStorageTime          int    `default:"30" describe:"event storage time (days)"`
 	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
 	SecretKey                 string `default:"-"`
 	ConfigDir                 string `default:"-" json:"-"`
