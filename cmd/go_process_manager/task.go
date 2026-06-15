@@ -1,16 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"strconv"
 
-	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/cli"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/spf13/cobra"
-	"go.uber.org/fx"
 )
 
 var taskCmd = &cobra.Command{
@@ -39,17 +34,7 @@ var taskListCmd = &cobra.Command{
 	Short: "List all tasks",
 	Long:  `Print a table of all registered tasks, including their ID, name, schedule and last run status.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.TaskCli) {
-				err := c.GetList()
-				if err != nil {
-					log.Panic(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewTaskCli().GetList()
 	},
 }
 
@@ -59,18 +44,7 @@ var taskDeleteCmd = &cobra.Command{
 	Long:  `Permanently remove the task with the given ID from gpm.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.TaskCli) {
-				err := c.Delete(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					log.Panic(err)
-				}
-				fmt.Println("Task deleted successfully")
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewTaskCli().GetList()
 	},
 }
 
@@ -80,18 +54,7 @@ var taskStartCmd = &cobra.Command{
 	Long:  `Manually run the task with the given ID, ignoring its schedule.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.TaskCli) {
-				err := c.Start(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					log.Panic(err)
-				}
-				fmt.Println("Task started successfully")
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewTaskCli().Start(utils.Unwarp(strconv.Atoi(args[0])))
 	},
 }
 
@@ -101,17 +64,6 @@ var taskStopCmd = &cobra.Command{
 	Long:  `Stop the currently running task with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.TaskCli) {
-				err := c.Stop(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					log.Panic(err)
-				}
-				fmt.Println("Task stopped successfully")
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewTaskCli().Stop(utils.Unwarp(strconv.Atoi(args[0])))
 	},
 }

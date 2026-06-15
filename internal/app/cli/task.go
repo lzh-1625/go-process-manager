@@ -14,11 +14,10 @@ func NewTaskCli() *TaskCli {
 	return &TaskCli{}
 }
 
-func (t *TaskCli) GetList() error {
+func (t *TaskCli) GetList() {
 	result, err := Get[[]model.TaskVo]("/api/task/all", nil)
-	if err != nil {
-		return err
-	}
+
+	checkError(err)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{
@@ -40,29 +39,19 @@ func (t *TaskCli) GetList() error {
 	}
 
 	table.Render()
-	return nil
 }
 
-func (t *TaskCli) Delete(id int) error {
+func (t *TaskCli) Delete(id int) {
 	_, err := Delete[struct{}]("/api/task", map[string]string{"id": strconv.Itoa(id)})
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }
 
-func (t *TaskCli) Start(id int) error {
+func (t *TaskCli) Start(id int) {
 	_, err := Get[struct{}]("/api/task/start", map[string]string{"id": strconv.Itoa(id)})
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }
 
-func (t *TaskCli) Stop(id int) error {
+func (t *TaskCli) Stop(id int) {
 	_, err := Get[struct{}]("/api/task/stop", map[string]string{"id": strconv.Itoa(id)})
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }

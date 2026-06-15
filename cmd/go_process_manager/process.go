@@ -1,17 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
-	"strconv"
-
-	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/cli"
-	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/spf13/cobra"
-
-	"go.uber.org/fx"
 )
 
 var processCmd = &cobra.Command{
@@ -42,18 +33,7 @@ var processListCmd = &cobra.Command{
 	Short: "List all managed processes",
 	Long:  `Print a table of all processes managed by gpm, including their ID, name and current state.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			// register sqlite implement search engine
-			fx.Invoke(func(cli *cli.ProcessCli) {
-				err := cli.GetList()
-				if err != nil {
-					log.Panic(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewProcessCli().GetList()
 	},
 }
 
@@ -64,17 +44,7 @@ var processExecCmd = &cobra.Command{
 its output to the current terminal. The process is not kept under supervision.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(cli *cli.ProcessCli) {
-				err := cli.Exec(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					fmt.Print(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewProcessCli().Exec(args[0])
 	},
 }
 
@@ -84,17 +54,7 @@ var processStartCmd = &cobra.Command{
 	Long:  `Start the managed process with the given ID and keep it under gpm supervision.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(cli *cli.ProcessCli) {
-				err := cli.Start(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					fmt.Print(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewProcessCli().Start(args[0])
 	},
 }
 
@@ -104,16 +64,6 @@ var processStopCmd = &cobra.Command{
 	Long:  `Gracefully stop the managed process with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(cli *cli.ProcessCli) {
-				err := cli.Stop(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					fmt.Print(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewProcessCli().Stop(args[0])
 	},
 }

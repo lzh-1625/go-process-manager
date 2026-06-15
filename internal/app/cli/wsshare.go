@@ -14,12 +14,9 @@ func NewWSShareCli() *WSShareCli {
 	return &WSShareCli{}
 }
 
-func (w *WSShareCli) GetList() error {
+func (w *WSShareCli) GetList() {
 	result, err := Get[[]*model.WsShare]("/api/ws/token/list", nil)
-	if err != nil {
-		return err
-	}
-
+	checkError(err)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{
 		"ID",
@@ -46,13 +43,9 @@ func (w *WSShareCli) GetList() error {
 	}
 
 	table.Render()
-	return nil
 }
 
-func (w *WSShareCli) Delete(id int) error {
+func (w *WSShareCli) Delete(id int) {
 	_, err := Delete[struct{}]("/api/ws/token", map[string]string{"id": strconv.Itoa(id)})
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }

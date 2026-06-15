@@ -1,16 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"strconv"
 
-	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/cli"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/spf13/cobra"
-	"go.uber.org/fx"
 )
 
 var wsshareCmd = &cobra.Command{
@@ -37,17 +32,7 @@ var wsshareListCmd = &cobra.Command{
 	Short: "List all active share tokens",
 	Long:  `Print a table of all active WebSocket terminal share tokens, including their ID and expiry.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.WSShareCli) {
-				err := c.GetList()
-				if err != nil {
-					log.Panic(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewWSShareCli().GetList()
 	},
 }
 
@@ -57,17 +42,6 @@ var wsshareDeleteCmd = &cobra.Command{
 	Long:  `Immediately revoke the WebSocket terminal share token with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.WSShareCli) {
-				err := c.Delete(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					log.Panic(err)
-				}
-				fmt.Println("WebSocket share deleted successfully")
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewWSShareCli().Delete(utils.Unwarp(strconv.Atoi(args[0])))
 	},
 }

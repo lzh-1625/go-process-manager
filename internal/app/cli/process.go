@@ -27,10 +27,7 @@ func NewProcessCli() *ProcessCli {
 
 func (p *ProcessCli) GetList() error {
 	result, err := Get[[]model.ProcessInfo]("/api/process", nil)
-	if err != nil {
-		return err
-	}
-
+	checkError(err)
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.Header([]string{
@@ -102,17 +99,16 @@ func formatBytes(bytes int64) string {
 	return fmt.Sprintf("%.2f%s", size, units[int(level)])
 }
 
-func (p *ProcessCli) Exec(uuid int) error {
+func (p *ProcessCli) Exec(name string) error {
+	proc := p.getProcess(name)
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		return err
-	}
+	checkError(err)
 	u := url.URL{
 		Scheme: "ws",
 		Host:   config.CF.Listen,
 		Path:   "/api/ws",
 		RawQuery: url.Values{
-			"uuid": {strconv.Itoa(uuid)},
+			"uuid": {strconv.Itoa(proc.UUID)},
 			"cols": {strconv.Itoa(width)},
 			"rows": {strconv.Itoa(height)},
 		}.Encode(),
@@ -120,14 +116,10 @@ func (p *ProcessCli) Exec(uuid int) error {
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{
 		"Authorization": {"bearer " + GetJwt()},
 	})
-	if err != nil {
-		return err
-	}
+	checkError(err)
 	defer conn.Close()
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		return err
-	}
+	checkError(err)
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -172,18 +164,23 @@ func (p *ProcessCli) Exec(uuid int) error {
 	return nil
 }
 
-func (p *ProcessCli) Start(uuid int) error {
-	_, err := Put[struct{}]("/api/process", map[string]any{"uuid": uuid})
-	if err != nil {
-		return err
-	}
-	return nil
+func (p *ProcessCli) Start(name string) {
+	proc := p.getProcess(name)
+	_, err := Put[struct{}]("/api/process", map[string]any{"uuid": proc.UUID})
+	checkError(err)
 }
 
-func (p *ProcessCli) Stop(uuid int) error {
-	_, err := Delete[struct{}]("/api/process", map[string]string{"uuid": strconv.Itoa(uuid)})
-	if err != nil {
-		return err
+func (p *ProcessCli) Stop(name string) {
+	proc := p.getProcess(name)
+	_, err := Delete[struct{}]("/api/process", map[string]string{"uuid": strconv.Itoa(proc.UUID)})
+	checkError(err)
+}
+
+func (p *ProcessCli) getProcess(name string) *model.Process {
+	proc, err := Get[model.Process]("/api/process/config", map[string]string{"name": name})
+	if proc == nil || proc.UUID == 0 || err != nil {
+		fmt.Printf("Failed: Process named \"%s\" not found\n", name)
+		os.Exit(0)
 	}
-	return nil
+	return proc
 }
