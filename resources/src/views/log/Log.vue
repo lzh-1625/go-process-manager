@@ -387,12 +387,12 @@ const loadLogs = async (options?: { page?: number }) => {
 const searchLogs = () => loadLogs({ page: 1 });
 const resetSearch = () => {
   searchForm.value = {
-    name: [],
+    name: [] as string[],
     log: "",
     using: "",
-    startTime: "",
-    endTime: "",
-    sort: "",
+    startTime: getDefaultStartTime(),
+    endTime: formatDatetimeLocal(new Date()),
+    sort: "desc",
     hightLight: true,
   };
   loadLogs({ page: 1 });
