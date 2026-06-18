@@ -38,9 +38,10 @@ type Hits struct {
 type GetLogReq struct {
 	FilterName []string `json:"filterName"`
 	Match      struct {
-		Log   string `json:"log"`
-		Name  string `json:"name"`
-		Using string `json:"using"`
+		Log       string `json:"log"`
+		Name      string `json:"name"`
+		Using     string `json:"using"`
+		HighLight bool   `json:"highLight"`
 	} `json:"match"`
 	TimeRange struct {
 		StartTime int64 `json:"startTime"`

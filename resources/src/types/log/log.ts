@@ -12,6 +12,7 @@ export interface GetLogReq {
     log?: string;
     name?: string;
     using?: string;
+    highLight?: boolean;
   };
   time?: {
     startTime?: number;

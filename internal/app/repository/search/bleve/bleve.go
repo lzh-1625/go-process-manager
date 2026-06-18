@@ -4,7 +4,9 @@ package bleve
 
 import (
 	"path"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -91,7 +93,9 @@ func (b *bleveSearch) Insert(logs ...model.ProcessLog) {
 
 func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 	buildQuery := bleve.NewBooleanQuery()
-	for _, v := range sr.QueryStringAnalysis(req.Match.Log) {
+
+	logQuery := sr.QueryStringAnalysis(req.Match.Log)
+	for _, v := range logQuery {
 		switch v.Cond {
 		case sr.Match:
 			logQuery := bleve.NewMatchQuery(v.Content)
@@ -198,6 +202,16 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 			Using: v.Fields["using"].(string),
 			Name:  v.Fields["name"].(string),
 		})
+	}
+
+	if req.Match.HighLight {
+		for _, v := range slices.DeleteFunc(logQuery, func(q sr.Query) bool {
+			return q.Cond == sr.NotMatch || q.Cond == sr.NotWildCard
+		}) {
+			for i := range data {
+				data[i].Log = strings.ReplaceAll(data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
+			}
+		}
 	}
 
 	result.Data = data

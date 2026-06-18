@@ -255,7 +255,8 @@ export default {
     confirmStartAll: "确认全部启动",
     confirmStopAll: "确认全部停止",
     confirmStartAllMsg: "确定要启动所有进程吗？",
-    confirmStopAllMsg: "确定要停止所有进程吗？此操作将强制终止所有正在运行的进程。",
+    confirmStopAllMsg:
+      "确定要停止所有进程吗？此操作将强制终止所有正在运行的进程。",
     totalWillStart: "共 {n} 个进程将被启动",
     totalWillStop: "共 {n} 个进程将被停止",
     confirmStart: "确认启动",
@@ -323,6 +324,7 @@ export default {
     terminalError: "终端连接发生错误",
   },
   logPage: {
+    highLight: "高亮",
     title: "日志查看",
     processName: "进程名",
     logContent: "日志内容",
@@ -348,8 +350,8 @@ export default {
     title: "系统事件",
     eventType: "事件类型",
     additionalInfo: "附加信息",
-    additionalKey:"附加键",
-    additionalValue:"附加值",
+    additionalKey: "附加键",
+    additionalValue: "附加值",
     totalEvents: "共 {n} 条事件",
     loadEventsFailed: "加载事件失败",
     loadEventsError: "加载事件出错",
@@ -477,7 +479,8 @@ export default {
     operationFailed: "操作失败",
     enablePush: "启用推送",
     pushDesc: "推送配置描述",
-    placeholder: "占位符：{$name}进程名称 {$user}使用者 {$message}消息内容 {$status}进程状态",
+    placeholder:
+      "占位符：{$name}进程名称 {$user}使用者 {$message}消息内容 {$status}进程状态",
   },
   sharePage: {
     title: "分享链接管理",

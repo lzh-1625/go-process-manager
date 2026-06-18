@@ -24,11 +24,14 @@ func NewSqliteSearch(logRepository *repository.LogRepository) search.ILogLogic {
 func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
 	query := search.QueryStringAnalysis(req.Match.Log)
 	data, total := l.logRepository.SearchLog(req, query)
-	for _, v := range slices.DeleteFunc(query, func(q search.Query) bool {
-		return q.Cond == search.NotMatch || q.Cond == search.NotWildCard
-	}) {
-		for i := range data {
-			data[i].Log = strings.ReplaceAll(data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
+
+	if req.Match.HighLight {
+		for _, v := range slices.DeleteFunc(query, func(q search.Query) bool {
+			return q.Cond == search.NotMatch || q.Cond == search.NotWildCard
+		}) {
+			for i := range data {
+				data[i].Log = strings.ReplaceAll(data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
+			}
 		}
 	}
 
