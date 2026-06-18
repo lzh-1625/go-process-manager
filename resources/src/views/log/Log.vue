@@ -21,77 +21,29 @@
             icon
             variant="text"
             size="small"
-            :loading="loading"
-            :disabled="loading"
-            @click="refreshLogs"
-          >
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
             @click="showFilter = !showFilter"
           >
             <v-icon>mdi-filter</v-icon>
           </v-btn>
         </h6>
-
-        <!-- 日志内容搜索框（始终显示） -->
-        <div class="px-4 px-sm-5 pb-3 pt-1">
-          <v-row dense class="align-center">
-            <v-col cols="12" sm="7" md="8">
-              <v-text-field
-                :label="$t('logPage.logContent')"
-                variant="outlined"
-                density="compact"
-                v-model="searchForm.log"
-                clearable
-                hide-details
-                prepend-inner-icon="mdi-magnify"
-                @keyup.enter="searchLogs"
-              />
-            </v-col>
-            <v-col
-              cols="12"
-              sm="5"
-              md="4"
-              class="d-flex ga-2 align-center justify-end"
-            >
-              <v-btn
-                color="primary"
-                size="small"
-                variant="elevated"
-                elevation="2"
-                :loading="loading"
-                :disabled="loading"
-                @click="searchLogs"
-              >
-                <v-icon start>mdi-magnify</v-icon>
-                {{ $t("common.search") }}
-              </v-btn>
-              <v-btn
-                size="small"
-                variant="tonal"
-                :disabled="loading"
-                @click="resetSearch"
-              >
-                <v-icon start>mdi-refresh</v-icon>
-                {{ $t("common.reset") }}
-              </v-btn>
-              <v-switch
-                v-model="searchForm.hightLight"
-                :label="$t('logPage.highLight')"
-                hide-details
-                color="primary"
-              />
-            </v-col>
-          </v-row>
-        </div>
-
+        <div class="px-4 px-sm-5 pb-3 pt-1"></div>
         <!-- 更多筛选条件（可折叠） -->
         <v-expand-transition>
           <div v-show="showFilter" class="px-4 px-sm-5 pb-4">
+            <v-row dense class="align-center">
+              <v-col cols="12" sm="12" md="12">
+                <v-text-field
+                  :label="$t('logPage.logContent')"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.log"
+                  clearable
+                  hide-details
+                  prepend-inner-icon="mdi-magnify"
+                  @keyup.enter="searchLogs"
+                />
+              </v-col>
+            </v-row>
             <v-row dense>
               <v-col cols="12" sm="6" md="4">
                 <v-autocomplete
@@ -150,6 +102,40 @@
                   v-model="searchForm.endTime"
                   clearable
                   hide-details
+                />
+              </v-col>
+              <v-col
+                cols="12"
+                sm="6"
+                md="4"
+                class="d-flex ga-2 align-center justify-end"
+              >
+                <v-btn
+                  color="primary"
+                  size="small"
+                  variant="elevated"
+                  elevation="2"
+                  :loading="loading"
+                  :disabled="loading"
+                  @click="searchLogs"
+                >
+                  <v-icon start>mdi-magnify</v-icon>
+                  {{ $t("common.search") }}
+                </v-btn>
+                <v-btn
+                  size="small"
+                  variant="tonal"
+                  :disabled="loading"
+                  @click="resetSearch"
+                >
+                  <v-icon start>mdi-refresh</v-icon>
+                  {{ $t("common.reset") }}
+                </v-btn>
+                <v-switch
+                  v-model="searchForm.hightLight"
+                  :label="$t('logPage.highLight')"
+                  hide-details
+                  color="primary"
                 />
               </v-col>
             </v-row>
