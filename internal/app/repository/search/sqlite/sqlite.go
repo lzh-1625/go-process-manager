@@ -3,12 +3,12 @@ package sqlite
 import (
 	"errors"
 	"slices"
-	"strings"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	logger "github.com/lzh-1625/go_process_manager/log"
+	"github.com/lzh-1625/go_process_manager/utils"
 )
 
 type sqliteSearch struct {
@@ -30,7 +30,7 @@ func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
 			return q.Cond == search.NotMatch || q.Cond == search.NotWildCard
 		}) {
 			for i := range data {
-				data[i].Log = strings.ReplaceAll(data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
+				data[i].Log = utils.StringReplaceHighLight(data[i].Log, v.Content)
 			}
 		}
 	}

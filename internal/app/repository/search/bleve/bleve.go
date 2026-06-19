@@ -6,7 +6,6 @@ import (
 	"path"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -209,7 +208,7 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 			return q.Cond == sr.NotMatch || q.Cond == sr.NotWildCard
 		}) {
 			for i := range data {
-				data[i].Log = strings.ReplaceAll(data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
+				result.Data[i].Log = utils.StringReplaceHighLight(result.Data[i].Log, v.Content)
 			}
 		}
 	}

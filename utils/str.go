@@ -54,3 +54,10 @@ func StructToJsonStr[T any](data T) string {
 	}
 	return string(jsonStr)
 }
+
+func StringReplaceHighLight(str string, subStr string) string {
+	re := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(subStr) + `\b`)
+	return re.ReplaceAllStringFunc(str, func(match string) string {
+		return "\033[43m" + match + "\033[0m"
+	})
+}

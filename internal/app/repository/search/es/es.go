@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"slices"
-	"strings"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -134,7 +132,7 @@ func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 	}
 
 	result := model.LogResp{}
-	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Do(context.TODO())
+	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().NumOfFragments(0).Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
 	if err != nil {
 		log.Logger.Warnw("es search failed", "err", err)
 		return result
@@ -143,20 +141,13 @@ func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 	for _, v := range resp.Hits.Hits {
 		if v.Source != nil {
 			var data model.ProcessLog
-			if err := json.Unmarshal(v.Source, &data); err != nil {
-				log.Logger.Warnw("json decode failed", "err", err)
-			} else {
+			if err := json.Unmarshal(v.Source, &data); err == nil {
+				if len(v.Highlight) > 0 && len(v.Highlight["log"]) > 0 {
+					data.Log = v.Highlight["log"][0]
+				}
 				result.Data = append(result.Data, &data)
-			}
-		}
-	}
-	
-	if req.Match.HighLight {
-		for _, v := range slices.DeleteFunc(query, func(q sr.Query) bool {
-			return q.Cond == sr.NotMatch || q.Cond == sr.NotWildCard
-		}) {
-			for i := range result.Data {
-				result.Data[i].Log = strings.ReplaceAll(result.Data[i].Log, v.Content, "\033[43m"+v.Content+"\033[0m")
+			} else {
+				log.Logger.Warnw("json decode failed", "err", err)
 			}
 		}
 	}
