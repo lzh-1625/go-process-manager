@@ -132,7 +132,12 @@ func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 	}
 
 	result := model.LogResp{}
-	resp, err := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...)).Highlight(elastic.NewHighlight().NumOfFragments(0).Field("log").PreTags("\033[43m").PostTags("\033[0m")).Do(context.TODO())
+
+	sq := search.Query(elastic.NewBoolQuery().Must(queryList...).MustNot(notQuery...))
+	if req.Match.HighLight {
+		sq = sq.Highlight(elastic.NewHighlight().NumOfFragments(0).Field("log").PreTags("\033[43m").PostTags("\033[0m"))
+	}
+	resp, err := sq.Do(context.TODO())
 	if err != nil {
 		log.Logger.Warnw("es search failed", "err", err)
 		return result
