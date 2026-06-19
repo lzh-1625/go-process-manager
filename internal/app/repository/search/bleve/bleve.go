@@ -4,7 +4,6 @@ package bleve
 
 import (
 	"path"
-	"slices"
 	"strconv"
 	"time"
 
@@ -169,18 +168,21 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 	if req.Sort == "asc" {
 		sortArgs = ([]string{"time", "id"})
 	}
-	hl := bleve.HighlightRequest{}
-	hl.AddField("log")
-	res, err := b.index.Search(&bleve.SearchRequest{
-		Query:  buildQuery,
-		Fields: []string{"log", "name", "using", "time", "id"},
-		From:   req.Page.From,
-		Size:   req.Page.Size,
-		Sort:   search.ParseSortOrderStrings(sortArgs),
-		Highlight: &bleve.HighlightRequest{
+	var hl *bleve.HighlightRequest
+	if req.Match.HighLight {
+		hl = &bleve.HighlightRequest{
 			Style:  new("ansi"),
 			Fields: []string{"log"},
-		},
+		}
+	}
+
+	res, err := b.index.Search(&bleve.SearchRequest{
+		Query:     buildQuery,
+		Fields:    []string{"log", "name", "using", "time", "id"},
+		From:      req.Page.From,
+		Size:      req.Page.Size,
+		Sort:      search.ParseSortOrderStrings(sortArgs),
+		Highlight: hl,
 	})
 	if err != nil {
 		logger.Logger.Warnw("bleve search failed", "err", err)
@@ -201,16 +203,6 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 			Using: v.Fields["using"].(string),
 			Name:  v.Fields["name"].(string),
 		})
-	}
-
-	if req.Match.HighLight {
-		for _, v := range slices.DeleteFunc(logQuery, func(q sr.Query) bool {
-			return q.Cond == sr.NotMatch || q.Cond == sr.NotWildCard
-		}) {
-			for i := range data {
-				result.Data[i].Log = utils.StringReplaceHighLight(result.Data[i].Log, v.Content)
-			}
-		}
 	}
 
 	result.Data = data
