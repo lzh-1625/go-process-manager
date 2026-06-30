@@ -58,6 +58,7 @@ type Configuration struct {
 	CondWaitTime              int    `default:"30" describe:"long polling wait time (seconds)"`
 	EventStorageTime          int    `default:"30" describe:"event storage time (days)"`
 	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
+	StaticResourceCahce       bool   `default:"true" describe:"enable static resource cache"`
 	SecretKey                 string `default:"-"`
 	ConfigDir                 string `default:"-" json:"-"`
 }

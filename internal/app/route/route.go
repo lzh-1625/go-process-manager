@@ -38,6 +38,9 @@ func NewRoute(
 	r := echo.New()
 	r.Use(middleware.Recover())
 	r.Use(middle.Logger)
+	if config.CF.StaticResourceCahce {
+		r.Use(middle.CacheMiddleware())
+	}
 
 	// close echo default log print
 	r.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
