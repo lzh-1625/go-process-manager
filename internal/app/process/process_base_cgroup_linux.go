@@ -80,7 +80,7 @@ func (p *ProcessBase) initCgroupV2() {
 		}
 		resources.Memory = memResources
 	}
-	control, err := cgroup2.NewSystemd("/", fmt.Sprintf("GPM%d.slice", p.UUID), -1, resources)
+	control, err := cgroup2.NewSystemd("/", fmt.Sprintf("GPM%d.slice", p.Pid), -1, resources)
 	if err != nil {
 		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
