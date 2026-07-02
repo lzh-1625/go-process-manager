@@ -48,7 +48,7 @@ func (p *ProcessBase) initCgroupV1() {
 		}
 		resources.Memory = memResources
 	}
-	control, err := cgroup1.New(cgroup1.StaticPath(fmt.Sprintf("/GPM%d", p.UUID)), resources)
+	control, err := cgroup1.New(cgroup1.StaticPath(fmt.Sprintf("/GPM%d", p.Pid)), resources)
 	if err != nil {
 		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
