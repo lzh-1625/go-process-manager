@@ -198,6 +198,10 @@ func (p *ProcessCtlLogic) GetProcessConfigByID(uuid int) (*model.Process, error)
 	return p.processRepository.GetProcessConfigByID(uuid)
 }
 
+func (p *ProcessCtlLogic) GetProcessConfigByName(name string) (*model.Process, error) {
+	return p.processRepository.GetProcessConfigByName(name)
+}
+
 func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	proc, ok := p.processMap.Load(config.UUID)
 	if !ok {

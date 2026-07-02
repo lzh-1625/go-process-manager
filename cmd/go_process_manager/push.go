@@ -1,16 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"strconv"
 
-	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/cli"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/spf13/cobra"
-	"go.uber.org/fx"
 )
 
 var pushCmd = &cobra.Command{
@@ -35,17 +30,7 @@ var pushListCmd = &cobra.Command{
 	Short: "List all push configurations",
 	Long:  `Print a table of all event-push configurations, including their ID, type and target endpoint.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.PushCli) {
-				err := c.GetList()
-				if err != nil {
-					log.Panic(err)
-				}
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewPushCli().GetList()
 	},
 }
 
@@ -55,17 +40,6 @@ var pushDeleteCmd = &cobra.Command{
 	Long:  `Permanently remove the push configuration with the given ID.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fx.New(
-			fx.NopLogger,
-			app.Module,
-			fx.Invoke(func(c *cli.PushCli) {
-				err := c.Delete(utils.Unwarp(strconv.Atoi(args[0])))
-				if err != nil {
-					log.Panic(err)
-				}
-				fmt.Println("Push config deleted successfully")
-				os.Exit(0)
-			}),
-		).Run()
+		cli.NewPushCli().Delete(utils.Unwarp(strconv.Atoi(args[0])))
 	},
 }

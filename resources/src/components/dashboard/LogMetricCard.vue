@@ -42,7 +42,6 @@ const chartOption = computed<EChartsOption>(() => {
         fontSize: 16,
         fontWeight: "bold",
       },
-      subtext: `${t("dashboardPage.executing")}: ${logData.value.executing}`,
       subtextStyle: {
         fontSize: 12,
       },

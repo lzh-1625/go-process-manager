@@ -14,6 +14,83 @@ const { t } = useI18n();
 const loading = ref(true);
 const performanceData = ref<PerformceUsage | null>(null);
 
+const viewportWidth = ref(window.innerWidth);
+const viewportHeight = ref(window.innerHeight);
+
+const chartLayout = computed(() => {
+  const w = viewportWidth.value;
+  const h = viewportHeight.value;
+  if (w > h && h <= 520) return "landscape";
+  if (w <= 600) return "mobile";
+  return "default";
+});
+
+const chartCols = computed(() => (chartLayout.value === "landscape" ? 6 : 12));
+
+const chartHeight = computed(() => {
+  const h = viewportHeight.value;
+  switch (chartLayout.value) {
+    case "landscape":
+      return `${Math.min(240, Math.max(160, h - 88))}px`;
+    case "mobile":
+      return "260px";
+    default:
+      return "300px";
+  }
+});
+
+const chartLegend = computed(() => {
+  if (chartLayout.value === "landscape") {
+    return {
+      orient: "horizontal" as const,
+      left: "center",
+      bottom: 0,
+      top: "auto",
+      textStyle: { fontSize: 9 },
+      type: "scroll" as const,
+    };
+  }
+  if (chartLayout.value === "mobile") {
+    return {
+      orient: "horizontal" as const,
+      left: "center",
+      bottom: 0,
+      top: "auto",
+      textStyle: { fontSize: 10 },
+      type: "scroll" as const,
+    };
+  }
+  return {
+    orient: "vertical" as const,
+    left: "left",
+    top: "middle",
+    textStyle: { fontSize: 11 },
+    type: "scroll" as const,
+  };
+});
+
+const chartSeriesLayout = computed(() => {
+  if (chartLayout.value === "landscape") {
+    return {
+      radius: ["28%", "50%"],
+      center: ["50%", "42%"],
+      showLabel: false,
+    };
+  }
+  if (chartLayout.value === "mobile") {
+    return {
+      radius: ["35%", "62%"],
+      center: ["50%", "45%"],
+      showLabel: false,
+    };
+  }
+  return {
+    radius: ["40%", "70%"],
+    center: ["60%", "55%"],
+    showLabel: true,
+  };
+});
+
 // CPU饼图配置
 const cpuChartEl = ref<HTMLDivElement | null>(null);
 const cpuOption = computed<EChartsOption>(() => {
@@ -59,34 +136,26 @@ const cpuOption = computed<EChartsOption>(() => {
     title: {
       text: t("dashboardPage.cpuUsage"),
       left: "center",
-      top: 10,
+      top: chartLayout.value === "landscape" ? 4 : 10,
       textStyle: {
-        fontSize: 16,
+        fontSize: chartLayout.value === "landscape" ? 13 : 16,
         fontWeight: "bold",
       },
     },
-    legend: {
-      orient: "vertical",
-      left: "left",
-      top: "middle",
-      textStyle: {
-        fontSize: 11,
-      },
-      type: "scroll",
-    },
+    legend: chartLegend.value,
     series: [
         {
           name: t("dashboardPage.cpuUsage"),
         type: "pie",
-        radius: ["40%", "70%"],
-        center: ["60%", "55%"],
+        radius: chartSeriesLayout.value.radius,
+        center: chartSeriesLayout.value.center,
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
           borderWidth: 2,
         },
         label: {
-          show: true,
+          show: chartSeriesLayout.value.showLabel,
           position: "outside",
           formatter: (params: any) => {
             return `${params.name}: ${params.value}%`;
@@ -101,7 +170,7 @@ const cpuOption = computed<EChartsOption>(() => {
           },
         },
         labelLine: {
-          show: true,
+          show: chartSeriesLayout.value.showLabel,
           length: 15,
           length2: 10,
         },
@@ -143,34 +212,26 @@ const memOption = computed<EChartsOption>(() => {
     title: {
       text: t("dashboardPage.memoryUsage"),
       left: "center",
-      top: 10,
+      top: chartLayout.value === "landscape" ? 4 : 10,
       textStyle: {
-        fontSize: 16,
+        fontSize: chartLayout.value === "landscape" ? 13 : 16,
         fontWeight: "bold",
       },
     },
-    legend: {
-      orient: "vertical",
-      left: "left",
-      top: "middle",
-      textStyle: {
-        fontSize: 11,
-      },
-      type: "scroll",
-    },
+    legend: chartLegend.value,
     series: [
       {
         name: t("dashboardPage.memoryUsage"),
         type: "pie",
-        radius: ["40%", "70%"],
-        center: ["60%", "55%"],
+        radius: chartSeriesLayout.value.radius,
+        center: chartSeriesLayout.value.center,
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
           borderWidth: 2,
         },
         label: {
-          show: true,
+          show: chartSeriesLayout.value.showLabel,
           position: "outside",
           formatter: (params: any) => {
             return `${params.name}: ${params.value}MB`;
@@ -185,7 +246,7 @@ const memOption = computed<EChartsOption>(() => {
           },
         },
         labelLine: {
-          show: true,
+          show: chartSeriesLayout.value.showLabel,
           length: 15,
           length2: 10,
         },
@@ -225,6 +286,8 @@ const loadData = async () => {
 };
 
 const handleResize = () => {
+  viewportWidth.value = window.innerWidth;
+  viewportHeight.value = window.innerHeight;
   getCpuInstance()?.resize();
   getMemInstance()?.resize();
 };
@@ -279,11 +342,15 @@ onMounted(() => {
 });
 
 watch(
-  () => [cpuOption.value, memOption.value],
+  () => [cpuOption.value, memOption.value, chartHeight.value],
   () => {
     if (performanceData.value) {
       setCpuOption(cpuOption.value);
       setMemOption(memOption.value);
+      nextTick(() => {
+        getCpuInstance()?.resize();
+        getMemInstance()?.resize();
+      });
     }
   },
   { deep: true }
@@ -292,30 +359,50 @@ watch(
 
 <template>
   <div>
-    <v-card-title class="text-h6 font-weight-bold pa-5">
+    <v-card-title
+      class="text-h6 font-weight-bold"
+      :class="chartLayout === 'landscape' ? 'pa-3 pb-1' : 'pa-5'"
+    >
       {{ $t("dashboardPage.systemPerformance") }}
     </v-card-title>
-    <v-card-text>
+    <v-card-text :class="chartLayout === 'landscape' ? 'pa-3 pt-0' : ''">
       <div
         v-if="loading"
         class="h-full d-flex align-center justify-center"
-        style="min-height: 300px"
+        :style="{ minHeight: chartHeight }"
       >
         <v-progress-circular
           indeterminate
           color="primary"
         ></v-progress-circular>
       </div>
-      <v-row v-else>
-        <v-col cols="12" md="6">
-          <div ref="cpuChartEl" style="width: 100%; height: 300px"></div>
+      <v-row v-else dense class="performance-charts-row">
+        <v-col :cols="chartCols" md="6">
+          <div
+            ref="cpuChartEl"
+            class="performance-chart"
+            :style="{ height: chartHeight }"
+          ></div>
         </v-col>
-        <v-col cols="12" md="6">
-          <div ref="memChartEl" style="width: 100%; height: 300px"></div>
+        <v-col :cols="chartCols" md="6">
+          <div
+            ref="memChartEl"
+            class="performance-chart"
+            :style="{ height: chartHeight }"
+          ></div>
         </v-col>
       </v-row>
     </v-card-text>
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.performance-chart {
+  width: 100%;
+  min-height: 160px;
+}
+
+.performance-charts-row {
+  margin-bottom: 0;
+}
+</style>

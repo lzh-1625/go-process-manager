@@ -239,12 +239,12 @@ func (p *ProcessBase) monitorHandler() {
 		}
 		cpuPercent, err := p.monitor.pu.CPUPercent()
 		if err != nil {
-			log.Logger.Errorw("CPU usage get failed", "err", err)
+			log.Logger.Warnw("CPU usage get failed", "err", err)
 			return
 		}
 		memInfo, err := p.monitor.pu.MemoryInfo()
 		if err != nil {
-			log.Logger.Errorw("memory usage get failed", "err", err)
+			log.Logger.Warnw("memory usage get failed", "err", err)
 			return
 		}
 		p.AddRecordTime()
@@ -274,10 +274,7 @@ func (p *ProcessBase) Kill() error {
 	if p.State.State != eum.ProcessStateRunning {
 		return errors.New("can't kill not running process")
 	}
-	p.State.stateLock.Lock()
 	p.State.manualStopFlag = true
-	p.State.stateLock.Unlock()
-
 	if err := p.op.Signal(syscall.SIGINT); err != nil {
 		log.Logger.Errorw("send SIGINT signal failed", "err", err)
 		return p.op.Kill()

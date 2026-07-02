@@ -9,8 +9,8 @@ import (
 )
 
 type ILogLogic interface {
-	Search(req model.GetLogReq, filterProcessName ...string) model.LogResp
-	Insert(log string, processName string, using string, ts int64)
+	Search(req model.GetLogReq) model.LogResp
+	Insert(...model.ProcessLog)
 	Reload() error
 }
 

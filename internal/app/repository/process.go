@@ -53,3 +53,8 @@ func (p *ProcessRepository) GetProcessConfigByID(uuid int) (data *model.Process,
 	data, err = p.query.Process.Where(p.query.Process.UUID.Eq(uuid)).First()
 	return
 }
+
+func (p *ProcessRepository) GetProcessConfigByName(name string) (data *model.Process, err error) {
+	data, err = p.query.Process.Where(p.query.Process.Name.Eq(name)).First()
+	return
+}

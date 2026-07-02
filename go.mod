@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/kardianos/service v1.2.4
 	github.com/labstack/echo/v5 v5.1.1
+	github.com/nsqio/go-diskqueue v1.1.0
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/spf13/cobra v1.8.1
@@ -121,7 +122,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/olivere/elastic/v7 v7.0.32
-	github.com/panjf2000/ants/v2 v2.10.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/runletapp/go-console v0.0.0-20211204140000-27323a28410a
 	github.com/shirou/gopsutil v3.21.11+incompatible

@@ -32,23 +32,26 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 	}
 	if isAdmin(ctx) {
 		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.ILogLogic.Search(req, req.FilterName...),
+			Data:    a.ILogLogic.Search(req),
 			Message: "success",
 			Code:    0,
 		})
 	} else {
 		processNameList := a.permissionLogic.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
-		filterName := slices.DeleteFunc(req.FilterName, func(s string) bool {
-			return !slices.Contains(processNameList, s)
-		})
-		if len(filterName) == 0 {
-			filterName = processNameList
+		
+		if len(req.FilterName) == 0 {
+			req.FilterName = processNameList
+		} else {
+			req.FilterName = slices.DeleteFunc(req.FilterName, func(s string) bool {
+				return !slices.Contains(processNameList, s)
+			})
 		}
-		if len(filterName) == 0 {
+
+		if len(req.FilterName) == 0 {
 			return errors.New("no information found")
 		}
 		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.ILogLogic.Search(req, filterName...),
+			Data:    a.ILogLogic.Search(req),
 			Message: "success",
 			Code:    0,
 		})

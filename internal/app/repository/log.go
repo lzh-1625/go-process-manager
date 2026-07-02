@@ -18,8 +18,12 @@ type LogRepository struct {
 	query *query.Query
 }
 
-func (l *LogRepository) InsertLog(data model.ProcessLog) error {
-	return l.query.ProcessLog.Create(&data)
+func (l *LogRepository) InsertLog(logs ...model.ProcessLog) error {
+	data := make([]*model.ProcessLog, len(logs))
+	for i, v := range logs {
+		data[i] = &v
+	}
+	return l.query.ProcessLog.CreateInBatches(data, len(data))
 }
 
 func (l *LogRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) (result []*model.ProcessLog, total int64) {
@@ -39,9 +43,18 @@ func (l *LogRepository) SearchLog(req model.GetLogReq, logQuery []search.Query) 
 			q = q.Where(l.query.ProcessLog.Log.NotLike("%" + v.Content + "%"))
 		}
 	}
+	if req.CursorID != 0 {
+		if req.Sort == "desc" {
+			q = q.Where(l.query.ProcessLog.ID.Lt(req.CursorID))
+		} else {
+			q = q.Where(l.query.ProcessLog.ID.Gt(req.CursorID))
+		}
+	}
 
 	if req.Sort == "desc" {
-		q = q.Order(l.query.ProcessLog.Time.Desc())
+		q = q.Order(l.query.ProcessLog.Time.Desc(), l.query.ProcessLog.ID.Desc())
+	} else {
+		q = q.Order(l.query.ProcessLog.Time.Asc(), l.query.ProcessLog.ID.Asc())
 	}
 	if req.TimeRange.StartTime != 0 {
 		q = q.Where(l.query.ProcessLog.Time.Gte(req.TimeRange.StartTime))

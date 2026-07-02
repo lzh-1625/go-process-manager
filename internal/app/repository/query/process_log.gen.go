@@ -27,7 +27,7 @@ func newProcessLog(db *gorm.DB, opts ...gen.DOOption) processLog {
 
 	tableName := _processLog.processLogDo.TableName()
 	_processLog.ALL = field.NewAsterisk(tableName)
-	_processLog.ID = field.NewInt(tableName, "id")
+	_processLog.ID = field.NewInt64(tableName, "id")
 	_processLog.Log = field.NewString(tableName, "log")
 	_processLog.Time = field.NewInt64(tableName, "time")
 	_processLog.Name = field.NewString(tableName, "name")
@@ -42,7 +42,7 @@ type processLog struct {
 	processLogDo
 
 	ALL   field.Asterisk
-	ID    field.Int
+	ID    field.Int64
 	Log   field.String
 	Time  field.Int64
 	Name  field.String
@@ -63,7 +63,7 @@ func (p processLog) As(alias string) *processLog {
 
 func (p *processLog) updateTableName(table string) *processLog {
 	p.ALL = field.NewAsterisk(table)
-	p.ID = field.NewInt(table, "id")
+	p.ID = field.NewInt64(table, "id")
 	p.Log = field.NewString(table, "log")
 	p.Time = field.NewInt64(table, "time")
 	p.Name = field.NewString(table, "name")

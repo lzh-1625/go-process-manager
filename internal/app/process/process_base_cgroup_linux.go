@@ -33,13 +33,10 @@ func (p *ProcessBase) initCgroup() {
 func (p *ProcessBase) initCgroupV1() {
 	resources := &specs.LinuxResources{}
 	if p.Config.CpuLimit != nil {
-		period := uint64(config.CF.CgroupPeriod)
-		quota := int64(float32(config.CF.CgroupPeriod) * *p.Config.CpuLimit * 0.01)
-		cpuResources := &specs.LinuxCPU{
-			Period: &period,
-			Quota:  &quota,
+		resources.CPU = &specs.LinuxCPU{
+			Period: new(uint64(config.CF.CgroupPeriod)),
+			Quota:  new(int64(float32(config.CF.CgroupPeriod) * *p.Config.CpuLimit * 0.01)),
 		}
-		resources.CPU = cpuResources
 	}
 	if p.Config.MemoryLimit != nil {
 		limit := int64(*p.Config.MemoryLimit * 1024 * 1024)
@@ -51,7 +48,7 @@ func (p *ProcessBase) initCgroupV1() {
 		}
 		resources.Memory = memResources
 	}
-	control, err := cgroup1.New(cgroup1.StaticPath(fmt.Sprintf("/GPM%d", p.UUID)), resources)
+	control, err := cgroup1.New(cgroup1.StaticPath(fmt.Sprintf("/GPM%d", p.Pid)), resources)
 	if err != nil {
 		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return
@@ -83,7 +80,7 @@ func (p *ProcessBase) initCgroupV2() {
 		}
 		resources.Memory = memResources
 	}
-	control, err := cgroup2.NewSystemd("/", fmt.Sprintf("GPM%d.slice", p.UUID), -1, resources)
+	control, err := cgroup2.NewSystemd("/", fmt.Sprintf("GPM%d.slice", p.Pid), -1, resources)
 	if err != nil {
 		log.Logger.Errorw("enable cgroup failed", "err", err, "name", p.Name)
 		return

@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
@@ -13,6 +15,13 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
+
+func checkError(err error) {
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(0)
+	}
+}
 
 func Get[T any](uri string, query map[string]string) (*T, error) {
 	q := url.Values{}

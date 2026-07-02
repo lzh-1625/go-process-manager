@@ -31,42 +31,49 @@ func init() {
 
 // 只支持 float64、int、int64、bool、string类型
 type Configuration struct {
-	LogLevel                   string `default:"info"  describe:"log level [debug,info]"`
-	Listen                     string `default:":8797" describe:"listen port"`
-	StorgeType                 string `default:"sqlite" describe:"storage engine [sqlite,es,bleve]"`
-	EsUrl                      string `default:"" describe:"Elasticsearch url"`
-	EsIndex                    string `default:"server_log_v1" describe:"Elasticsearch index"`
-	EsUsername                 string `default:"" describe:"Elasticsearch username"`
-	EsPassword                 string `default:"" describe:"Elasticsearch password"`
-	EsWindowLimit              bool   `default:"true" describe:"Es pagination 10000 limit"`
-	ProcessRestartsLimit       int    `default:"2" describe:"process restart limit"`
-	ProcessMsgCacheBufLimit    int    `default:"4096" describe:"pty process cache message bytes limit"`
-	ProcessControlExpireTime   int64  `default:"60" describe:"process control timeout (seconds)"`
-	PerformanceInfoListLength  int    `default:"30" describe:"performance info storage length"`
-	PerformanceInfoInterval    int    `default:"60" describe:"monitor interval time (seconds)"`
-	TerminalConnectTimeout     int    `default:"10" describe:"terminal connect timeout (minutes)"`
-	UserPassWordMinLength      int    `default:"4" describe:"user password min length"`
-	LogHandlerPoolSize         int    `default:"10" describe:"log handler parallel number"`
-	LogHandlerMaxBlockingTasks int    `default:"1024" describe:"log handler max blocking tasks"`
-	LogReportOptimization      bool   `default:"true" describe:"log optimization, prevent truncation"`
-	PprofEnable                bool   `default:"true" describe:"enable pprof analysis tool"`
-	KillWaitTime               int    `default:"5" describe:"kill signal wait time (seconds)"`
-	TaskTimeout                int    `default:"60" describe:"task execution timeout (seconds)"`
-	TokenExpirationTime        int64  `default:"720" describe:"token expiration time (hours)"`
-	WsHealthCheckInterval      int    `default:"3" describe:"ws health check interval (seconds)"`
-	CgroupPeriod               int64  `default:"100000" describe:"CgroupPeriod"`
-	CgroupSwapLimit            bool   `default:"false" describe:"cgroup swap limit"`
-	CondWaitTime               int    `default:"30" describe:"long polling wait time (seconds)"`
-	EventStorageTime           int    `default:"1" describe:"event storage time (days)"`
-	GZipEnable                 bool   `default:"false" describe:"enable gzip compression"`
-	SecretKey                  string `default:"-"`
+	LogLevel                  string `default:"info"  describe:"log level [debug,info]"`
+	Listen                    string `default:":8797" describe:"listen port"`
+	StorgeType                string `default:"sqlite" describe:"storage engine [sqlite,es,bleve]"`
+	EsUrl                     string `default:"" describe:"Elasticsearch url"`
+	EsIndex                   string `default:"server_log_v1" describe:"Elasticsearch index"`
+	EsUsername                string `default:"" describe:"Elasticsearch username"`
+	EsPassword                string `default:"" describe:"Elasticsearch password"`
+	EsWindowLimit             bool   `default:"true" describe:"Es pagination 10000 limit"`
+	ProcessRestartsLimit      int    `default:"2" describe:"process restart limit"`
+	ProcessMsgCacheBufLimit   int    `default:"4096" describe:"pty process cache message bytes limit"`
+	ProcessControlExpireTime  int64  `default:"60" describe:"process control timeout (seconds)"`
+	PerformanceInfoListLength int    `default:"30" describe:"performance info storage length"`
+	PerformanceInfoInterval   int    `default:"60" describe:"monitor interval time (seconds)"`
+	TerminalConnectTimeout    int    `default:"10" describe:"terminal connect timeout (minutes)"`
+	UserPassWordMinLength     int    `default:"4" describe:"user password min length"`
+	LogHandlerPoolSize        int    `default:"1" describe:"log handler parallel number"`
+	LogReportOptimization     bool   `default:"true" describe:"log optimization, prevent truncation"`
+	PprofEnable               bool   `default:"true" describe:"enable pprof analysis tool"`
+	KillWaitTime              int    `default:"5" describe:"kill signal wait time (seconds)"`
+	TaskTimeout               int    `default:"60" describe:"task execution timeout (seconds)"`
+	TokenExpirationTime       int64  `default:"720" describe:"token expiration time (hours)"`
+	WsHealthCheckInterval     int    `default:"3" describe:"ws health check interval (seconds)"`
+	CgroupPeriod              int64  `default:"100000" describe:"CgroupPeriod"`
+	CgroupSwapLimit           bool   `default:"false" describe:"cgroup swap limit"`
+	CondWaitTime              int    `default:"30" describe:"long polling wait time (seconds)"`
+	EventStorageTime          int    `default:"30" describe:"event storage time (days)"`
+	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
+	StaticResourceCahce       bool   `default:"true" describe:"enable static resource cache"`
+	SecretKey                 string `default:"-"`
+	ConfigDir                 string `default:"-" json:"-"`
 }
 
 const configFileName = "config.json"
 
 func LoadConfig() error {
-	home, _ := os.UserHomeDir()
-	f, err := os.Open(path.Join(home, ".gpm", configFileName))
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Println("get user home dir failed", err)
+		log.Println("use current dir as config dir")
+		homeDir = "."
+	}
+	CF.ConfigDir = path.Join(homeDir, ".gpm")
+	f, err := os.Open(path.Join(CF.ConfigDir, configFileName))
 	if err != nil {
 		return err
 	}
@@ -79,13 +86,9 @@ func LoadConfig() error {
 }
 
 func DumpConfig() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Println("get user home dir failed", err)
-	}
-	filePath := path.Join(home, ".gpm", configFileName)
+	filePath := path.Join(CF.ConfigDir, configFileName)
 	log.Println("config file path", filePath)
-	if err = os.MkdirAll(path.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(path.Dir(filePath), 0755); err != nil {
 		log.Println("create config file dir failed", err)
 	}
 	f, err := os.Create(filePath)

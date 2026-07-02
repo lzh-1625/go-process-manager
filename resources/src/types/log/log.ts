@@ -12,6 +12,7 @@ export interface GetLogReq {
     log?: string;
     name?: string;
     using?: string;
+    highLight?: boolean;
   };
   time?: {
     startTime?: number;
@@ -22,6 +23,7 @@ export interface GetLogReq {
     size?: number;
   };
   sort?: string;
+  cursorID?: number;
 }
 
 export interface LogResp {

@@ -45,12 +45,11 @@ const initWebSocketPty = () => {
   // 在这里计算初始尺寸更准确
   const initialCols = Math.floor(xtermEl.value.clientWidth / 9);
   const initialRows = Math.floor(xtermEl.value.clientHeight / 19);
-
-  const baseUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws`;
+  document.cookie = `Authorization=bearer ${localStorage.getItem("token")!}; path=/api/ws; SameSite=Lax`;
+  const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const baseUrl = `${scheme}://${window.location.hostname}:${window.location.port}/api/ws`;
   // const baseUrl = `ws://${window.location.hostname}:8797/api/ws`;
-  const url = `${baseUrl}?uuid=${props.data.uuid}&token=${localStorage.getItem(
-    "token"
-  )}&cols=${initialCols}&rows=${initialRows}`;
+  const url = `${baseUrl}?uuid=${props.data.uuid}&cols=${initialCols}&rows=${initialRows}`;
 
   initSocket(url);
 };

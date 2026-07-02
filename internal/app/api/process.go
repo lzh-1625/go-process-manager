@@ -154,15 +154,27 @@ func (p *ProcApi) UpdateProcessConfig(ctx *echo.Context) error {
 
 func (p *ProcApi) GetProcessConfig(ctx *echo.Context) error {
 	var req struct {
-		UUID int `query:"uuid"`
+		UUID int    `query:"uuid"`
+		Name string `query:"name"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	data, err := p.processCtlLogic.GetProcessConfigByID(req.UUID)
-	if err != nil {
-		return err
+	var data *model.Process
+	if req.UUID != 0 {
+		pc, err := p.processCtlLogic.GetProcessConfigByID(req.UUID)
+		if err != nil {
+			return err
+		}
+		data = pc
+	} else {
+		pc, err := p.processCtlLogic.GetProcessConfigByName(req.Name)
+		if err != nil {
+			return err
+		}
+		data = pc
 	}
+
 	return ctx.JSON(http.StatusOK, model.Response[*model.Process]{
 		Data:    data,
 		Message: "success",

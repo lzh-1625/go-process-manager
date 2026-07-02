@@ -262,7 +262,8 @@ export default {
     confirmStartAll: "Confirm Start All",
     confirmStopAll: "Confirm Stop All",
     confirmStartAllMsg: "Are you sure you want to start all processes?",
-    confirmStopAllMsg: "Are you sure you want to stop all processes? This will forcefully terminate all running processes.",
+    confirmStopAllMsg:
+      "Are you sure you want to stop all processes? This will forcefully terminate all running processes.",
     totalWillStart: "{n} processes will be started",
     totalWillStop: "{n} processes will be stopped",
     confirmStart: "Confirm Start",
@@ -330,6 +331,7 @@ export default {
     terminalError: "Terminal connection error",
   },
   logPage: {
+    highLight: "High Light",
     title: "Log Viewer",
     processName: "Process Name",
     logContent: "Log Content",
@@ -342,13 +344,21 @@ export default {
     totalLogs: "Total {n} logs",
     loadLogsFailed: "Failed to load logs",
     noLogsRetrieved: "No logs retrieved",
+    viewContextAbove: "View Context Above",
+    viewContextBelow: "View Context Below",
+    loadMoreAbove: "Load More Above",
+    loadMoreBelow: "Load More Below",
+    contextMode: "Context Mode",
+    noMoreAbove: "No more logs above",
+    noMoreBelow: "No more logs below",
+    contextScrollHint: "Scroll to top / bottom to load more context",
   },
   eventPage: {
     title: "System Events",
     eventType: "Event Type",
     additionalInfo: "Additional Info",
-    additionalKey:"Additional Key",
-    additionalValue:"Additional Value",
+    additionalKey: "Additional Key",
+    additionalValue: "Additional Value",
     totalEvents: "Total {n} events",
     loadEventsFailed: "Failed to load events",
     loadEventsError: "Error loading events",
@@ -424,7 +434,8 @@ export default {
     admin: "Admin",
     normalUser: "Regular User",
     confirmDelete: "Confirm Delete",
-    deleteConfirmMessage: "Are you sure you want to delete this user? This action cannot be undone.",
+    deleteConfirmMessage:
+      "Are you sure you want to delete this user? This action cannot be undone.",
     deleteConfirm: "Confirm Delete",
   },
   settingsPage: {
@@ -440,7 +451,8 @@ export default {
     systemConfig: "System Configuration",
     refreshStorage: "Refresh Storage Engine",
     refreshStorageEngine: "Refresh Storage Engine",
-    configWarning: "Some configurations require restart to take effect. Incorrect configurations may cause crashes.",
+    configWarning:
+      "Some configurations require restart to take effect. Incorrect configurations may cause crashes.",
     default: "Default:",
     defaultPlaceholder: "Default: {default}",
     noConfig: "No configuration items",
@@ -467,7 +479,8 @@ export default {
     requestBody: "Request Body",
     totalPushes: "Total {n} push configurations",
     editPush: "Edit Push",
-    confirmDeleteMsg: "Are you sure you want to delete this push configuration?",
+    confirmDeleteMsg:
+      "Are you sure you want to delete this push configuration?",
     noRemark: "No remark",
     invalidUrl: "Please enter a valid URL",
     loadPushFailed: "Failed to load push list",
@@ -476,7 +489,8 @@ export default {
     operationFailed: "Operation failed",
     enablePush: "Enable Push",
     pushDesc: "Push configuration description",
-    placeholder: "Placeholders: {$name} process name {$user} user {$message} message content {$status} process status",
+    placeholder:
+      "Placeholders: {$name} process name {$user} user {$message} message content {$status} process status",
   },
   sharePage: {
     title: "Share Link Management",
@@ -495,7 +509,8 @@ export default {
     noShareLinks: "No share links",
     totalShares: "Total {n} share links",
     confirmDelete: "Confirm Delete",
-    confirmDeleteMsg: "Are you sure you want to delete this share link? This action cannot be undone.",
+    confirmDeleteMsg:
+      "Are you sure you want to delete this share link? This action cannot be undone.",
     confirmDeleteBtn: "Confirm Delete",
     copySuccess: "Share link copied to clipboard",
     copyFailed: "Copy failed",

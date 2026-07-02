@@ -297,7 +297,7 @@ const getProcessListWait = () => {
     })
     .then((response) => {
       version.value = parseInt(response.headers?.version || "0");
-      processData.value = response.data.data.sort((a, b) =>
+      processData.value = response.data.data.sort((a: { name: string; }, b: { name: any; }) =>
         a.name.localeCompare(b.name)
       );
       getProcessListWait();

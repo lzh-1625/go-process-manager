@@ -43,7 +43,7 @@ func NewRoute(
 	r.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	r.HTTPErrorHandler = func(c *echo.Context, err error) {
-		log.Logger.Errorw("HTTPErrorHandler", "err", err)
+		log.Logger.Warn(err)
 		c.JSON(http.StatusInternalServerError, model.Response[struct{}]{
 			Code:    -1,
 			Message: "error: " + err.Error(),
@@ -61,6 +61,9 @@ func NewRoute(
 			return nil
 		}
 	})
+	if config.CF.StaticResourceCahce {
+		r.Use(middle.CacheMiddleware())
+	}
 	// static file
 	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		HTML5:      true,

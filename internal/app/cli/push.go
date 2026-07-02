@@ -14,11 +14,9 @@ func NewPushCli() *PushCli {
 	return &PushCli{}
 }
 
-func (p *PushCli) GetList() error {
+func (p *PushCli) GetList() {
 	result, err := Get[[]*model.Push]("/api/push/list", nil)
-	if err != nil {
-		return err
-	}
+	checkError(err)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{
@@ -40,15 +38,11 @@ func (p *PushCli) GetList() error {
 	}
 
 	table.Render()
-	return nil
 }
 
-func (p *PushCli) GetByID(id int) error {
+func (p *PushCli) GetByID(id int) {
 	result, err := Get[model.Push]("/api/push", map[string]string{"id": strconv.Itoa(id)})
-	if err != nil {
-		return err
-	}
-
+	checkError(err)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{"FIELD", "VALUE"})
 	table.Append([]string{"ID", strconv.FormatInt(result.ID, 10)})
@@ -57,31 +51,20 @@ func (p *PushCli) GetByID(id int) error {
 	table.Append([]string{"Body", result.Body})
 	table.Append([]string{"Remark", result.Remark})
 	table.Append([]string{"Enable", strconv.FormatBool(result.Enable)})
-
 	table.Render()
-	return nil
 }
 
-func (p *PushCli) Create(push model.Push) error {
+func (p *PushCli) Create(push model.Push) {
 	_, err := Post[struct{}]("/api/push", push)
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }
 
-func (p *PushCli) Update(push model.Push) error {
+func (p *PushCli) Update(push model.Push) {
 	_, err := Put[struct{}]("/api/push", push)
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }
 
-func (p *PushCli) Delete(id int) error {
+func (p *PushCli) Delete(id int) {
 	_, err := Delete[struct{}]("/api/push", map[string]string{"id": strconv.Itoa(id)})
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }

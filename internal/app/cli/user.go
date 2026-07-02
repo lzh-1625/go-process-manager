@@ -29,11 +29,10 @@ func getRoleString(role eum.Role) string {
 	}
 }
 
-func (u *UserCli) GetList() error {
+func (u *UserCli) GetList() {
 	result, err := Get[[]*model.User]("/api/user", nil)
-	if err != nil {
-		return err
-	}
+
+	checkError(err)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{
@@ -53,13 +52,9 @@ func (u *UserCli) GetList() error {
 	}
 
 	table.Render()
-	return nil
 }
 
-func (u *UserCli) Delete(account string) error {
+func (u *UserCli) Delete(account string) {
 	_, err := Delete[struct{}]("/api/user", map[string]string{"account": account})
-	if err != nil {
-		return err
-	}
-	return nil
+	checkError(err)
 }
