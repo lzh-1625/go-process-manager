@@ -32,6 +32,7 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		logKv = append(logKv, "Method", c.Request().Method)
 		logKv = append(logKv, "Status", code)
 		logKv = append(logKv, "Path", path)
+		logKv = append(logKv, "IP", c.RealIP())
 		logKv = append(logKv, "time", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
 
 		if user, ok := c.Get(eum.CtxUserName).(string); ok && user != "" {
