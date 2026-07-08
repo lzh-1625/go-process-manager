@@ -14,9 +14,10 @@ import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
 
 const { t } = useI18n();
-let chartInstance;
+let chartInstance: echarts.ECharts;
 
 const snackbarStore = useSnackbarStore();
+const stopLoading = ref(false);
 const initEChart = () => {
   props.data.usage.cpu = (props.data.usage.cpu ?? [0, 0]).map((num) =>
     parseFloat(num.toFixed(2))
@@ -155,10 +156,17 @@ const handleStart = () => {
 };
 
 const handleStop = () => {
+  if (stopLoading.value) {
+    return;
+  }
+
+  stopLoading.value = true;
   killProcess(props.data.uuid).then((e) => {
     if (e.code === 0) {
       snackbarStore.showSuccessMessage(t("processCardPage.stopSuccess"));
     }
+  }).finally(() => {
+    stopLoading.value = false;
   });
 };
 
@@ -356,6 +364,8 @@ const copyToken = () => {
             icon="mdi-stop"
             variant="text"
             density="comfortable"
+            :loading="stopLoading"
+            :disabled="stopLoading"
           />
           <!-- 编辑按钮 -->
           <v-btn

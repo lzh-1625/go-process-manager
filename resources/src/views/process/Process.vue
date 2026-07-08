@@ -278,8 +278,25 @@ const executeKillAll = () => {
 };
 
 let cancelTokenSource: any;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearRetryTimer = () => {
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+};
+
+const retryProcessListWait = () => {
+  clearRetryTimer();
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    getProcessListWait();
+  }, 1000);
+};
 
 onBeforeUnmount(() => {
+  clearRetryTimer();
   if (cancelTokenSource) {
     cancelTokenSource.cancel("组件已销毁，取消请求");
   }
@@ -296,6 +313,7 @@ const getProcessListWait = () => {
       },
     })
     .then((response) => {
+      clearRetryTimer();
       version.value = parseInt(response.headers?.version || "0");
       processData.value = response.data.data.sort((a: { name: string; }, b: { name: any; }) =>
         a.name.localeCompare(b.name)
@@ -303,7 +321,12 @@ const getProcessListWait = () => {
       getProcessListWait();
     })
     .catch((error) => {
+      if (axios.isCancel(error)) {
+        return;
+      }
+
       console.error("请求错误:", error);
+      retryProcessListWait();
     });
 };
 onMounted(() => {
