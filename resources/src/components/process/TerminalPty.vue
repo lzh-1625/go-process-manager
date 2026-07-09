@@ -179,4 +179,28 @@ onUnmounted(() => {
 #xterm .terminal {
   height: 100%;
 }
+
+#xterm .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--v-theme-primary), 0.7) transparent;
+}
+
+#xterm .xterm-viewport::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+  display: block;
+}
+
+#xterm .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(var(--v-theme-primary), 0.52);
+}
+
+#xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-primary), 0.72);
+}
 </style>

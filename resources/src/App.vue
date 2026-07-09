@@ -4,6 +4,7 @@ import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
 import BlankLayout from "@/layouts/BlankLayout.vue";
 
+import FloatingScrollbar from "@/components/common/FloatingScrollbar.vue";
 import Snackbar from "@/components/common/Snackbar.vue";
 import { useAppStore } from "@/stores/appStore";
 import { useTheme } from "vuetify";
@@ -45,6 +46,7 @@ onMounted(() => {
       <router-view> </router-view>
     </component>
     <Snackbar />
+    <FloatingScrollbar />
   </v-app>
 </template>
 
