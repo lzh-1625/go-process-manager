@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -130,8 +131,10 @@ func run() {
 	authMiddleware := middle.NewAuthMiddleware(userLogic)
 	r := route.NewRoute(wsAPI, procAPI, taskAPI, userAPI, pushAPI, eventAPI, permissionAPI, logAPI, configAPI, metricAPI, loggerMiddleware, authMiddleware)
 	server := &http.Server{
-		Addr:    config.CF.Listen,
-		Handler: r,
+		Addr:        config.CF.Listen,
+		Handler:     r,
+		ErrorLog:    slog.NewLogLogger(r.Logger.Handler(), slog.LevelError),
+		ReadTimeout: 30 * time.Second,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -171,13 +174,26 @@ func run() {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second+time.Duration(config.CF.KillWaitTime)*time.Second)
 	defer cancel()
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Logger.Errorw("shutdown echo server failed", "err", err)
+	cleanupDone := make(chan struct{})
+	go func() {
+		defer close(cleanupDone)
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Logger.Errorw("shutdown echo server failed", "err", err)
+		}
+		c.Stop()
+		log.Logger.Infow("waiting for all process to stop")
+		processCtlLogic.KillAllProcess()
+		logHandler.Close()
+		eventBus.Close()
+		print(stopTitle)
+	}()
+
+	select {
+	case <-cleanupDone:
+	case <-shutdownCtx.Done():
+		log.Logger.Errorw("shutdown timed out", "err", shutdownCtx.Err())
+		if err := server.Close(); err != nil {
+			log.Logger.Errorw("force close echo server failed", "err", err)
+		}
 	}
-	c.Stop()
-	log.Logger.Infow("waiting for all process to stop")
-	processCtlLogic.KillAllProcess()
-	logHandler.Close()
-	eventBus.Close()
-	print(stopTitle)
 }
