@@ -60,7 +60,7 @@ type ProcessBase struct {
 	PerformanceStatus struct {
 		Cpu  []float64
 		Mem  []float64
-		Time []string
+		Time []time.Time
 	}
 	monitor struct {
 		enable bool
@@ -210,19 +210,31 @@ func (p *ProcessBase) push(message string) {
 func (p *ProcessBase) InitPerformanceStatus() {
 	p.PerformanceStatus.Cpu = make([]float64, config.CF.PerformanceInfoListLength)
 	p.PerformanceStatus.Mem = make([]float64, config.CF.PerformanceInfoListLength)
-	p.PerformanceStatus.Time = make([]string, config.CF.PerformanceInfoListLength)
+	p.PerformanceStatus.Time = make([]time.Time, config.CF.PerformanceInfoListLength)
 }
 
-func (p *ProcessBase) AddCpuUsage(usage float64) {
-	p.PerformanceStatus.Cpu = append(p.PerformanceStatus.Cpu[1:], usage)
+func (p *ProcessBase) addPerformanceRecord(cpu, mem float64) {
+	p.PerformanceStatus.Cpu = append(p.PerformanceStatus.Cpu[1:], cpu)
+	p.PerformanceStatus.Mem = append(p.PerformanceStatus.Mem[1:], mem)
+	p.PerformanceStatus.Time = append(p.PerformanceStatus.Time[1:], time.Now())
 }
 
-func (p *ProcessBase) AddMemUsage(usage float64) {
-	p.PerformanceStatus.Mem = append(p.PerformanceStatus.Mem[1:], usage)
-}
+// fetch performance information, return cpu usage and memory usage in KB
+func (p *ProcessBase) GetPerformanceInfo() (float64, float64, error) {
+	if p.monitor.pu == nil {
+		return 0, 0, errors.New("process not running")
+	}
 
-func (p *ProcessBase) AddRecordTime() {
-	p.PerformanceStatus.Time = append(p.PerformanceStatus.Time[1:], time.Now().Format(time.DateTime))
+	cpuPercent, err := p.monitor.pu.CPUPercent()
+	if err != nil {
+		log.Logger.Warnw("CPU usage get failed", "err", err)
+		return 0, 0, err
+	}
+	memInfo, err := p.monitor.pu.MemoryInfo()
+	if err != nil {
+		return 0, 0, err
+	}
+	return cpuPercent, float64(memInfo.RSS >> 10), nil
 }
 
 func (p *ProcessBase) monitorHandler() {
@@ -237,19 +249,13 @@ func (p *ProcessBase) monitorHandler() {
 			log.Logger.Debugw("process not running", "state", p.State.State)
 			return
 		}
-		cpuPercent, err := p.monitor.pu.CPUPercent()
+
+		c, m, err := p.GetPerformanceInfo()
 		if err != nil {
-			log.Logger.Warnw("CPU usage get failed", "err", err)
+			log.Logger.Warnw("performance info get failed", "err", err)
 			return
 		}
-		memInfo, err := p.monitor.pu.MemoryInfo()
-		if err != nil {
-			log.Logger.Warnw("memory usage get failed", "err", err)
-			return
-		}
-		p.AddRecordTime()
-		p.AddCpuUsage(cpuPercent)
-		p.AddMemUsage(float64(memInfo.RSS >> 10))
+		p.addPerformanceRecord(c, m)
 		select {
 		case <-ticker.C:
 		case <-p.StopChan:

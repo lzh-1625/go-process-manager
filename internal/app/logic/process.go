@@ -134,7 +134,6 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 			continue
 		}
 
-		// 使用 Info() 方法获取进程信息快照
 		pi.State.Info = process.State.Info
 		pi.State.State = process.State.State
 		pi.StartTime = process.State.StartTime.Format(time.DateTime)
@@ -143,7 +142,16 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		pi.Usage.Mem = process.PerformanceStatus.Mem
 		pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
 		pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
-		pi.Usage.Time = process.PerformanceStatus.Time
+		for _, v := range process.PerformanceStatus.Time {
+			pi.Usage.Time = append(pi.Usage.Time, v.Format(time.DateTime))
+		}
+
+		// real-time performance information
+		if c, m, err := process.GetPerformanceInfo(); err == nil {
+			pi.Usage.Cpu = append(pi.Usage.Cpu, c)
+			pi.Usage.Mem = append(pi.Usage.Mem, m)
+			pi.Usage.Time = append(pi.Usage.Time, time.Now().Format(time.DateTime))
+		}
 		pi.CgroupEnable = process.Config.CgroupEnable
 		pi.CpuLimit = process.Config.CpuLimit
 		pi.MemoryLimit = process.Config.MemoryLimit
