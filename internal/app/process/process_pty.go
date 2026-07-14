@@ -24,6 +24,7 @@ type ProcessPty struct {
 	pty           *os.File
 }
 
+// Start starts the process.
 func (p *ProcessPty) Start() (err error) {
 	defer func() {
 		if err != nil {
@@ -71,7 +72,7 @@ func (p *ProcessPty) pInit() {
 	p.writers = make(map[string]io.WriteCloser)
 	p.Pid = p.op.Pid
 	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
-	p.InitPerformanceStatus()
+	p.initPerformanceStatus()
 	p.initPsutil()
 	p.initCgroup()
 	p.initLogHandler()
@@ -80,6 +81,7 @@ func (p *ProcessPty) pInit() {
 	go p.monitorHandler()
 }
 
+// SetTerminalSize sets the process terminal size.
 func (p *ProcessPty) SetTerminalSize(cols, rows int) {
 	if cols == 0 || rows == 0 || len(p.writers) != 0 {
 		return
@@ -93,13 +95,9 @@ func (p *ProcessPty) SetTerminalSize(cols, rows int) {
 
 }
 
+// WriteBytes writes data to the process terminal.
 func (p *ProcessPty) WriteBytes(input []byte) (err error) {
 	_, err = p.pty.Write(input)
-	return
-}
-
-func (p *ProcessPty) Write(input string) (err error) {
-	_, err = p.pty.Write([]byte(input))
 	return
 }
 
@@ -134,6 +132,8 @@ func (p *ProcessPty) readInit() {
 	}
 }
 
+// ReadCache reads the cached terminal data.
+// The process caches some recent output so that terminal clients can view a portion of its output history.
 func (p *ProcessPty) ReadCache(ws io.WriteCloser) error {
 	if p.cacheBytesBuf == nil {
 		return errors.New("cache is null")

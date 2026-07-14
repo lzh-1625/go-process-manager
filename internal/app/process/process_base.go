@@ -40,7 +40,7 @@ type ProcessBase struct {
 	wlock   sync.RWMutex
 	Config  struct {
 		AutoRestart       bool
-		CompulsoryRestart bool
+		CompulsoryRestart bool // Restart automatically after reaching the restart limit when CompulsoryRestart is true.
 		PushIDs           []int64
 		LogReport         bool
 		CgroupEnable      bool
@@ -82,12 +82,14 @@ type ProcessBase struct {
 	pushHandle    func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
 }
 
+// SetOpertor sets the current process operator for a limited time.
 func (p *ProcessBase) SetOpertor(operator string) {
 	if p.operate.user.CompareAndSwap(nil, &operator) {
 		p.operate.time = time.Now()
 	}
 }
 
+// GetOpertor returns the current operator name and clears it.
 func (p *ProcessBase) GetOpertor() string {
 	s := p.operate.user.Swap(nil)
 	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) || s == nil {
@@ -97,6 +99,7 @@ func (p *ProcessBase) GetOpertor() string {
 }
 
 // fn function execution successfully, set state
+// The process state cannot change while fn is running.
 func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
@@ -112,10 +115,12 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 	return true
 }
 
+// GetUserString returns the formatted list of terminal users for the current process.
 func (p *ProcessBase) GetUserString() string {
 	return strings.Join(p.GetUserList(), ";")
 }
 
+// GetUserList returns the terminal users for the current process.
 func (p *ProcessBase) GetUserList() []string {
 	p.wlock.RLock()
 	defer p.wlock.RUnlock()
@@ -126,12 +131,14 @@ func (p *ProcessBase) GetUserList() []string {
 	return userList
 }
 
+// HasWriter reports whether the current terminal has the specified writer.
 func (p *ProcessBase) HasWriter(userName string) bool {
 	p.wlock.RLock()
 	defer p.wlock.RUnlock()
 	return p.writers[userName] != nil
 }
 
+// AddWriter adds a terminal writer.
 func (p *ProcessBase) AddWriter(user string, c io.WriteCloser) {
 	p.wlock.Lock()
 	defer p.wlock.Unlock()
@@ -147,6 +154,7 @@ func (p *ProcessBase) AddWriter(user string, c io.WriteCloser) {
 	}
 }
 
+// DeleteWriter removes a terminal writer.
 func (p *ProcessBase) DeleteWriter(user string) {
 	p.wlock.Lock()
 	defer p.wlock.Unlock()
@@ -162,10 +170,8 @@ func (p *ProcessBase) logReportHandler(log []byte) {
 	}
 }
 
-func (p *ProcessBase) GetStartTimeFormat() string {
-	return p.State.StartTime.Format(time.DateTime)
-}
-
+// ProcessControl disconnects all current users and makes the specified user the controller.
+// Other users cannot operate the process terminal, and control is released automatically after a timeout.
 func (p *ProcessBase) ProcessControl(name string) {
 	p.Control.changControlTime = time.Now()
 	p.Control.Controller = name
@@ -189,6 +195,7 @@ func (p *ProcessBase) setProcessConfig(pconfig model.Process) {
 	p.Config.CpuLimit = pconfig.CpuLimit
 }
 
+// ResetRestartTimes resets the restart count.
 func (p *ProcessBase) ResetRestartTimes() {
 	p.State.RestartTimes = 0
 }
@@ -207,7 +214,7 @@ func (p *ProcessBase) push(message string) {
 	}
 }
 
-func (p *ProcessBase) InitPerformanceStatus() {
+func (p *ProcessBase) initPerformanceStatus() {
 	p.PerformanceStatus.Cpu = make([]float64, config.CF.PerformanceInfoListLength)
 	p.PerformanceStatus.Mem = make([]float64, config.CF.PerformanceInfoListLength)
 	p.PerformanceStatus.Time = make([]time.Time, config.CF.PerformanceInfoListLength)
@@ -275,6 +282,7 @@ func (p *ProcessBase) initPsutil() {
 	}
 }
 
+// Kill stops the process by sending SIGINT first, then forcibly kills it if it does not exit in time.
 func (p *ProcessBase) Kill() error {
 	if p.State.State != eum.ProcessStateRunning {
 		return errors.New("can't kill not running process")
@@ -351,6 +359,7 @@ func SetPushHandle(fn func(p *ProcessBase, pushIDs []int64, messagePlaceholders 
 	}
 }
 
+// NewProcessPty creates a process and configures its handlers.
 func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty {
 	p := &ProcessPty{
 		ProcessBase: &ProcessBase{

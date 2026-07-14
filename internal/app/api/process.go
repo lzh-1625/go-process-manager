@@ -105,7 +105,7 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	if prod.State.State == eum.ProcessStateStart || prod.State.State == eum.ProcessStateRunning {
 		return errors.New("process is currently running")
 	}
-	prod.ResetRestartTimes()
+	prod.ResetRestartTimes() // Reset the current restart count when the process is started manually.
 	prod.SetOpertor(getUserName(ctx))
 	return prod.Start()
 }
