@@ -42,6 +42,7 @@ func (t *TaskLogic) getTaskJob(id int) (*TaskJob, error) {
 	return c.(*TaskJob), nil
 }
 
+// InitTaskJob initializes all task jobs.
 func (t *TaskLogic) InitTaskJob() {
 	for _, v := range t.taskRepository.GetAllTask() {
 		tj, err := NewTaskJob(v, t.eventLogic, t.processCtlLogic, t)
@@ -53,6 +54,7 @@ func (t *TaskLogic) InitTaskJob() {
 	}
 }
 
+// StopTaskJob stops a task job.
 func (t *TaskLogic) StopTaskJob(id int) error {
 	taskJob, err := t.getTaskJob(id)
 	if err != nil {
@@ -67,6 +69,7 @@ func (t *TaskLogic) StopTaskJob(id int) error {
 	return nil
 }
 
+// GetAllTaskJob returns all current task jobs.
 func (t *TaskLogic) GetAllTaskJob() []model.TaskVo {
 	result := t.taskRepository.GetAllTaskWithProcessName()
 	for i, v := range result {
@@ -82,10 +85,12 @@ func (t *TaskLogic) GetAllTaskJob() []model.TaskVo {
 	return result
 }
 
+// GetTaskByID returns a task by ID.
 func (t *TaskLogic) GetTaskByID(id int) (*model.Task, error) {
 	return t.taskRepository.GetTaskByID(id)
 }
 
+// DeleteTask deletes a task.
 func (t *TaskLogic) DeleteTask(id int) (err error) {
 
 	if tj, err := t.getTaskJob(id); err == nil {
@@ -102,6 +107,7 @@ func (t *TaskLogic) DeleteTask(id int) (err error) {
 	return
 }
 
+// CreateTask creates a task.
 func (t *TaskLogic) CreateTask(data model.Task) error {
 	tj, err := NewTaskJob(&data, t.eventLogic, t.processCtlLogic, t)
 	if err != nil {
@@ -116,6 +122,7 @@ func (t *TaskLogic) CreateTask(data model.Task) error {
 	return nil
 }
 
+// EditTask updates a task.
 func (t *TaskLogic) EditTask(data *model.Task) error {
 	tj, err := t.getTaskJob(data.ID)
 	if err != nil {
@@ -138,6 +145,7 @@ func (t *TaskLogic) EditTask(data *model.Task) error {
 	return t.taskRepository.EditTask(data)
 }
 
+// CreateApiKey creates an API key that can trigger a task.
 func (t *TaskLogic) CreateApiKey(id int) error {
 	data, err := t.taskRepository.GetTaskByID(id)
 	if err != nil {
@@ -148,6 +156,7 @@ func (t *TaskLogic) CreateApiKey(id int) error {
 	return nil
 }
 
+// RunTaskByKey triggers a task using an API key.
 func (t *TaskLogic) RunTaskByKey(key string) error {
 	data, err := t.taskRepository.GetTaskByKey(key)
 	if err != nil {
@@ -157,6 +166,7 @@ func (t *TaskLogic) RunTaskByKey(key string) error {
 	return nil
 }
 
+// RunTaskByTriggerEvent runs tasks triggered by a process state change.
 func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessState) {
 	taskList := t.taskRepository.GetTriggerTask(processName, event)
 	if len(taskList) == 0 {
@@ -169,6 +179,7 @@ func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessS
 	}
 }
 
+// RunTaskByID runs the task with the specified ID.
 func (t *TaskLogic) RunTaskByID(id int) error {
 	task, err := t.getTaskJob(id)
 	if err != nil {

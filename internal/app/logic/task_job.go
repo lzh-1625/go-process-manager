@@ -56,10 +56,10 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	logger = logger.With("traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
 	t.Running = true
 	t.StartTime = time.Now()
-	TaskWaitCond.Trigger()
+	TaskWaitCond().Trigger()
 	defer func() {
 		t.Running = false
-		TaskWaitCond.Trigger()
+		TaskWaitCond().Trigger()
 	}()
 
 	proc, err := t.processCtlLogic.GetProcess(t.TaskConfig.OperationTarget)

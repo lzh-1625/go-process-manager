@@ -85,8 +85,8 @@ func NewRoute(
 	}
 	r.Use(loggerMiddleware.EventLogger)
 
-	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond)
-	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond)
+	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond())
+	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond())
 
 	apiGroup := r.Group("/api")
 	apiGroup.Use(authMiddleware.Auth)

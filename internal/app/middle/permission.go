@@ -7,6 +7,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
+// RolePermission validates role permissions.
 func RolePermission(needPermission eum.Role) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {

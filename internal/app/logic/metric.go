@@ -26,6 +26,7 @@ func NewMetricLogic(processCtlLogic *ProcessCtlLogic, logHandler *LogHandler, IL
 	}
 }
 
+// GetPerformceUsage returns performance metrics for all current processes.
 func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 	pl := m.processCtlLogic.GetProcessList()
 	items := make([]model.PerformceUsageItem, 0, len(pl))
@@ -60,6 +61,8 @@ func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 
 }
 
+// GetLogMetric returns recent log statistics.
+// dateType selects the time range: 1 for 7 days, 2 for 6 weeks, and 3 for 6 months.
 func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric) {
 	t := time.Now()
 	switch dateType {

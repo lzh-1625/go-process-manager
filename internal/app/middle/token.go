@@ -12,6 +12,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
+// whiteList contains paths excluded from JWT validation.
 var whiteList = []string{
 	"/api/user/login",
 	"/api/user/register/admin",
@@ -32,7 +33,7 @@ type AuthMiddleware struct {
 func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		path := c.Request().URL.Path
-		// 白名单放行
+
 		if !slices.ContainsFunc(whiteList, func(s string) bool {
 			return strings.HasPrefix(path, s)
 		}) {

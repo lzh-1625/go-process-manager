@@ -263,10 +263,10 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
 	return process.NewProcessPty(cf,
 		process.SetAddWriterHook(func(p *process.ProcessBase, user string, c io.WriteCloser) {
-			ProcessWaitCond.Trigger()
+			ProcessWaitCond().Trigger()
 		}),
 		process.SetDelWriterHook(func(p *process.ProcessBase, user string) {
-			ProcessWaitCond.Trigger()
+			ProcessWaitCond().Trigger()
 		}),
 		process.SetLogHandler(config.CF.LogReportOptimization, func(proc *process.ProcessBase, log []byte) {
 			logStr := string(log)
@@ -284,7 +284,7 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 			p.pushLogic.Push(pushIDs, messagePlaceholders)
 		}),
 		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
-			ProcessWaitCond.Trigger()
+			ProcessWaitCond().Trigger()
 			p.createEvent(proc, state)
 			if p.processStateHandler != nil {
 				go p.processStateHandler(proc.Name, state)
