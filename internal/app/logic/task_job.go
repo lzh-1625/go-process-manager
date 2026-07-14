@@ -37,7 +37,7 @@ func NewTaskJob(data *model.Task, eventLogic *EventLogic, processCtlLogic *Proce
 		taskLogic:       taskLogic,
 	}
 	if data.Enable {
-		if err := tj.InitCronHandle(); err != nil {
+		if err := tj.initCronHandle(); err != nil {
 			log.Logger.Warnw("cron task start failed", "err", err, "task", data.ID)
 		}
 	}
@@ -114,7 +114,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	return
 }
 
-func (t *TaskJob) InitCronHandle() error {
+func (t *TaskJob) initCronHandle() error {
 	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron expression validation
 		log.Logger.Errorw("cron parse failed", "cron", t.TaskConfig.CronExpression, "err", err)
 		return err
@@ -145,7 +145,7 @@ func (t *TaskJob) EditStatus(status bool) error {
 		t.Cron.Stop()
 	}
 	if status { // start cron
-		if err := t.InitCronHandle(); err != nil {
+		if err := t.initCronHandle(); err != nil {
 			return err
 		}
 	}
