@@ -93,7 +93,6 @@ var runCmd = &cobra.Command{
 				taskLogic *logic.TaskLogic,
 				logHandler *logic.LogHandler,
 				eventLogic *logic.EventLogic,
-				eventBus *logic.EventBus,
 			) {
 				c := cron.New()
 				lc.Append(fx.Hook{
@@ -114,14 +113,9 @@ var runCmd = &cobra.Command{
 							})
 							c.Start()
 						}
-						processCtlLogic.ProcessInit()
 						taskLogic.InitTaskJob()
-						go func() {
-							// run task by trigger event
-							for event := range eventBus.Subscribe() {
-								go taskLogic.RunTaskByTriggerEvent(event.Proc.Name, event.State)
-							}
-						}()
+						processCtlLogic.SetProcessStateHandler(taskLogic.RunTaskByTriggerEvent)
+						processCtlLogic.ProcessInit()
 						return nil
 					},
 					OnStop: func(ctx context.Context) error {
@@ -129,7 +123,6 @@ var runCmd = &cobra.Command{
 						log.Logger.Infow("waiting for all process to stop")
 						processCtlLogic.KillAllProcess()
 						logHandler.Close()
-						eventBus.Close()
 						print(stopTitle)
 						return nil
 					},

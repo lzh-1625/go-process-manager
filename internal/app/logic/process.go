@@ -28,8 +28,10 @@ type ProcessCtlLogic struct {
 	eventLogic           *EventLogic
 	pushLogic            *PushLogic
 	logHandler           *LogHandler
-	eventBus             *EventBus
+	processStateHandler  ProcessStateHandler
 }
+
+type ProcessStateHandler func(processName string, state eum.ProcessState)
 
 func NewProcessCtlLogic(
 	processRepository *repository.ProcessRepository,
@@ -37,7 +39,6 @@ func NewProcessCtlLogic(
 	eventLogic *EventLogic,
 	pushLogic *PushLogic,
 	logHandler *LogHandler,
-	eventBus *EventBus,
 ) *ProcessCtlLogic {
 	return &ProcessCtlLogic{
 		processMap:           sync.Map{},
@@ -46,9 +47,13 @@ func NewProcessCtlLogic(
 		eventLogic:           eventLogic,
 		pushLogic:            pushLogic,
 		logHandler:           logHandler,
-		eventBus:             eventBus,
 	}
 }
+
+func (p *ProcessCtlLogic) SetProcessStateHandler(handler ProcessStateHandler) {
+	p.processStateHandler = handler
+}
+
 func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
 	p.processMap.Store(uuid, proc)
 }
@@ -281,10 +286,9 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
 			ProcessWaitCond.Trigger()
 			p.createEvent(proc, state)
-			p.eventBus.Publish(Event{
-				Proc:  proc,
-				State: state,
-			})
+			if p.processStateHandler != nil {
+				go p.processStateHandler(proc.Name, state)
+			}
 		}),
 	)
 }

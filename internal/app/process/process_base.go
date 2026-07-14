@@ -227,7 +227,6 @@ func (p *ProcessBase) GetPerformanceInfo() (float64, float64, error) {
 
 	cpuPercent, err := p.monitor.pu.CPUPercent()
 	if err != nil {
-		log.Logger.Warnw("CPU usage get failed", "err", err)
 		return 0, 0, err
 	}
 	memInfo, err := p.monitor.pu.MemoryInfo()
@@ -252,7 +251,7 @@ func (p *ProcessBase) monitorHandler() {
 
 		c, m, err := p.GetPerformanceInfo()
 		if err != nil {
-			log.Logger.Warnw("performance info get failed", "err", err)
+			log.Logger.Debugw("performance monitor exit", "err", err)
 			return
 		}
 		p.addPerformanceRecord(c, m)

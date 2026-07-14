@@ -18,21 +18,18 @@ type TaskLogic struct {
 	taskJobMap      sync.Map
 	eventLogic      *EventLogic
 	processCtlLogic *ProcessCtlLogic
-	eventBus        *EventBus
 }
 
 func NewTaskLogic(
 	taskRepository *repository.TaskRepository,
 	eventLogic *EventLogic,
 	processCtlLogic *ProcessCtlLogic,
-	eventBus *EventBus,
 ) *TaskLogic {
 	t := &TaskLogic{
 		taskRepository:  taskRepository,
 		taskJobMap:      sync.Map{},
 		eventLogic:      eventLogic,
 		processCtlLogic: processCtlLogic,
-		eventBus:        eventBus,
 	}
 	return t
 }
