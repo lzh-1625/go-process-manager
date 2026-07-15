@@ -1,9 +1,9 @@
 package logic
 
 import (
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 )
 
 type PermissionLogic struct {
@@ -28,6 +28,6 @@ func (p *PermissionLogic) GetPermssionList(account string) []model.PermissionPo 
 	return p.permissionRepository.GetPermssionList(account)
 }
 
-func (p *PermissionLogic) GetProcessNameByPermission(user string, op eum.OprPermission) (result []string) {
+func (p *PermissionLogic) GetProcessNameByPermission(user string, op types.OprPermission) (result []string) {
 	return p.permissionRepository.GetProcessNameByPermission(user, op)
 }

@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
@@ -167,7 +167,7 @@ func (t *TaskLogic) RunTaskByKey(key string) error {
 }
 
 // RunTaskByTriggerEvent runs tasks triggered by a process state change.
-func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event eum.ProcessState) {
+func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event types.ProcessState) {
 	taskList := t.taskRepository.GetTriggerTask(processName, event)
 	if len(taskList) == 0 {
 		return

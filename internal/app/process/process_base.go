@@ -14,8 +14,8 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
 
@@ -52,7 +52,7 @@ type ProcessBase struct {
 	State struct {
 		StartTime      time.Time
 		Info           string
-		State          eum.ProcessState //0 not running, 1 running, 2 warning state
+		State          types.ProcessState //0 not running, 1 running, 2 warning state
 		stateLock      sync.Mutex
 		RestartTimes   int
 		manualStopFlag bool
@@ -76,7 +76,7 @@ type ProcessBase struct {
 	}
 
 	logHandler    io.WriteCloser
-	stateHook     func(p *ProcessBase, state eum.ProcessState)
+	stateHook     func(p *ProcessBase, state types.ProcessState)
 	addWriterHook func(p *ProcessBase, user string, c io.WriteCloser)
 	delWriterHook func(p *ProcessBase, user string)
 	pushHandle    func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
@@ -100,9 +100,12 @@ func (p *ProcessBase) GetOpertor() string {
 
 // fn function execution successfully, set state
 // The process state cannot change while fn is running.
-func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
+func (p *ProcessBase) SetState(state types.ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
+	if !p.checkStateChange(p.State.State, state) {
+		return false
+	}
 	for _, v := range fn {
 		if !v() {
 			return false
@@ -113,6 +116,21 @@ func (p *ProcessBase) SetState(state eum.ProcessState, fn ...func() bool) bool {
 		p.stateHook(p, state)
 	}
 	return true
+}
+
+func (p *ProcessBase) checkStateChange(old, new types.ProcessState) bool {
+	switch old {
+	case types.ProcessStateStarting:
+		return new == types.ProcessStateRunning || new == types.ProcessStateWarning
+	case types.ProcessStateRunning:
+		return new == types.ProcessStateStopping || new == types.ProcessStateStopped
+	case types.ProcessStateWarning, types.ProcessStateStopped:
+		return new == types.ProcessStateStarting
+	case types.ProcessStateStopping:
+		return new == types.ProcessStateStopped
+	default:
+		return true
+	}
 }
 
 // GetUserString returns the formatted list of terminal users for the current process.
@@ -251,7 +269,7 @@ func (p *ProcessBase) monitorHandler() {
 	ticker := time.NewTicker(time.Second * time.Duration(config.CF.PerformanceInfoInterval))
 	defer ticker.Stop()
 	for {
-		if p.State.State != eum.ProcessStateRunning {
+		if p.State.State != types.ProcessStateRunning {
 			log.Logger.Debugw("process not running", "state", p.State.State)
 			return
 		}
@@ -284,7 +302,7 @@ func (p *ProcessBase) initPsutil() {
 
 // Kill stops the process by sending SIGINT first, then forcibly kills it if it does not exit in time.
 func (p *ProcessBase) Kill() error {
-	if p.State.State != eum.ProcessStateRunning {
+	if p.State.State != types.ProcessStateRunning {
 		return errors.New("can't kill not running process")
 	}
 	p.State.manualStopFlag = true
@@ -292,7 +310,7 @@ func (p *ProcessBase) Kill() error {
 		log.Logger.Errorw("send SIGINT signal failed", "err", err)
 		return p.op.Kill()
 	}
-
+	p.SetState(types.ProcessStateStopping)
 	select {
 	case <-p.StopChan:
 		{
@@ -304,6 +322,11 @@ func (p *ProcessBase) Kill() error {
 			return p.op.Kill()
 		}
 	}
+}
+
+// 立即停止进程
+func (p *ProcessBase) Kill9() error {
+	return p.op.Kill()
 }
 
 func (p *ProcessBase) initLogHandler() {
@@ -324,7 +347,7 @@ func (p *ProcessBase) initLogHandler() {
 type ProcessOptions func(*ProcessBase)
 
 // state change hook
-func SetStateHook(fn func(p *ProcessBase, state eum.ProcessState)) ProcessOptions {
+func SetStateHook(fn func(p *ProcessBase, state types.ProcessState)) ProcessOptions {
 	return func(p *ProcessBase) {
 		p.stateHook = fn
 	}

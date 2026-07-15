@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 )
 
 func NewTaskRepository(query *query.Query) *TaskRepository {
@@ -65,7 +65,7 @@ func (t *TaskRepository) GetAllTaskWithProcessName() (result []model.TaskVo) {
 	return
 }
 
-func (t *TaskRepository) GetTriggerTask(processName string, event eum.ProcessState) []model.Task {
+func (t *TaskRepository) GetTriggerTask(processName string, event types.ProcessState) []model.Task {
 	result := []model.Task{}
 	t.query.Task.Select(t.query.Task.ALL).
 		LeftJoin(t.query.Process, t.query.Process.UUID.EqCol(t.query.Task.TriggerTarget)).

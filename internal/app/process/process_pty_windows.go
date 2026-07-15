@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/runletapp/go-console"
@@ -28,13 +28,11 @@ func (p *ProcessPty) Start() (err error) {
 	defer func() {
 		if err != nil {
 			p.Config.AutoRestart = false
-			p.SetState(eum.ProcessStateWarnning)
+			p.SetState(types.ProcessStateWarning)
 			p.State.Info = "process start failed: " + err.Error()
 		}
 	}()
-	if ok := p.SetState(eum.ProcessStateStart, func() bool {
-		return p.State.State != eum.ProcessStateRunning && p.State.State != eum.ProcessStateStart
-	}); !ok {
+	if ok := p.SetState(types.ProcessStateStarting); !ok {
 		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}
@@ -63,9 +61,7 @@ func (p *ProcessPty) Start() (err error) {
 	}
 	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
 	p.pInit()
-	if !p.SetState(eum.ProcessStateRunning, func() bool {
-		return p.State.State == eum.ProcessStateStart
-	}) {
+	if !p.SetState(types.ProcessStateRunning) {
 		return errors.New("state abnormal start failed")
 	}
 	p.push("process start success")
@@ -155,11 +151,7 @@ func (p *ProcessPty) watchDog() {
 	if p.logHandler != nil {
 		p.logHandler.Close()
 	}
-	if !p.SetState(eum.ProcessStateStop, func() bool {
-		// process is already stopped or warning state, no need to repeat set state
-		if eum.ProcessStateStop == p.State.State || eum.ProcessStateWarnning == p.State.State {
-			return false
-		}
+	if !p.SetState(types.ProcessStateStopped, func() bool {
 		close(p.StopChan)
 		p.pty.Close()
 		return true
@@ -189,7 +181,7 @@ func (p *ProcessPty) watchDog() {
 		return
 	}
 	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(eum.ProcessStateWarnning)
+	p.SetState(types.ProcessStateWarning)
 	p.State.Info = "restart times abnormal"
 	p.push("restart times reached limit")
 }

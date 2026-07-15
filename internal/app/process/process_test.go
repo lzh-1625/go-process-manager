@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
@@ -105,7 +105,7 @@ func TestProcessAtomic(t *testing.T) {
 		Cmd:  "sleep 100",
 		Cwd:  ".",
 	},
-		SetStateHook(func(p *ProcessBase, state eum.ProcessState) {
+		SetStateHook(func(p *ProcessBase, state types.ProcessState) {
 			t.Logf("state: %v", state)
 		}),
 	)

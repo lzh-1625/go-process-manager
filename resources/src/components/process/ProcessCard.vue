@@ -156,12 +156,12 @@ const handleStart = () => {
 };
 
 const handleStop = () => {
-  if (stopLoading.value) {
+  if (stopLoading.value && props.data.state.state !== 4) {
     return;
   }
 
   stopLoading.value = true;
-  killProcess(props.data.uuid).then((e) => {
+  killProcess(props.data.uuid, props.data.state.state === 4).then((e) => {
     if (e.code === 0) {
       snackbarStore.showSuccessMessage(t("processCardPage.stopSuccess"));
     }
@@ -289,6 +289,15 @@ const copyToken = () => {
         >
           mdi-stop-circle</v-icon
         >
+        <v-icon
+          v-if="props.data.state.state == 4"
+          color="orange"
+          class="mdi-spin"
+          x-large
+          style="float: left"
+        >
+          mdi-loading
+        </v-icon>
         <v-tooltip
           v-if="props.data.state.state == 2"
           location="top"
@@ -364,8 +373,9 @@ const copyToken = () => {
             icon="mdi-stop"
             variant="text"
             density="comfortable"
-            :loading="stopLoading"
-            :disabled="stopLoading"
+            :color="props.data.state.state === 4 ? 'red' : undefined"
+            :loading="stopLoading && props.data.state.state !== 4"
+            :disabled="stopLoading && props.data.state.state !== 4"
           />
           <!-- 编辑按钮 -->
           <v-btn

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/duke-git/lancet/v2/datetime"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -32,7 +32,7 @@ func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 	items := make([]model.PerformceUsageItem, 0, len(pl))
 
 	for _, v := range pl {
-		if v.State.State != eum.ProcessStateRunning {
+		if v.State.State != types.ProcessStateRunning {
 			continue
 		}
 		items = append(items, model.PerformceUsageItem{

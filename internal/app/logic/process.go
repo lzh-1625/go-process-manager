@@ -12,10 +12,10 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/shirou/gopsutil/mem"
@@ -31,7 +31,7 @@ type ProcessCtlLogic struct {
 	processStateHandler  ProcessStateHandler
 }
 
-type ProcessStateHandler func(processName string, state eum.ProcessState)
+type ProcessStateHandler func(processName string, state types.ProcessState)
 
 func NewProcessCtlLogic(
 	processRepository *repository.ProcessRepository,
@@ -58,7 +58,7 @@ func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
 	p.processMap.Store(uuid, proc)
 }
 
-func (p *ProcessCtlLogic) KillProcess(uuid int) error {
+func (p *ProcessCtlLogic) KillProcess(uuid int, wait bool) error {
 	value, ok := p.processMap.Load(uuid)
 	if !ok {
 		return errors.New("process not exist")
@@ -67,7 +67,10 @@ func (p *ProcessCtlLogic) KillProcess(uuid int) error {
 	if !ok {
 		return errors.New("process type error")
 	}
-	return result.Kill()
+	if wait {
+		return result.Kill()
+	}
+	return result.Kill9()
 }
 
 func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.ProcessPty, error) {
@@ -96,7 +99,7 @@ func (p *ProcessCtlLogic) KillAllProcess() {
 }
 
 func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
-	stopPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, eum.OperationStop)
+	stopPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStop)
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*process.ProcessPty)
@@ -112,7 +115,7 @@ func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
 }
 
 func (p *ProcessCtlLogic) DeleteProcess(uuid int) error {
-	p.KillProcess(uuid)
+	p.KillProcess(uuid, true)
 	p.processMap.Delete(uuid)
 	return p.processRepository.DeleteProcessConfig(uuid)
 }
@@ -193,7 +196,7 @@ func (p *ProcessCtlLogic) ProcessInit() {
 }
 
 func (p *ProcessCtlLogic) ProcesStartAllByUsername(userName string) {
-	startPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, eum.OperationStart)
+	startPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*process.ProcessPty)
 		if !slices.Contains(startPermissionProcess, process.Name) {
@@ -283,7 +286,7 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
 			p.pushLogic.Push(pushIDs, messagePlaceholders)
 		}),
-		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
+		process.SetStateHook(func(proc *process.ProcessBase, state types.ProcessState) {
 			ProcessWaitCond().Trigger()
 			p.createEvent(proc, state)
 			if p.processStateHandler != nil {
@@ -293,18 +296,18 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 	)
 }
 
-func (p *ProcessCtlLogic) createEvent(proc *process.ProcessBase, state eum.ProcessState) {
-	var eventType eum.EventType
+func (p *ProcessCtlLogic) createEvent(proc *process.ProcessBase, state types.ProcessState) {
+	var eventType types.EventType
 	kv := []string{}
 	switch state {
-	case eum.ProcessStateRunning:
-		eventType = eum.EventProcessStart
+	case types.ProcessStateRunning:
+		eventType = types.EventProcessStart
 		kv = append(kv, "restartTimes", strconv.Itoa(proc.State.RestartTimes))
-	case eum.ProcessStateStop:
-		eventType = eum.EventProcessStop
+	case types.ProcessStateStopped:
+		eventType = types.EventProcessStop
 		kv = append(kv, "startTime", proc.State.StartTime.Format(time.DateTime))
-	case eum.ProcessStateWarnning:
-		eventType = eum.EventProcessWarning
+	case types.ProcessStateWarning:
+		eventType = types.EventProcessWarning
 		kv = append(kv, "reason", proc.State.Info, "startTime", proc.State.StartTime.Format(time.DateTime))
 	default:
 		return

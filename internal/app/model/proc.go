@@ -1,6 +1,6 @@
 package model
 
-import "github.com/lzh-1625/go_process_manager/internal/app/eum"
+import "github.com/lzh-1625/go_process_manager/internal/app/types"
 
 type ProcessInfo struct {
 	Name         string   `json:"name"`
@@ -24,6 +24,6 @@ type Usage struct {
 }
 
 type State struct {
-	State eum.ProcessState `json:"state"`
-	Info  string           `json:"info"`
+	State types.ProcessState `json:"state"`
+	Info  string             `json:"info"`
 }

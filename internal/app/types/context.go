@@ -1,4 +1,4 @@
-package eum
+package types
 
 const (
 	CtxUserName = "user"
