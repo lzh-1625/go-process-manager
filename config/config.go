@@ -29,7 +29,7 @@ func init() {
 	log.Println("config initialized successfully")
 }
 
-// 只支持 float64、int、int64、bool、string类型
+// Only float64, int, int64, bool, and string types are supported.
 type Configuration struct {
 	LogLevel                  string `default:"info"  describe:"log level [debug,info]"`
 	Listen                    string `default:":8797" describe:"listen port"`

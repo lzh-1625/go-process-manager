@@ -324,7 +324,7 @@ func (p *ProcessBase) Kill() error {
 	}
 }
 
-// 立即停止进程
+// Stop the process immediately.
 func (p *ProcessBase) Kill9() error {
 	return p.op.Kill()
 }
