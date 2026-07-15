@@ -329,6 +329,7 @@ export default {
     terminalInitFailed: "Terminal container initialization failed",
     terminalDisconnected: "Terminal connection closed",
     terminalError: "Terminal connection error",
+    terminalControlledBy: "Terminal is controlled by {controller}",
   },
   logPage: {
     highLight: "High Light",

@@ -141,7 +141,10 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		if err != nil {
 			continue
 		}
-
+		if !process.VerifyControl() {
+			pi.Controller = process.Control.Controller
+			pi.ControlExpiredTime = process.Control.ControlExpiredTime
+		}
 		pi.State.Info = process.State.Info
 		pi.State.State = process.State.State
 		pi.StartTime = process.State.StartTime.Format(time.DateTime)

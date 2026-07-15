@@ -322,6 +322,7 @@ export default {
     terminalInitFailed: "终端容器初始化失败",
     terminalDisconnected: "终端连接断开",
     terminalError: "终端连接发生错误",
+    terminalControlledBy: "终端正由 {controller} 控制",
   },
   logPage: {
     highLight: "高亮",

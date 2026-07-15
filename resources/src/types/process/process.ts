@@ -3,6 +3,8 @@ export interface ProcessItem {
   uuid: number;
   startTime: Date;
   user: string;
+  controller: string;
+  controlExpiredTime: string;
   usage: Usage;
   state: State;
   termType: TermType;

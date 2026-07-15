@@ -206,6 +206,59 @@ const props = defineProps<{
   data: ProcessItem;
 }>();
 
+const controlNow = ref(Date.now());
+let controlExpiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearControlExpiryTimer = () => {
+  if (controlExpiryTimer) {
+    clearTimeout(controlExpiryTimer);
+    controlExpiryTimer = null;
+  }
+};
+
+const scheduleControlExpiry = () => {
+  clearControlExpiryTimer();
+  controlNow.value = Date.now();
+
+  const expiresAt = Date.parse(props.data.controlExpiredTime);
+  if (!props.data.controller || !Number.isFinite(expiresAt)) {
+    return;
+  }
+
+  const delay = expiresAt - controlNow.value;
+  if (delay <= 0) {
+    return;
+  }
+
+  controlExpiryTimer = setTimeout(() => {
+    controlNow.value = Date.now();
+    controlExpiryTimer = null;
+  }, delay + 1);
+};
+
+watch(
+  [() => props.data.controller, () => props.data.controlExpiredTime],
+  scheduleControlExpiry,
+  { immediate: true }
+);
+
+onUnmounted(clearControlExpiryTimer);
+
+const hasValidController = computed(() => {
+  const expiresAt = Date.parse(props.data.controlExpiredTime);
+  return (
+    !!props.data.controller &&
+    Number.isFinite(expiresAt) &&
+    expiresAt > controlNow.value
+  );
+});
+
+const controlledByOther = computed(
+  () =>
+    hasValidController.value &&
+    props.data.controller !== localStorage.getItem("name")
+);
+
 const control = () => {
   getContorl(props.data.uuid).then((e) => {
     if (e.code === 0) {
@@ -319,6 +372,15 @@ const copyToken = () => {
           <v-icon size="small" class="mr-1">mdi-account</v-icon>
           {{ props.data.user }}
         </span>
+        <v-chip
+          v-if="hasValidController"
+          color="warning"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-account-lock"
+        >
+          {{ props.data.controller }}
+        </v-chip>
       </div>
       <div class="top-right" v-permission="1">
         <v-menu bottom left>
@@ -351,13 +413,24 @@ const copyToken = () => {
       <div class="bottom-left">
         <v-chip size="small" variant="outlined" class="d-flex align-center">
           <!-- 终端按钮 -->
-          <v-btn
-            @click="terminalComponent?.wsConnect()"
-            size="small"
-            icon="mdi-console"
-            variant="text"
-            density="comfortable"
-          />
+          <v-tooltip
+            location="top"
+            :disabled="!controlledByOther"
+            :text="$t('processCardPage.terminalControlledBy', { controller: props.data.controller })"
+          >
+            <template v-slot:activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps">
+                <v-btn
+                  @click="terminalComponent?.wsConnect()"
+                  size="small"
+                  icon="mdi-console"
+                  variant="text"
+                  density="comfortable"
+                  :disabled="controlledByOther"
+                />
+              </span>
+            </template>
+          </v-tooltip>
           <!-- 启动按钮 -->
           <v-btn
             @click="handleStart"

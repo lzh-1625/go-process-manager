@@ -33,8 +33,8 @@ type ProcessBase struct {
 	Lock         sync.Mutex
 	StopChan     chan struct{}
 	Control      struct {
-		Controller       string
-		changControlTime time.Time
+		Controller         string
+		ControlExpiredTime time.Time
 	}
 	writers map[string]io.WriteCloser
 	wlock   sync.RWMutex
@@ -191,7 +191,7 @@ func (p *ProcessBase) logReportHandler(log []byte) {
 // ProcessControl disconnects all current users and makes the specified user the controller.
 // Other users cannot operate the process terminal, and control is released automatically after a timeout.
 func (p *ProcessBase) ProcessControl(name string) {
-	p.Control.changControlTime = time.Now()
+	p.Control.ControlExpiredTime = time.Now().Add(time.Second * time.Duration(config.CF.ProcessControlExpireTime))
 	p.Control.Controller = name
 	for _, ws := range p.writers {
 		ws.Close()
@@ -200,7 +200,7 @@ func (p *ProcessBase) ProcessControl(name string) {
 
 // not being controlled or control time expired
 func (p *ProcessBase) VerifyControl() bool {
-	return p.Control.Controller == "" || p.Control.changControlTime.Unix() < time.Now().Unix()-config.CF.ProcessControlExpireTime
+	return p.Control.Controller == "" || time.Now().After(p.Control.ControlExpiredTime)
 }
 
 func (p *ProcessBase) setProcessConfig(pconfig model.Process) {

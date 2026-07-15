@@ -108,7 +108,7 @@ func NewRoute(
 			processGroup.PUT("/all", procApi.StartAllProcess)
 			processGroup.DELETE("/all", procApi.KillAllProcess)
 			processGroup.POST("/share", procApi.ProcessCreateShare, middle.RolePermission(types.RoleAdmin))
-			processGroup.GET("/control", procApi.ProcessControl, middle.RolePermission(types.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+			processGroup.GET("/control", procApi.ProcessControl, middle.RolePermission(types.RoleAdmin), ProcessWaitCond.WaitTriggerMiddel)
 
 			proConfigGroup := processGroup.Group("/config")
 			{
