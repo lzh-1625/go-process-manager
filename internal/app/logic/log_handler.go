@@ -91,6 +91,12 @@ func (l *LogHandler) worker() {
 		select {
 		case <-l.ctx.Done():
 			return
+		default:
+		}
+
+		select {
+		case <-l.ctx.Done():
+			return
 		case msg := <-l.queue.ReadChan():
 			var pl model.ProcessLog
 			_ = json.Unmarshal(msg, &pl)
