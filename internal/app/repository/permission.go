@@ -6,7 +6,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/query"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
-	"github.com/lzh-1625/go_process_manager/log"
 	"gorm.io/gorm"
 )
 
@@ -22,27 +21,17 @@ type PermissionRepository struct {
 
 func (p *PermissionRepository) GetPermssionList(account string) []model.PermissionPo {
 	result := []model.PermissionPo{}
-	if err := p.query.Permission.UnderlyingDB().Raw(`SELECT
-	p.name ,
-	p.uuid as pid,
-	p2.owned ,
-	p2."start" ,
-	p2.stop ,
-	p2.terminal,
-	p2.log ,
-	p2.write
-FROM
-	users u
-full join process p
-left join permission p2 on
-	p2.account == u.account
-	and p2.pid = p.uuid
-WHERE
-	u.account = ?
-	or u.account ISNULL`, account).Find(&result); err.Error != nil {
-		log.Logger.Warnw("permission query failed", "err", err)
-	}
-
+	proc := p.query.Process
+	perm := p.query.Permission.As("p2")
+	proc.Select(
+		proc.Name,
+		proc.UUID.As("pid"),
+		perm.Owned, perm.Start, perm.Stop,
+		perm.Terminal, perm.Log, perm.Write,
+	).LeftJoin(perm,
+		perm.Account.Eq(account),
+		perm.Pid.EqCol(proc.UUID),
+	).Scan(&result)
 	return result
 }
 
