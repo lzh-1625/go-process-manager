@@ -1,13 +1,14 @@
+@use "sass:meta";
+@use "./variables";
+
 // tailwindcss
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 // enforce font globally
-// @use "vuetify/variables";
-@import "./variables";
-@import 'vuetify/styles';
-@import "./override";
-@import "./common/gradients.scss";
-@import "./common/animation.scss";
-@import "./common/beautify.scss";
+@include meta.load-css("vuetify/styles");
+@include meta.load-css("./override");
+@include meta.load-css("./common/gradients");
+@include meta.load-css("./common/animation");
+@include meta.load-css("./common/beautify");
