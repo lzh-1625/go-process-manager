@@ -51,7 +51,9 @@ func NewRoute(
 	}
 	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			next(c)
+			if err := next(c); err != nil {
+				return err
+			}
 			if resp, err := echo.UnwrapResponse(c.Response()); err == nil && !resp.Committed && !c.IsWebSocket() {
 				return c.JSON(http.StatusOK, model.Response[any]{
 					Code:    0,
