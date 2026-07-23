@@ -145,6 +145,7 @@ import { useI18n } from "vue-i18n";
 import { getShareList, deleteShare } from "~/src/api/share";
 import { getProcessList } from "~/src/api/process";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
+import { copyText } from "~/src/utils/clipboard";
 
 const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
@@ -205,16 +206,15 @@ const getProcessName = (pid) => {
   return process ? process.name : `PID: ${pid}`;
 };
 
-const copyShareLink = (token) => {
+const copyShareLink = async (token) => {
   const shareUrl = `${window.location.origin}/share?token=${token}`;
-  navigator.clipboard.writeText(shareUrl).then(
-    () => {
-      snackbarStore.showSuccessMessage(t("sharePage.copySuccess"));
-    },
-    (err) => {
-      snackbarStore.showErrorMessage(t("sharePage.copyFailed"));
-    }
-  );
+  const copied = await copyText(shareUrl);
+
+  if (copied) {
+    snackbarStore.showSuccessMessage(t("sharePage.copySuccess"));
+  } else {
+    snackbarStore.showErrorMessage(t("sharePage.copyFailed"));
+  }
 };
 
 const deleteItem = (item) => {

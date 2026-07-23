@@ -523,6 +523,12 @@ export default {
     terminalError: "Terminal connection error",
     noShares: "No share links",
   },
+  shareTerminal: {
+    missingToken: "Missing access token",
+    terminalInitFailed: "Terminal container initialization failed",
+    connectionClosed: "Terminal connection closed",
+    connectionError: "Terminal connection error",
+  },
   errorPage: {
     oops: "Oops!!!",
     notFound: "This page you are looking for could not be found.",

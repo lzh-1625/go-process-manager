@@ -512,6 +512,12 @@ export default {
     terminalError: "终端连接发生错误",
     noShares: "暂无分享链接",
   },
+  shareTerminal: {
+    missingToken: "缺少访问令牌",
+    terminalInitFailed: "终端容器初始化失败",
+    connectionClosed: "终端连接已关闭",
+    connectionError: "终端连接发生错误",
+  },
   errorPage: {
     oops: "Opps!!!",
     notFound: "This page you are looking for could not be found.",
