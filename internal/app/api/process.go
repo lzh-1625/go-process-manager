@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
@@ -63,12 +63,13 @@ func (p *ProcApi) DeleteProcess(ctx *echo.Context) error {
 
 func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	var req struct {
-		UUID int `query:"uuid"`
+		UUID    int  `query:"uuid"`
+		SIGKILL bool `query:"sigkill"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationStop) {
+	if !p.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationStop) {
 		return errors.New("not permission")
 	}
 	proc, err := p.processCtlLogic.GetProcess(req.UUID)
@@ -76,6 +77,9 @@ func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 		return err
 	}
 	proc.SetOpertor(getUserName(ctx))
+	if req.SIGKILL {
+		return proc.Kill9()
+	}
 	return proc.Kill()
 }
 
@@ -86,7 +90,7 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !p.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationStart) {
+	if !p.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationStart) {
 		return errors.New("not permission")
 	}
 	prod, err := p.processCtlLogic.GetProcess(req.UUID)
@@ -102,10 +106,10 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 		proc.SetOpertor(getUserName(ctx))
 		return nil
 	}
-	if prod.State.State == eum.ProcessStateStart || prod.State.State == eum.ProcessStateRunning {
+	if prod.State.State == types.ProcessStateStarting || prod.State.State == types.ProcessStateRunning {
 		return errors.New("process is currently running")
 	}
-	prod.ResetRestartTimes()
+	prod.ResetRestartTimes() // Reset the current restart count when the process is started manually.
 	prod.SetOpertor(getUserName(ctx))
 	return prod.Start()
 }

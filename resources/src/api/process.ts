@@ -17,8 +17,8 @@ export function startProcessAll() {
   return api.put("/process/all", {  }).then((res) => res);
 }
 
-export function killProcess(uuid) {
-  return api.delete("/process", { uuid }).then((res) => res);
+export function killProcess(uuid, sigkill = false) {
+  return api.delete("/process", { uuid, sigkill }).then((res) => res);
 }
 
 export function startProcess(uuid) {

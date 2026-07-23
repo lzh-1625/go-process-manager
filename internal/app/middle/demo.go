@@ -8,7 +8,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 )
 
-// 演示模式
+// DemoMiddle enables demo mode.
 func DemoMiddle() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx *echo.Context) error {

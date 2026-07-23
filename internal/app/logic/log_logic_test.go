@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -75,11 +74,7 @@ func req() model.GetLogReq {
 }
 
 func TestSearchLog(t *testing.T) {
-	os.Mkdir("tmp", 0755)
-	config.CF.ConfigDir = "./tmp"
-	t.Cleanup(func() {
-		os.RemoveAll("tmp")
-	})
+	config.CF.ConfigDir = t.TempDir()
 	var bleve = bleve.NewBleveSearch()
 	var sqlite = sqlite.NewSqliteSearch(repository.NewLogRepository(repository.NewQuery(repository.NewDB())))
 	var es = es.NewEsSearch()

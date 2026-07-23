@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/containerd/cgroups/v3 v3.0.4
+	github.com/containerd/console v1.0.5
 	github.com/gorilla/websocket v1.5.1
 	github.com/kardianos/service v1.2.4
 	github.com/labstack/echo/v5 v5.1.1
@@ -13,6 +14,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/vcaesar/gse-bleve v0.40.0
 	go.uber.org/fx v1.24.0
+	golang.org/x/sys v0.43.0
 	golang.org/x/term v0.42.0
 )
 
@@ -108,7 +110,6 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect

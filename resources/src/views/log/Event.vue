@@ -213,6 +213,7 @@ const headers = computed(() => [
 const eventTypes = computed(() => [
   { label: t("eventPage.processStart"), value: "ProcessStart" },
   { label: t("eventPage.processStop"), value: "ProcessStop" },
+  { label: t("eventPage.processConnect"), value: "ProcessConnect" },
   { label: t("eventPage.apiRequest"), value: "ApiRequest" },
   { label: t("eventPage.processWarning"), value: "ProcessWarning" },
   { label: t("eventPage.taskStart"), value: "TaskStart" },

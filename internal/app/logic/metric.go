@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/duke-git/lancet/v2/datetime"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -26,12 +26,13 @@ func NewMetricLogic(processCtlLogic *ProcessCtlLogic, logHandler *LogHandler, IL
 	}
 }
 
+// GetPerformceUsage returns performance metrics for all current processes.
 func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 	pl := m.processCtlLogic.GetProcessList()
 	items := make([]model.PerformceUsageItem, 0, len(pl))
 
 	for _, v := range pl {
-		if v.State.State != eum.ProcessStateRunning {
+		if v.State.State != types.ProcessStateRunning {
 			continue
 		}
 		items = append(items, model.PerformceUsageItem{
@@ -60,6 +61,8 @@ func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 
 }
 
+// GetLogMetric returns recent log statistics.
+// dateType selects the time range: 1 for 7 days, 2 for 6 weeks, and 3 for 6 months.
 func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric) {
 	t := time.Now()
 	switch dateType {

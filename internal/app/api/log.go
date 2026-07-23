@@ -6,10 +6,10 @@ import (
 	"slices"
 
 	"github.com/labstack/echo/v5"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 )
 
 type LogApi struct {
@@ -37,8 +37,8 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 			Code:    0,
 		})
 	} else {
-		processNameList := a.permissionLogic.GetProcessNameByPermission(getUserName(ctx), eum.OperationLog)
-		
+		processNameList := a.permissionLogic.GetProcessNameByPermission(getUserName(ctx), types.OperationLog)
+
 		if len(req.FilterName) == 0 {
 			req.FilterName = processNameList
 		} else {

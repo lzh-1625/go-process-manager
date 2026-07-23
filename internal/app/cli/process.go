@@ -11,8 +11,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
 )
@@ -40,15 +40,17 @@ func (p *ProcessCli) GetList() error {
 		"START TIME",
 	})
 
-	getStateString := func(state eum.ProcessState) string {
+	getStateString := func(state types.ProcessState) string {
 		switch state {
-		case eum.ProcessStateStart:
+		case types.ProcessStateStarting:
 			return "Starting"
-		case eum.ProcessStateRunning:
+		case types.ProcessStateRunning:
 			return "Running"
-		case eum.ProcessStateStop:
+		case types.ProcessStateStopped:
 			return "Stopped"
-		case eum.ProcessStateWarnning:
+		case types.ProcessStateStopping:
+			return "Stopping"
+		case types.ProcessStateWarning:
 			return "Warning"
 		default:
 			return "Unknown"

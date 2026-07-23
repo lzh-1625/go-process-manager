@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
@@ -32,9 +32,10 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		logKv = append(logKv, "Method", c.Request().Method)
 		logKv = append(logKv, "Status", code)
 		logKv = append(logKv, "Path", path)
+		logKv = append(logKv, "IP", c.RealIP())
 		logKv = append(logKv, "time", fmt.Sprintf("%dms", time.Now().UnixMilli()-start.UnixMilli()))
 
-		if user, ok := c.Get(eum.CtxUserName).(string); ok && user != "" {
+		if user, ok := c.Get(types.CtxUserName).(string); ok && user != "" {
 			logKv = append(logKv, "user", user)
 		}
 
@@ -73,14 +74,14 @@ func (e *EventLoggerMiddleware) EventLogger(next echo.HandlerFunc) echo.HandlerF
 			return err
 		}
 
-		user, _ := c.Get(eum.CtxUserName).(string)
+		user, _ := c.Get(types.CtxUserName).(string)
 		if user == "" {
 			return err
 		}
 
 		e.eventLogic.Create(
 			c.Request().Method,
-			eum.EventApiRequest,
+			types.EventApiRequest,
 			"uri", c.Request().URL.Path,
 			"method", c.Request().Method,
 			"user", user,

@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && (!epoll || !linux)
 
 package process
 
@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/creack/pty"
@@ -24,17 +24,16 @@ type ProcessPty struct {
 	pty           *os.File
 }
 
+// Start starts the process.
 func (p *ProcessPty) Start() (err error) {
 	defer func() {
 		if err != nil {
 			p.Config.AutoRestart = false
-			p.SetState(eum.ProcessStateWarnning)
+			p.SetState(types.ProcessStateWarning)
 			p.State.Info = "process start failed: " + err.Error()
 		}
 	}()
-	if ok := p.SetState(eum.ProcessStateStart, func() bool {
-		return p.State.State != eum.ProcessStateStart && p.State.State != eum.ProcessStateRunning
-	}); !ok {
+	if ok := p.SetState(types.ProcessStateStarting); !ok {
 		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}
@@ -54,9 +53,7 @@ func (p *ProcessPty) Start() (err error) {
 	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
 	p.op = cmd.Process
 	p.pInit()
-	if !p.SetState(eum.ProcessStateRunning, func() bool {
-		return p.State.State == eum.ProcessStateStart
-	}) {
+	if !p.SetState(types.ProcessStateRunning) {
 		return errors.New("state abnormal start failed")
 	}
 	p.push("process start success")
@@ -71,7 +68,7 @@ func (p *ProcessPty) pInit() {
 	p.writers = make(map[string]io.WriteCloser)
 	p.Pid = p.op.Pid
 	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
-	p.InitPerformanceStatus()
+	p.initPerformanceStatus()
 	p.initPsutil()
 	p.initCgroup()
 	p.initLogHandler()
@@ -80,6 +77,7 @@ func (p *ProcessPty) pInit() {
 	go p.monitorHandler()
 }
 
+// SetTerminalSize sets the process terminal size.
 func (p *ProcessPty) SetTerminalSize(cols, rows int) {
 	if cols == 0 || rows == 0 || len(p.writers) != 0 {
 		return
@@ -93,13 +91,9 @@ func (p *ProcessPty) SetTerminalSize(cols, rows int) {
 
 }
 
+// WriteBytes writes data to the process terminal.
 func (p *ProcessPty) WriteBytes(input []byte) (err error) {
 	_, err = p.pty.Write(input)
-	return
-}
-
-func (p *ProcessPty) Write(input string) (err error) {
-	_, err = p.pty.Write([]byte(input))
 	return
 }
 
@@ -134,6 +128,8 @@ func (p *ProcessPty) readInit() {
 	}
 }
 
+// ReadCache reads the cached terminal data.
+// The process caches some recent output so that terminal clients can view a portion of its output history.
 func (p *ProcessPty) ReadCache(ws io.WriteCloser) error {
 	if p.cacheBytesBuf == nil {
 		return errors.New("cache is null")
@@ -159,11 +155,8 @@ func (p *ProcessPty) watchDog() {
 	if p.logHandler != nil {
 		p.logHandler.Close()
 	}
-	if !p.SetState(eum.ProcessStateStop, func() bool {
+	if !p.SetState(types.ProcessStateStopped, func() bool {
 		// process is already stopped or warning state, no need to repeat set state
-		if eum.ProcessStateStop == p.State.State || eum.ProcessStateWarnning == p.State.State {
-			return false
-		}
 		close(p.StopChan)
 		p.pty.Close()
 		return true
@@ -193,7 +186,7 @@ func (p *ProcessPty) watchDog() {
 		return
 	}
 	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(eum.ProcessStateWarnning)
+	p.SetState(types.ProcessStateWarning)
 	p.State.Info = "restart times abnormal"
 	p.push("restart times reached limit")
 }

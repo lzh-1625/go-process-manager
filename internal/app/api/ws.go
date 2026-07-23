@@ -10,10 +10,10 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 
 	"github.com/gorilla/websocket"
@@ -62,7 +62,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // 允许所有跨域请求
+		return true // Allow requests from all origins.
 	},
 }
 
@@ -71,7 +71,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if !w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminal) {
+	if !w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminal) {
 		return errors.New("not permission")
 	}
 	reqUser := getUserName(ctx)
@@ -106,10 +106,10 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	if proc.State.State == eum.ProcessStateRunning {
+	if proc.State.State == types.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
-		write := w.permissionApi.hasOprPermission(ctx, req.UUID, eum.OperationTerminalWrite)
-		w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
+		write := w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
+		w.eventLogic.Create(proc.Name, types.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddWriter(reqUser, wci)
 		defer proc.DeleteWriter(reqUser)
@@ -147,7 +147,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if proc.HasWriter(guestName) {
 		return errors.New("connection already exists")
 	}
-	if proc.State.State != eum.ProcessStateRunning {
+	if proc.State.State != types.ProcessStateRunning {
 		return errors.New("process not is running")
 	}
 	if !proc.VerifyControl() {
@@ -178,7 +178,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	w.eventLogic.Create(proc.Name, eum.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
+	w.eventLogic.Create(proc.Name, types.EventProcessConnect, "user", guestName, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddWriter(guestName, wci)
 	defer proc.DeleteWriter(guestName)

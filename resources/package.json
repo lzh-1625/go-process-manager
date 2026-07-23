@@ -1,6 +1,7 @@
 {
   "name": "vuetify3-design",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite --mode dev",
     "build": "vite build --base=/ --mode pro",

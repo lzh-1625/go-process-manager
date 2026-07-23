@@ -1,17 +1,21 @@
-::-webkit-scrollbar {
-  width: 7px;
-  background: rgba(var(--v-theme-primary), 0.24);
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
-::-webkit-scrollbar:horizontal {
-  height: 7px;
-  background: rgba(var(--v-theme-primary, 0.24));
+html::-webkit-scrollbar:horizontal,
+body::-webkit-scrollbar:horizontal {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
-::-webkit-scrollbar-thumb,
-::-webkit-scrollbar-thumb-horizontal {
-  border-radius: 0.5rem;
-  background: rgba(var(--v-theme-primary));
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .shadow-1 {

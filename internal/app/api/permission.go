@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 )
 
 type PermissionApi struct {
@@ -41,7 +41,7 @@ func (p *PermissionApi) GetPermissionList(ctx *echo.Context) error {
 	})
 }
 
-func (p *PermissionApi) hasOprPermission(c *echo.Context, uuid int, op eum.OprPermission) bool {
+func (p *PermissionApi) hasOprPermission(c *echo.Context, uuid int, op types.OprPermission) bool {
 	if isAdmin(c) {
 		return true
 	}
@@ -54,15 +54,15 @@ func (p *PermissionApi) hasOprPermission(c *echo.Context, uuid int, op eum.OprPe
 	}
 
 	switch op {
-	case eum.OperationLog:
+	case types.OperationLog:
 		return per.Log
-	case eum.OperationTerminal:
+	case types.OperationTerminal:
 		return per.Terminal
-	case eum.OperationStart:
+	case types.OperationStart:
 		return per.Start
-	case eum.OperationStop:
+	case types.OperationStop:
 		return per.Stop
-	case eum.OperationTerminalWrite:
+	case types.OperationTerminalWrite:
 		return per.Write
 	default:
 		panic("unknown operation")

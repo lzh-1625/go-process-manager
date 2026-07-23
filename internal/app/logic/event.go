@@ -3,9 +3,9 @@ package logic
 import (
 	"time"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
@@ -20,7 +20,7 @@ func NewEventLogic(eventRepository *repository.EventRepository) *EventLogic {
 	}
 }
 
-func (e *EventLogic) Create(name string, eventType eum.EventType, additionalKv ...string) {
+func (e *EventLogic) Create(name string, eventType types.EventType, additionalKv ...string) {
 	if len(additionalKv)%2 != 0 {
 		log.Logger.Errorw("parameters length error", "args", additionalKv)
 		return

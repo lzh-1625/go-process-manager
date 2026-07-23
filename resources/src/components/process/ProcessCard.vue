@@ -14,9 +14,10 @@ import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
 
 const { t } = useI18n();
-let chartInstance;
+let chartInstance: echarts.ECharts;
 
 const snackbarStore = useSnackbarStore();
+const stopLoading = ref(false);
 const initEChart = () => {
   props.data.usage.cpu = (props.data.usage.cpu ?? [0, 0]).map((num) =>
     parseFloat(num.toFixed(2))
@@ -155,10 +156,17 @@ const handleStart = () => {
 };
 
 const handleStop = () => {
-  killProcess(props.data.uuid).then((e) => {
+  if (stopLoading.value && props.data.state.state !== 4) {
+    return;
+  }
+
+  stopLoading.value = true;
+  killProcess(props.data.uuid, props.data.state.state === 4).then((e) => {
     if (e.code === 0) {
       snackbarStore.showSuccessMessage(t("processCardPage.stopSuccess"));
     }
+  }).finally(() => {
+    stopLoading.value = false;
   });
 };
 
@@ -197,6 +205,59 @@ onUnmounted(() => {
 const props = defineProps<{
   data: ProcessItem;
 }>();
+
+const controlNow = ref(Date.now());
+let controlExpiryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearControlExpiryTimer = () => {
+  if (controlExpiryTimer) {
+    clearTimeout(controlExpiryTimer);
+    controlExpiryTimer = null;
+  }
+};
+
+const scheduleControlExpiry = () => {
+  clearControlExpiryTimer();
+  controlNow.value = Date.now();
+
+  const expiresAt = Date.parse(props.data.controlExpiredTime);
+  if (!props.data.controller || !Number.isFinite(expiresAt)) {
+    return;
+  }
+
+  const delay = expiresAt - controlNow.value;
+  if (delay <= 0) {
+    return;
+  }
+
+  controlExpiryTimer = setTimeout(() => {
+    controlNow.value = Date.now();
+    controlExpiryTimer = null;
+  }, delay + 1);
+};
+
+watch(
+  [() => props.data.controller, () => props.data.controlExpiredTime],
+  scheduleControlExpiry,
+  { immediate: true }
+);
+
+onUnmounted(clearControlExpiryTimer);
+
+const hasValidController = computed(() => {
+  const expiresAt = Date.parse(props.data.controlExpiredTime);
+  return (
+    !!props.data.controller &&
+    Number.isFinite(expiresAt) &&
+    expiresAt > controlNow.value
+  );
+});
+
+const controlledByOther = computed(
+  () =>
+    hasValidController.value &&
+    props.data.controller !== localStorage.getItem("name")
+);
 
 const control = () => {
   getContorl(props.data.uuid).then((e) => {
@@ -281,6 +342,15 @@ const copyToken = () => {
         >
           mdi-stop-circle</v-icon
         >
+        <v-icon
+          v-if="props.data.state.state == 4"
+          color="orange"
+          class="mdi-spin"
+          x-large
+          style="float: left"
+        >
+          mdi-loading
+        </v-icon>
         <v-tooltip
           v-if="props.data.state.state == 2"
           location="top"
@@ -302,6 +372,15 @@ const copyToken = () => {
           <v-icon size="small" class="mr-1">mdi-account</v-icon>
           {{ props.data.user }}
         </span>
+        <v-chip
+          v-if="hasValidController"
+          color="warning"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-account-lock"
+        >
+          {{ props.data.controller }}
+        </v-chip>
       </div>
       <div class="top-right" v-permission="1">
         <v-menu bottom left>
@@ -334,13 +413,24 @@ const copyToken = () => {
       <div class="bottom-left">
         <v-chip size="small" variant="outlined" class="d-flex align-center">
           <!-- 终端按钮 -->
-          <v-btn
-            @click="terminalComponent?.wsConnect()"
-            size="small"
-            icon="mdi-console"
-            variant="text"
-            density="comfortable"
-          />
+          <v-tooltip
+            location="top"
+            :disabled="!controlledByOther"
+            :text="$t('processCardPage.terminalControlledBy', { controller: props.data.controller })"
+          >
+            <template v-slot:activator="{ props: tooltipProps }">
+              <span v-bind="tooltipProps">
+                <v-btn
+                  @click="terminalComponent?.wsConnect()"
+                  size="small"
+                  icon="mdi-console"
+                  variant="text"
+                  density="comfortable"
+                  :disabled="controlledByOther"
+                />
+              </span>
+            </template>
+          </v-tooltip>
           <!-- 启动按钮 -->
           <v-btn
             @click="handleStart"
@@ -356,6 +446,9 @@ const copyToken = () => {
             icon="mdi-stop"
             variant="text"
             density="comfortable"
+            :color="props.data.state.state === 4 ? 'red' : undefined"
+            :loading="stopLoading && props.data.state.state !== 4"
+            :disabled="stopLoading && props.data.state.state !== 4"
           />
           <!-- 编辑按钮 -->
           <v-btn

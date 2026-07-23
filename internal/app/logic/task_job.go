@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/robfig/cron/v3"
 )
@@ -37,7 +37,7 @@ func NewTaskJob(data *model.Task, eventLogic *EventLogic, processCtlLogic *Proce
 		taskLogic:       taskLogic,
 	}
 	if data.Enable {
-		if err := tj.InitCronHandle(); err != nil {
+		if err := tj.initCronHandle(); err != nil {
 			log.Logger.Warnw("cron task start failed", "err", err, "task", data.ID)
 		}
 	}
@@ -46,20 +46,20 @@ func NewTaskJob(data *model.Task, eventLogic *EventLogic, processCtlLogic *Proce
 
 func (t *TaskJob) Run(ctx context.Context) (err error) {
 	logger := log.Logger.With("taskID", t.TaskConfig.ID)
-	if ctx.Value(eum.CtxTaskTraceID{}) == nil {
-		ctx = context.WithValue(ctx, eum.CtxTaskTraceID{}, uuid.NewString())
+	if ctx.Value(types.CtxTaskTraceID{}) == nil {
+		ctx = context.WithValue(ctx, types.CtxTaskTraceID{}, uuid.NewString())
 	}
-	t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStart, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
+	t.eventLogic.Create(t.TaskConfig.Name, types.EventTaskStart, "traceID", ctx.Value(types.CtxTaskTraceID{}).(string))
 	defer func() {
-		t.eventLogic.Create(t.TaskConfig.Name, eum.EventTaskStop, "traceID", ctx.Value(eum.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
+		t.eventLogic.Create(t.TaskConfig.Name, types.EventTaskStop, "traceID", ctx.Value(types.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
 	}()
-	logger = logger.With("traceID", ctx.Value(eum.CtxTaskTraceID{}).(string))
+	logger = logger.With("traceID", ctx.Value(types.CtxTaskTraceID{}).(string))
 	t.Running = true
 	t.StartTime = time.Now()
-	TaskWaitCond.Trigger()
+	TaskWaitCond().Trigger()
 	defer func() {
 		t.Running = false
-		TaskWaitCond.Trigger()
+		TaskWaitCond().Trigger()
 	}()
 
 	proc, err := t.processCtlLogic.GetProcess(t.TaskConfig.OperationTarget)
@@ -70,7 +70,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 
 	var ok bool
 	// check if the condition is satisfied
-	if t.TaskConfig.Condition == eum.TaskCondPass || t.TaskConfig.ProcessID == 0 {
+	if t.TaskConfig.Condition == types.TaskCondPass || t.TaskConfig.ProcessID == 0 {
 		ok = true
 	} else {
 		ok = conditionHandle[t.TaskConfig.Condition](t.TaskConfig, proc)
@@ -114,7 +114,7 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	return
 }
 
-func (t *TaskJob) InitCronHandle() error {
+func (t *TaskJob) initCronHandle() error {
 	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron expression validation
 		log.Logger.Errorw("cron parse failed", "cron", t.TaskConfig.CronExpression, "err", err)
 		return err
@@ -145,7 +145,7 @@ func (t *TaskJob) EditStatus(status bool) error {
 		t.Cron.Stop()
 	}
 	if status { // start cron
-		if err := t.InitCronHandle(); err != nil {
+		if err := t.initCronHandle(); err != nil {
 			return err
 		}
 	}
@@ -154,26 +154,26 @@ func (t *TaskJob) EditStatus(status bool) error {
 
 type conditionFunc func(data *model.Task, proc *process.ProcessPty) bool
 
-var conditionHandle = map[eum.Condition]conditionFunc{
-	eum.TaskCondRunning: func(data *model.Task, proc *process.ProcessPty) bool {
-		return proc.State.State == eum.ProcessStateRunning
+var conditionHandle = map[types.Condition]conditionFunc{
+	types.TaskCondRunning: func(data *model.Task, proc *process.ProcessPty) bool {
+		return proc.State.State == types.ProcessStateRunning
 	},
-	eum.TaskCondNotRunning: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskCondNotRunning: func(data *model.Task, proc *process.ProcessPty) bool {
 		state := proc.State.State
-		return state != eum.ProcessStateRunning && state != eum.ProcessStateStart
+		return state != types.ProcessStateRunning && state != types.ProcessStateStarting
 	},
-	eum.TaskCondException: func(data *model.Task, proc *process.ProcessPty) bool {
-		return proc.State.State == eum.ProcessStateWarnning
+	types.TaskCondException: func(data *model.Task, proc *process.ProcessPty) bool {
+		return proc.State.State == types.ProcessStateWarning
 	},
 }
 
 // execute operation, return result whether successfully
 type operationFunc func(*model.Task, *process.ProcessPty) bool
 
-var operationHandle = map[eum.TaskOperation]operationFunc{
-	eum.TaskStart: func(data *model.Task, proc *process.ProcessPty) bool {
+var operationHandle = map[types.TaskOperation]operationFunc{
+	types.TaskStart: func(data *model.Task, proc *process.ProcessPty) bool {
 		state := proc.State.State
-		if state == eum.ProcessStateRunning || state == eum.ProcessStateStart {
+		if state == types.ProcessStateRunning || state == types.ProcessStateStarting {
 			log.Logger.Debugw("process is running", "proc", proc.Name)
 			return false
 		}
@@ -181,9 +181,9 @@ var operationHandle = map[eum.TaskOperation]operationFunc{
 		return true
 	},
 
-	eum.TaskStartWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskStartWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
 		state := proc.State.State
-		if state == eum.ProcessStateRunning || state == eum.ProcessStateStart {
+		if state == types.ProcessStateRunning || state == types.ProcessStateStarting {
 			log.Logger.Debugw("process is running", "proc", proc.Name)
 			return false
 		}
@@ -201,8 +201,8 @@ var operationHandle = map[eum.TaskOperation]operationFunc{
 		}
 	},
 
-	eum.TaskStop: func(data *model.Task, proc *process.ProcessPty) bool {
-		if proc.State.State != eum.ProcessStateRunning {
+	types.TaskStop: func(data *model.Task, proc *process.ProcessPty) bool {
+		if proc.State.State != types.ProcessStateRunning {
 			log.Logger.Debugw("process is not running", "proc", proc.Name)
 			return false
 		}
@@ -211,8 +211,8 @@ var operationHandle = map[eum.TaskOperation]operationFunc{
 		return true
 	},
 
-	eum.TaskStopWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
-		if proc.State.State != eum.ProcessStateRunning {
+	types.TaskStopWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
+		if proc.State.State != types.ProcessStateRunning {
 			log.Logger.Debugw("process is not running", "proc", proc.Name)
 			return false
 		}

@@ -22,10 +22,12 @@ func NewWaitCond(wc *logic.WaitCond) *WaitCondMiddle {
 	}
 }
 
+// Trigger broadcasts an event.
 func (p *WaitCondMiddle) Trigger() {
 	p.wc.Trigger()
 }
 
+// WaitGetMiddel blocks the request until an event is broadcast or the request times out.
 func (p *WaitCondMiddle) WaitGetMiddel(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		version, err := strconv.ParseInt(c.Request().Header.Get("Version"), 10, 64)
@@ -45,6 +47,7 @@ func (p *WaitCondMiddle) WaitGetMiddel(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+// WaitTriggerMiddel broadcasts an event after the request completes.
 func (p *WaitCondMiddle) WaitTriggerMiddel(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		defer p.Trigger()

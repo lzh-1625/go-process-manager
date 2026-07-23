@@ -3,8 +3,8 @@ package cli
 import (
 	"os"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -14,15 +14,15 @@ func NewUserCli() *UserCli {
 	return &UserCli{}
 }
 
-func getRoleString(role eum.Role) string {
+func getRoleString(role types.Role) string {
 	switch role {
-	case eum.RoleRoot:
+	case types.RoleRoot:
 		return "Root"
-	case eum.RoleAdmin:
+	case types.RoleAdmin:
 		return "Admin"
-	case eum.RoleUser:
+	case types.RoleUser:
 		return "User"
-	case eum.RoleGuest:
+	case types.RoleGuest:
 		return "Guest"
 	default:
 		return "Unknown"

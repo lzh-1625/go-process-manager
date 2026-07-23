@@ -11,10 +11,10 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/api"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/middle"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/resources"
 )
@@ -51,7 +51,9 @@ func NewRoute(
 	}
 	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			next(c)
+			if err := next(c); err != nil {
+				return err
+			}
 			if resp, err := echo.UnwrapResponse(c.Response()); err == nil && !resp.Committed && !c.IsWebSocket() {
 				return c.JSON(http.StatusOK, model.Response[any]{
 					Code:    0,
@@ -85,8 +87,8 @@ func NewRoute(
 	}
 	r.Use(loggerMiddleware.EventLogger)
 
-	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond)
-	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond)
+	ProcessWaitCond := middle.NewWaitCond(logic.ProcessWaitCond())
+	TaskWaitCond := middle.NewWaitCond(logic.TaskWaitCond())
 
 	apiGroup := r.Group("/api")
 	apiGroup.Use(authMiddleware.Auth)
@@ -95,8 +97,8 @@ func NewRoute(
 		{
 			wsGroup.GET("", wsApi.WebsocketHandle)
 			wsGroup.GET("/share", wsApi.WebsocketShareHandle)
-			wsGroup.GET("/token/list", wsApi.GetWsShareList, middle.RolePermission(eum.RoleAdmin))
-			wsGroup.DELETE("/token", wsApi.DeleteWsShareByID, middle.RolePermission(eum.RoleAdmin))
+			wsGroup.GET("/token/list", wsApi.GetWsShareList, middle.RolePermission(types.RoleAdmin))
+			wsGroup.DELETE("/token", wsApi.DeleteWsShareByID, middle.RolePermission(types.RoleAdmin))
 		}
 
 		processGroup := apiGroup.Group("/process")
@@ -107,42 +109,42 @@ func NewRoute(
 			processGroup.PUT("", procApi.StartProcess)
 			processGroup.PUT("/all", procApi.StartAllProcess)
 			processGroup.DELETE("/all", procApi.KillAllProcess)
-			processGroup.POST("/share", procApi.ProcessCreateShare, middle.RolePermission(eum.RoleAdmin))
-			processGroup.GET("/control", procApi.ProcessControl, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+			processGroup.POST("/share", procApi.ProcessCreateShare, middle.RolePermission(types.RoleAdmin))
+			processGroup.GET("/control", procApi.ProcessControl, middle.RolePermission(types.RoleAdmin), ProcessWaitCond.WaitTriggerMiddel)
 
 			proConfigGroup := processGroup.Group("/config")
 			{
-				proConfigGroup.POST("", procApi.CreateProcess, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
-				proConfigGroup.DELETE("", procApi.DeleteProcess, middle.RolePermission(eum.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
-				proConfigGroup.PUT("", procApi.UpdateProcessConfig, middle.RolePermission(eum.RoleRoot))
-				proConfigGroup.GET("", procApi.GetProcessConfig, middle.RolePermission(eum.RoleAdmin))
+				proConfigGroup.POST("", procApi.CreateProcess, middle.RolePermission(types.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+				proConfigGroup.DELETE("", procApi.DeleteProcess, middle.RolePermission(types.RoleRoot), ProcessWaitCond.WaitTriggerMiddel)
+				proConfigGroup.PUT("", procApi.UpdateProcessConfig, middle.RolePermission(types.RoleRoot))
+				proConfigGroup.GET("", procApi.GetProcessConfig, middle.RolePermission(types.RoleAdmin))
 			}
 		}
 
 		taskGroup := apiGroup.Group("/task")
 		{
-			taskGroup.GET("", taskApi.GetTaskByID, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/all", taskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/all/wait", taskApi.GetTaskList, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitGetMiddel)
-			taskGroup.POST("", taskApi.CreateTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.DELETE("", taskApi.DeleteTaskByID, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.PUT("", taskApi.EditTask, middle.RolePermission(eum.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
-			taskGroup.GET("/start", taskApi.StartTask, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.GET("/stop", taskApi.StopTask, middle.RolePermission(eum.RoleAdmin))
-			taskGroup.POST("/key", taskApi.CreateTaskApiKey, middle.RolePermission(eum.RoleAdmin))
+			taskGroup.GET("", taskApi.GetTaskByID, middle.RolePermission(types.RoleAdmin))
+			taskGroup.GET("/all", taskApi.GetTaskList, middle.RolePermission(types.RoleAdmin))
+			taskGroup.GET("/all/wait", taskApi.GetTaskList, middle.RolePermission(types.RoleAdmin), TaskWaitCond.WaitGetMiddel)
+			taskGroup.POST("", taskApi.CreateTask, middle.RolePermission(types.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.DELETE("", taskApi.DeleteTaskByID, middle.RolePermission(types.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.PUT("", taskApi.EditTask, middle.RolePermission(types.RoleAdmin), TaskWaitCond.WaitTriggerMiddel)
+			taskGroup.GET("/start", taskApi.StartTask, middle.RolePermission(types.RoleAdmin))
+			taskGroup.GET("/stop", taskApi.StopTask, middle.RolePermission(types.RoleAdmin))
+			taskGroup.POST("/key", taskApi.CreateTaskApiKey, middle.RolePermission(types.RoleAdmin))
 			taskGroup.GET("/api-key/:key", taskApi.RunTaskByKey)
 		}
 
 		userGroup := apiGroup.Group("/user")
 		{
 			userGroup.POST("/login", userApi.LoginHandler)
-			userGroup.POST("", userApi.CreateUser, middle.RolePermission(eum.RoleRoot))
-			userGroup.PUT("", userApi.EditUser, middle.RolePermission(eum.RoleUser))
-			userGroup.DELETE("", userApi.DeleteUser, middle.RolePermission(eum.RoleRoot))
-			userGroup.GET("", userApi.GetUserList, middle.RolePermission(eum.RoleRoot))
+			userGroup.POST("", userApi.CreateUser, middle.RolePermission(types.RoleRoot))
+			userGroup.PUT("", userApi.EditUser, middle.RolePermission(types.RoleUser))
+			userGroup.DELETE("", userApi.DeleteUser, middle.RolePermission(types.RoleRoot))
+			userGroup.GET("", userApi.GetUserList, middle.RolePermission(types.RoleRoot))
 		}
 
-		pushGroup := apiGroup.Group("/push", middle.RolePermission(eum.RoleAdmin))
+		pushGroup := apiGroup.Group("/push", middle.RolePermission(types.RoleAdmin))
 		{
 			pushGroup.GET("/list", pushApi.GetPushList)
 			pushGroup.GET("", pushApi.GetPushByID)
@@ -151,30 +153,30 @@ func NewRoute(
 			pushGroup.DELETE("", pushApi.DeletePushConfig)
 		}
 
-		eventGroup := apiGroup.Group("/event", middle.RolePermission(eum.RoleAdmin))
+		eventGroup := apiGroup.Group("/event", middle.RolePermission(types.RoleAdmin))
 		{
 			eventGroup.GET("", eventApi.GetEventList)
 		}
 
-		permissionGroup := apiGroup.Group("/permission", middle.RolePermission(eum.RoleRoot))
+		permissionGroup := apiGroup.Group("/permission", middle.RolePermission(types.RoleRoot))
 		{
 			permissionGroup.GET("/list", permissionApi.GetPermissionList)
 			permissionGroup.PUT("", permissionApi.EditPermssion, ProcessWaitCond.WaitTriggerMiddel)
 		}
 
-		logGroup := apiGroup.Group("/log", middle.RolePermission(eum.RoleUser))
+		logGroup := apiGroup.Group("/log", middle.RolePermission(types.RoleUser))
 		{
 			logGroup.POST("", logApi.GetLog)
 			logGroup.GET("/running", logApi.GetRunningLog)
 		}
 
-		configGroup := apiGroup.Group("/config", middle.RolePermission(eum.RoleRoot))
+		configGroup := apiGroup.Group("/config", middle.RolePermission(types.RoleRoot))
 		{
 			configGroup.GET("", configApi.GetSystemConfiguration)
 			configGroup.PUT("", configApi.SetSystemConfiguration)
 			configGroup.PUT("/reload", configApi.LogConfigReload)
 		}
-		metricGroup := apiGroup.Group("/metric", middle.RolePermission(eum.RoleAdmin))
+		metricGroup := apiGroup.Group("/metric", middle.RolePermission(types.RoleAdmin))
 		{
 			metricGroup.GET("/log", metricApi.GetLogicStatsticMetric)
 			metricGroup.GET("/performce", metricApi.GetPerformceUsage)

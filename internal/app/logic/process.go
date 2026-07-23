@@ -12,10 +12,10 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/eum"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/shirou/gopsutil/mem"
@@ -28,8 +28,10 @@ type ProcessCtlLogic struct {
 	eventLogic           *EventLogic
 	pushLogic            *PushLogic
 	logHandler           *LogHandler
-	eventBus             *EventBus
+	processStateHandler  ProcessStateHandler
 }
+
+type ProcessStateHandler func(processName string, state types.ProcessState)
 
 func NewProcessCtlLogic(
 	processRepository *repository.ProcessRepository,
@@ -37,7 +39,6 @@ func NewProcessCtlLogic(
 	eventLogic *EventLogic,
 	pushLogic *PushLogic,
 	logHandler *LogHandler,
-	eventBus *EventBus,
 ) *ProcessCtlLogic {
 	return &ProcessCtlLogic{
 		processMap:           sync.Map{},
@@ -46,14 +47,18 @@ func NewProcessCtlLogic(
 		eventLogic:           eventLogic,
 		pushLogic:            pushLogic,
 		logHandler:           logHandler,
-		eventBus:             eventBus,
 	}
 }
+
+func (p *ProcessCtlLogic) SetProcessStateHandler(handler ProcessStateHandler) {
+	p.processStateHandler = handler
+}
+
 func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
 	p.processMap.Store(uuid, proc)
 }
 
-func (p *ProcessCtlLogic) KillProcess(uuid int) error {
+func (p *ProcessCtlLogic) KillProcess(uuid int, wait bool) error {
 	value, ok := p.processMap.Load(uuid)
 	if !ok {
 		return errors.New("process not exist")
@@ -62,7 +67,10 @@ func (p *ProcessCtlLogic) KillProcess(uuid int) error {
 	if !ok {
 		return errors.New("process type error")
 	}
-	return result.Kill()
+	if wait {
+		return result.Kill()
+	}
+	return result.Kill9()
 }
 
 func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.ProcessPty, error) {
@@ -91,7 +99,7 @@ func (p *ProcessCtlLogic) KillAllProcess() {
 }
 
 func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
-	stopPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, eum.OperationStop)
+	stopPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStop)
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*process.ProcessPty)
@@ -107,7 +115,7 @@ func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
 }
 
 func (p *ProcessCtlLogic) DeleteProcess(uuid int) error {
-	p.KillProcess(uuid)
+	p.KillProcess(uuid, true)
 	p.processMap.Delete(uuid)
 	return p.processRepository.DeleteProcessConfig(uuid)
 }
@@ -133,8 +141,10 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		if err != nil {
 			continue
 		}
-
-		// 使用 Info() 方法获取进程信息快照
+		if !process.VerifyControl() {
+			pi.Controller = process.Control.Controller
+			pi.ControlExpiredTime = process.Control.ControlExpiredTime
+		}
 		pi.State.Info = process.State.Info
 		pi.State.State = process.State.State
 		pi.StartTime = process.State.StartTime.Format(time.DateTime)
@@ -143,7 +153,16 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		pi.Usage.Mem = process.PerformanceStatus.Mem
 		pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
 		pi.Usage.MemCapacity = float64(utils.UnwarpIgnore(mem.VirtualMemory()).Total >> 10)
-		pi.Usage.Time = process.PerformanceStatus.Time
+		for _, v := range process.PerformanceStatus.Time {
+			pi.Usage.Time = append(pi.Usage.Time, v.Format(time.DateTime))
+		}
+
+		// real-time performance information
+		if c, m, err := process.GetPerformanceInfo(); err == nil {
+			pi.Usage.Cpu = append(pi.Usage.Cpu, c)
+			pi.Usage.Mem = append(pi.Usage.Mem, m)
+			pi.Usage.Time = append(pi.Usage.Time, time.Now().Format(time.DateTime))
+		}
 		pi.CgroupEnable = process.Config.CgroupEnable
 		pi.CpuLimit = process.Config.CpuLimit
 		pi.MemoryLimit = process.Config.MemoryLimit
@@ -180,7 +199,7 @@ func (p *ProcessCtlLogic) ProcessInit() {
 }
 
 func (p *ProcessCtlLogic) ProcesStartAllByUsername(userName string) {
-	startPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, eum.OperationStart)
+	startPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*process.ProcessPty)
 		if !slices.Contains(startPermissionProcess, process.Name) {
@@ -250,10 +269,10 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
 	return process.NewProcessPty(cf,
 		process.SetAddWriterHook(func(p *process.ProcessBase, user string, c io.WriteCloser) {
-			ProcessWaitCond.Trigger()
+			ProcessWaitCond().Trigger()
 		}),
 		process.SetDelWriterHook(func(p *process.ProcessBase, user string) {
-			ProcessWaitCond.Trigger()
+			ProcessWaitCond().Trigger()
 		}),
 		process.SetLogHandler(config.CF.LogReportOptimization, func(proc *process.ProcessBase, log []byte) {
 			logStr := string(log)
@@ -270,29 +289,28 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
 			p.pushLogic.Push(pushIDs, messagePlaceholders)
 		}),
-		process.SetStateHook(func(proc *process.ProcessBase, state eum.ProcessState) {
-			ProcessWaitCond.Trigger()
+		process.SetStateHook(func(proc *process.ProcessBase, state types.ProcessState) {
+			ProcessWaitCond().Trigger()
 			p.createEvent(proc, state)
-			p.eventBus.Publish(Event{
-				Proc:  proc,
-				State: state,
-			})
+			if p.processStateHandler != nil {
+				go p.processStateHandler(proc.Name, state)
+			}
 		}),
 	)
 }
 
-func (p *ProcessCtlLogic) createEvent(proc *process.ProcessBase, state eum.ProcessState) {
-	var eventType eum.EventType
+func (p *ProcessCtlLogic) createEvent(proc *process.ProcessBase, state types.ProcessState) {
+	var eventType types.EventType
 	kv := []string{}
 	switch state {
-	case eum.ProcessStateRunning:
-		eventType = eum.EventProcessStart
+	case types.ProcessStateRunning:
+		eventType = types.EventProcessStart
 		kv = append(kv, "restartTimes", strconv.Itoa(proc.State.RestartTimes))
-	case eum.ProcessStateStop:
-		eventType = eum.EventProcessStop
+	case types.ProcessStateStopped:
+		eventType = types.EventProcessStop
 		kv = append(kv, "startTime", proc.State.StartTime.Format(time.DateTime))
-	case eum.ProcessStateWarnning:
-		eventType = eum.EventProcessWarning
+	case types.ProcessStateWarning:
+		eventType = types.EventProcessWarning
 		kv = append(kv, "reason", proc.State.Info, "startTime", proc.State.StartTime.Format(time.DateTime))
 	default:
 		return

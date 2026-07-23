@@ -329,6 +329,7 @@ export default {
     terminalInitFailed: "Terminal container initialization failed",
     terminalDisconnected: "Terminal connection closed",
     terminalError: "Terminal connection error",
+    terminalControlledBy: "Terminal is controlled by {controller}",
   },
   logPage: {
     highLight: "High Light",
@@ -521,6 +522,12 @@ export default {
     terminalDisconnected: "Terminal connection disconnected",
     terminalError: "Terminal connection error",
     noShares: "No share links",
+  },
+  shareTerminal: {
+    missingToken: "Missing access token",
+    terminalInitFailed: "Terminal container initialization failed",
+    connectionClosed: "Terminal connection closed",
+    connectionError: "Terminal connection error",
   },
   errorPage: {
     oops: "Oops!!!",
