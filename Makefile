@@ -5,6 +5,7 @@ BINARY_NAME ?= gpm
 VERSION ?= $(shell date +%Y%m%d%H%M)
 
 SLIM ?= false # slim cannot support bleve
+EPOLL ?= false
 
 CMD_DIR := ./cmd/go_process_manager
 
@@ -12,8 +13,20 @@ LDFLAGS := -s -w -X main.Version=$(VERSION)
 
 BUILD_FLAGS := -trimpath
 
+BUILD_TAGS :=
+
 ifeq ($(SLIM),true)
-	TAGS := -tags="slim"
+	BUILD_TAGS += slim
+endif
+
+ifeq ($(EPOLL),true)
+ifeq ($(GOOS),linux)
+	BUILD_TAGS += epoll
+endif
+endif
+
+ifneq ($(strip $(BUILD_TAGS)),)
+	TAGS := -tags="$(BUILD_TAGS)"
 endif
 
 .PHONY: build clean
