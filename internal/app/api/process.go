@@ -41,7 +41,7 @@ func (p *ProcApi) CreateProcess(ctx *echo.Context) error {
 	}
 	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
 		Data: map[string]any{
-			"id": proc.UUID,
+			"uuid": proc.UUID,
 		},
 		Message: "success",
 		Code:    0,

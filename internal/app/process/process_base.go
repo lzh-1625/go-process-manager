@@ -386,6 +386,7 @@ func SetPushHandle(fn func(p *ProcessBase, pushIDs []int64, messagePlaceholders 
 func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty {
 	p := &ProcessPty{
 		ProcessBase: &ProcessBase{
+			UUID:         pconfig.UUID,
 			Name:         pconfig.Name,
 			StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
 			WorkDir:      pconfig.Cwd,
