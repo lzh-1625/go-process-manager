@@ -2,9 +2,12 @@ package process
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,7 +25,13 @@ import (
 	pu "github.com/shirou/gopsutil/process"
 )
 
-type ProcessBase struct {
+type ptyInterface interface {
+	io.ReadWriteCloser
+	SetSize(cols, rows int) error
+	Wait()
+}
+
+type Process struct {
 	UUID         int
 	op           *os.Process
 	Name         string
@@ -47,7 +56,7 @@ type ProcessBase struct {
 		MemoryLimit       *float32
 		CpuLimit          *float32
 		logHandlerPipe    bool
-		logHandlerFn      func(p *ProcessBase, log []byte)
+		logHandlerFn      func(p *Process, log []byte)
 	}
 	State struct {
 		StartTime      time.Time
@@ -74,23 +83,41 @@ type ProcessBase struct {
 		user atomic.Pointer[string]
 		time time.Time
 	}
+	cacheBytesBuf *bytes.Buffer
+	pty           ptyInterface
 
 	logHandler    io.WriteCloser
-	stateHook     func(p *ProcessBase, state types.ProcessState)
-	addWriterHook func(p *ProcessBase, user string, c io.WriteCloser)
-	delWriterHook func(p *ProcessBase, user string)
-	pushHandle    func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)
+	stateHook     func(p *Process, state types.ProcessState)
+	addWriterHook func(p *Process, user string, c io.WriteCloser)
+	delWriterHook func(p *Process, user string)
+	pushHandle    func(p *Process, pushIDs []int64, messagePlaceholders map[string]string)
 }
 
 // SetOpertor sets the current process operator for a limited time.
-func (p *ProcessBase) SetOpertor(operator string) {
+func (p *Process) SetOpertor(operator string) {
 	if p.operate.user.CompareAndSwap(nil, &operator) {
 		p.operate.time = time.Now()
 	}
 }
 
+func (p *Process) bufHandle(b []byte) {
+	p.logReportHandler(b)
+	p.cacheBytesBuf.Write(b)
+	p.cacheBytesBuf.Next(len(b))
+}
+
+// ReadCache reads the cached terminal data.
+// The process caches some recent output so that terminal clients can view a portion of its output history.
+func (p *Process) ReadCache(ws io.WriteCloser) error {
+	if p.cacheBytesBuf == nil {
+		return errors.New("cache is null")
+	}
+	_, err := ws.Write(p.cacheBytesBuf.Bytes())
+	return err
+}
+
 // GetOpertor returns the current operator name and clears it.
-func (p *ProcessBase) GetOpertor() string {
+func (p *Process) GetOpertor() string {
 	s := p.operate.user.Swap(nil)
 	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) || s == nil {
 		return ""
@@ -100,7 +127,7 @@ func (p *ProcessBase) GetOpertor() string {
 
 // fn function execution successfully, set state
 // The process state cannot change while fn is running.
-func (p *ProcessBase) SetState(state types.ProcessState, fn ...func() bool) bool {
+func (p *Process) SetState(state types.ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
 	if !p.checkStateChange(p.State.State, state) {
@@ -118,7 +145,7 @@ func (p *ProcessBase) SetState(state types.ProcessState, fn ...func() bool) bool
 	return true
 }
 
-func (p *ProcessBase) checkStateChange(old, new types.ProcessState) bool {
+func (p *Process) checkStateChange(old, new types.ProcessState) bool {
 	switch old {
 	case types.ProcessStateStarting:
 		return new == types.ProcessStateRunning || new == types.ProcessStateWarning
@@ -134,12 +161,12 @@ func (p *ProcessBase) checkStateChange(old, new types.ProcessState) bool {
 }
 
 // GetUserString returns the formatted list of terminal users for the current process.
-func (p *ProcessBase) GetUserString() string {
+func (p *Process) GetUserString() string {
 	return strings.Join(p.GetUserList(), ";")
 }
 
 // GetUserList returns the terminal users for the current process.
-func (p *ProcessBase) GetUserList() []string {
+func (p *Process) GetUserList() []string {
 	p.wlock.RLock()
 	defer p.wlock.RUnlock()
 	userList := make([]string, 0, len(p.writers))
@@ -150,14 +177,14 @@ func (p *ProcessBase) GetUserList() []string {
 }
 
 // HasWriter reports whether the current terminal has the specified writer.
-func (p *ProcessBase) HasWriter(userName string) bool {
+func (p *Process) HasWriter(userName string) bool {
 	p.wlock.RLock()
 	defer p.wlock.RUnlock()
 	return p.writers[userName] != nil
 }
 
 // AddWriter adds a terminal writer.
-func (p *ProcessBase) AddWriter(user string, c io.WriteCloser) {
+func (p *Process) AddWriter(user string, c io.WriteCloser) {
 	p.wlock.Lock()
 	defer p.wlock.Unlock()
 
@@ -173,7 +200,7 @@ func (p *ProcessBase) AddWriter(user string, c io.WriteCloser) {
 }
 
 // DeleteWriter removes a terminal writer.
-func (p *ProcessBase) DeleteWriter(user string) {
+func (p *Process) DeleteWriter(user string) {
 	p.wlock.Lock()
 	defer p.wlock.Unlock()
 	delete(p.writers, user)
@@ -182,7 +209,7 @@ func (p *ProcessBase) DeleteWriter(user string) {
 	}
 }
 
-func (p *ProcessBase) logReportHandler(log []byte) {
+func (p *Process) logReportHandler(log []byte) {
 	if p.Config.LogReport && p.logHandler != nil {
 		p.logHandler.Write(log)
 	}
@@ -190,7 +217,7 @@ func (p *ProcessBase) logReportHandler(log []byte) {
 
 // ProcessControl disconnects all current users and makes the specified user the controller.
 // Other users cannot operate the process terminal, and control is released automatically after a timeout.
-func (p *ProcessBase) ProcessControl(name string) {
+func (p *Process) ProcessControl(name string) {
 	p.Control.ControlExpiredTime = time.Now().Add(time.Second * time.Duration(config.CF.ProcessControlExpireTime))
 	p.Control.Controller = name
 	for _, ws := range p.writers {
@@ -199,11 +226,11 @@ func (p *ProcessBase) ProcessControl(name string) {
 }
 
 // not being controlled or control time expired
-func (p *ProcessBase) VerifyControl() bool {
+func (p *Process) VerifyControl() bool {
 	return p.Control.Controller == "" || time.Now().After(p.Control.ControlExpiredTime)
 }
 
-func (p *ProcessBase) setProcessConfig(pconfig model.Process) {
+func (p *Process) setProcessConfig(pconfig model.Process) {
 	p.Config.AutoRestart = pconfig.AutoRestart
 	p.Config.LogReport = pconfig.LogReport
 	p.Config.PushIDs = utils.JsonStrToStruct[[]int64](pconfig.PushIDs)
@@ -214,11 +241,11 @@ func (p *ProcessBase) setProcessConfig(pconfig model.Process) {
 }
 
 // ResetRestartTimes resets the restart count.
-func (p *ProcessBase) ResetRestartTimes() {
+func (p *Process) ResetRestartTimes() {
 	p.State.RestartTimes = 0
 }
 
-func (p *ProcessBase) push(message string) {
+func (p *Process) push(message string) {
 	if len(p.Config.PushIDs) != 0 {
 		messagePlaceholders := map[string]string{
 			"{$name}":    p.Name,
@@ -232,20 +259,20 @@ func (p *ProcessBase) push(message string) {
 	}
 }
 
-func (p *ProcessBase) initPerformanceStatus() {
+func (p *Process) initPerformanceStatus() {
 	p.PerformanceStatus.Cpu = make([]float64, config.CF.PerformanceInfoListLength)
 	p.PerformanceStatus.Mem = make([]float64, config.CF.PerformanceInfoListLength)
 	p.PerformanceStatus.Time = make([]time.Time, config.CF.PerformanceInfoListLength)
 }
 
-func (p *ProcessBase) addPerformanceRecord(cpu, mem float64) {
+func (p *Process) addPerformanceRecord(cpu, mem float64) {
 	p.PerformanceStatus.Cpu = append(p.PerformanceStatus.Cpu[1:], cpu)
 	p.PerformanceStatus.Mem = append(p.PerformanceStatus.Mem[1:], mem)
 	p.PerformanceStatus.Time = append(p.PerformanceStatus.Time[1:], time.Now())
 }
 
 // fetch performance information, return cpu usage and memory usage in KB
-func (p *ProcessBase) GetPerformanceInfo() (float64, float64, error) {
+func (p *Process) GetPerformanceInfo() (float64, float64, error) {
 	if p.monitor.pu == nil {
 		return 0, 0, errors.New("process not running")
 	}
@@ -261,7 +288,7 @@ func (p *ProcessBase) GetPerformanceInfo() (float64, float64, error) {
 	return cpuPercent, float64(memInfo.RSS >> 10), nil
 }
 
-func (p *ProcessBase) monitorHandler() {
+func (p *Process) monitorHandler() {
 	if !p.monitor.enable {
 		return
 	}
@@ -288,7 +315,7 @@ func (p *ProcessBase) monitorHandler() {
 	}
 }
 
-func (p *ProcessBase) initPsutil() {
+func (p *Process) initPsutil() {
 	pup, err := pu.NewProcess(int32(p.Pid))
 	if err != nil {
 		p.monitor.enable = false
@@ -301,7 +328,7 @@ func (p *ProcessBase) initPsutil() {
 }
 
 // Kill stops the process by sending SIGINT first, then forcibly kills it if it does not exit in time.
-func (p *ProcessBase) Kill() error {
+func (p *Process) Kill() error {
 	if p.State.State != types.ProcessStateRunning {
 		return errors.New("can't kill not running process")
 	}
@@ -325,11 +352,11 @@ func (p *ProcessBase) Kill() error {
 }
 
 // Stop the process immediately.
-func (p *ProcessBase) Kill9() error {
+func (p *Process) Kill9() error {
 	return p.op.Kill()
 }
 
-func (p *ProcessBase) initLogHandler() {
+func (p *Process) initLogHandler() {
 	if p.Config.logHandlerFn == nil {
 		return
 	}
@@ -344,58 +371,197 @@ func (p *ProcessBase) initLogHandler() {
 	}
 }
 
-type ProcessOptions func(*ProcessBase)
+func (p *Process) readInit() {
+	log.Logger.Debugw("stdout read thread started", "process name", p.Name, "user", p.GetUserString())
+	buf := make([]byte, 1024)
+	for {
+		select {
+		case <-p.StopChan:
+			{
+				log.Logger.Debugw("stdout read thread exited", "process name", p.Name, "user", p.GetUserString())
+				return
+			}
+		default:
+			{
+				n, err := p.pty.Read(buf)
+				if err != nil {
+					log.Logger.Debugw("stdout read failed", "err", err)
+					return
+				}
+				p.bufHandle(buf[:n])
+				if len(p.writers) == 0 {
+					continue
+				}
+				p.wlock.RLock()
+				for _, v := range p.writers {
+					v.Write(buf[:n])
+				}
+				p.wlock.RUnlock()
+			}
+		}
+	}
+}
+
+// WriteBytes writes data to the process terminal.
+func (p *Process) WriteBytes(input []byte) (err error) {
+	_, err = p.pty.Write(input)
+	return
+}
+
+// SetTerminalSize sets the process terminal size.
+func (p *Process) SetTerminalSize(cols, rows int) {
+	if cols == 0 || rows == 0 || len(p.writers) != 0 {
+		return
+	}
+	p.pty.SetSize(cols, rows)
+}
+
+func (p *Process) pInit() {
+	log.Logger.Infow("create process success")
+	p.StopChan = make(chan struct{})
+	p.State.manualStopFlag = false
+	p.State.StartTime = time.Now()
+	p.writers = make(map[string]io.WriteCloser)
+	p.Pid = p.op.Pid
+	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
+	p.initPerformanceStatus()
+	p.initPsutil()
+	p.initCgroup()
+	p.initLogHandler()
+	go p.watchDog()
+	go p.readInit()
+	go p.monitorHandler()
+}
+
+// Start starts the process.
+func (p *Process) Start() (err error) {
+	defer func() {
+		if err != nil {
+			p.Config.AutoRestart = false
+			p.SetState(types.ProcessStateWarning)
+			p.State.Info = "process start failed: " + err.Error()
+		}
+	}()
+	if ok := p.SetState(types.ProcessStateStarting); !ok {
+		log.Logger.Warnw("process is running, skip start")
+		return nil
+	}
+	cmd := exec.Command(p.StartCommand[0], p.StartCommand[1:]...)
+	cmd.Dir = p.WorkDir
+	cmd.Env = append(os.Environ(), p.Env...)
+	ptyImpl, err := NewPTY(cmd)
+	if err != nil {
+
+	}
+	p.pty = ptyImpl
+	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
+	p.op = cmd.Process
+	p.pInit()
+	if !p.SetState(types.ProcessStateRunning) {
+		return errors.New("state abnormal start failed")
+	}
+	p.push("process start success")
+	return nil
+}
+
+func (p *Process) watchDog() {
+	p.pty.Wait()
+	state, _ := p.op.Wait()
+	if p.cgroup.enable && p.cgroup.delete != nil {
+		err := p.cgroup.delete()
+		if err != nil {
+			log.Logger.Errorw("cgroup delete failed", "err", err, "process name", p.Name)
+		}
+	}
+	if p.logHandler != nil {
+		p.logHandler.Close()
+	}
+	if !p.SetState(types.ProcessStateStopped, func() bool {
+		// process is already stopped or warning state, no need to repeat set state
+		close(p.StopChan)
+		p.pty.Close()
+		return true
+	}) {
+		return
+	}
+	if state.ExitCode() != 0 {
+		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
+		p.push(fmt.Sprintf("process stopped, exit code %d", state.ExitCode()))
+	} else {
+		log.Logger.Infow("process normal exit", "process name", p.Name)
+		p.push("process normal exit")
+	}
+	if !p.Config.AutoRestart || p.State.manualStopFlag { // not restart or manual close
+		return
+	}
+	if p.Config.CompulsoryRestart { // compulsory restart
+		p.Start()
+		return
+	}
+	if state.ExitCode() == 0 { // normal exit
+		return
+	}
+	if p.State.RestartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
+		p.Start()
+		p.State.RestartTimes++
+		return
+	}
+	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
+	p.SetState(types.ProcessStateWarning)
+	p.State.Info = "restart times abnormal"
+	p.push("restart times reached limit")
+}
+
+type ProcessOptions func(*Process)
 
 // state change hook
-func SetStateHook(fn func(p *ProcessBase, state types.ProcessState)) ProcessOptions {
-	return func(p *ProcessBase) {
+func SetStateHook(fn func(p *Process, state types.ProcessState)) ProcessOptions {
+	return func(p *Process) {
 		p.stateHook = fn
 	}
 }
 
 // ws connect hook
-func SetAddWriterHook(fn func(p *ProcessBase, user string, c io.WriteCloser)) ProcessOptions {
-	return func(p *ProcessBase) {
+func SetAddWriterHook(fn func(p *Process, user string, c io.WriteCloser)) ProcessOptions {
+	return func(p *Process) {
 		p.addWriterHook = fn
 	}
 }
 
 // ws disconnect hook
-func SetDelWriterHook(fn func(p *ProcessBase, user string)) ProcessOptions {
-	return func(p *ProcessBase) {
+func SetDelWriterHook(fn func(p *Process, user string)) ProcessOptions {
+	return func(p *Process) {
 		p.delWriterHook = fn
 	}
 }
 
 // log handle hook
-func SetLogHandler(pipe bool, fn func(p *ProcessBase, log []byte)) ProcessOptions {
-	return func(p *ProcessBase) {
+func SetLogHandler(pipe bool, fn func(p *Process, log []byte)) ProcessOptions {
+	return func(p *Process) {
 		p.Config.logHandlerFn = fn
 		p.Config.logHandlerPipe = pipe
 	}
 }
 
 // push handle hook
-func SetPushHandle(fn func(p *ProcessBase, pushIDs []int64, messagePlaceholders map[string]string)) ProcessOptions {
-	return func(p *ProcessBase) {
+func SetPushHandle(fn func(p *Process, pushIDs []int64, messagePlaceholders map[string]string)) ProcessOptions {
+	return func(p *Process) {
 		p.pushHandle = fn
 	}
 }
 
 // NewProcessPty creates a process and configures its handlers.
-func NewProcessPty(pconfig model.Process, options ...ProcessOptions) *ProcessPty {
-	p := &ProcessPty{
-		ProcessBase: &ProcessBase{
-			UUID:         pconfig.UUID,
-			Name:         pconfig.Name,
-			StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
-			WorkDir:      pconfig.Cwd,
-			Env:          strings.Split(pconfig.Env, ";"),
-		},
+func NewProcess(pconfig model.Process, options ...ProcessOptions) *Process {
+	p := &Process{
+		UUID:         pconfig.UUID,
+		Name:         pconfig.Name,
+		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
+		WorkDir:      pconfig.Cwd,
+		Env:          strings.Split(pconfig.Env, ";"),
 	}
 
 	for _, option := range options {
-		option(p.ProcessBase)
+		option(p)
 	}
 	p.setProcessConfig(pconfig)
 	return p

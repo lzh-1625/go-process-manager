@@ -152,26 +152,26 @@ func (t *TaskJob) EditStatus(status bool) error {
 	return nil
 }
 
-type conditionFunc func(data *model.Task, proc *process.ProcessPty) bool
+type conditionFunc func(data *model.Task, proc *process.Process) bool
 
 var conditionHandle = map[types.Condition]conditionFunc{
-	types.TaskCondRunning: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskCondRunning: func(data *model.Task, proc *process.Process) bool {
 		return proc.State.State == types.ProcessStateRunning
 	},
-	types.TaskCondNotRunning: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskCondNotRunning: func(data *model.Task, proc *process.Process) bool {
 		state := proc.State.State
 		return state != types.ProcessStateRunning && state != types.ProcessStateStarting
 	},
-	types.TaskCondException: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskCondException: func(data *model.Task, proc *process.Process) bool {
 		return proc.State.State == types.ProcessStateWarning
 	},
 }
 
 // execute operation, return result whether successfully
-type operationFunc func(*model.Task, *process.ProcessPty) bool
+type operationFunc func(*model.Task, *process.Process) bool
 
 var operationHandle = map[types.TaskOperation]operationFunc{
-	types.TaskStart: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskStart: func(data *model.Task, proc *process.Process) bool {
 		state := proc.State.State
 		if state == types.ProcessStateRunning || state == types.ProcessStateStarting {
 			log.Logger.Debugw("process is running", "proc", proc.Name)
@@ -181,7 +181,7 @@ var operationHandle = map[types.TaskOperation]operationFunc{
 		return true
 	},
 
-	types.TaskStartWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskStartWaitDone: func(data *model.Task, proc *process.Process) bool {
 		state := proc.State.State
 		if state == types.ProcessStateRunning || state == types.ProcessStateStarting {
 			log.Logger.Debugw("process is running", "proc", proc.Name)
@@ -201,7 +201,7 @@ var operationHandle = map[types.TaskOperation]operationFunc{
 		}
 	},
 
-	types.TaskStop: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskStop: func(data *model.Task, proc *process.Process) bool {
 		if proc.State.State != types.ProcessStateRunning {
 			log.Logger.Debugw("process is not running", "proc", proc.Name)
 			return false
@@ -211,7 +211,7 @@ var operationHandle = map[types.TaskOperation]operationFunc{
 		return true
 	},
 
-	types.TaskStopWaitDone: func(data *model.Task, proc *process.ProcessPty) bool {
+	types.TaskStopWaitDone: func(data *model.Task, proc *process.Process) bool {
 		if proc.State.State != types.ProcessStateRunning {
 			log.Logger.Debugw("process is not running", "proc", proc.Name)
 			return false

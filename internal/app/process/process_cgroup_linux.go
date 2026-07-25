@@ -13,7 +13,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func (p *ProcessBase) initCgroup() {
+func (p *Process) initCgroup() {
 	if !p.Config.CgroupEnable {
 		log.Logger.Debugw("cgroup not enabled")
 		return
@@ -30,7 +30,7 @@ func (p *ProcessBase) initCgroup() {
 	}
 }
 
-func (p *ProcessBase) initCgroupV1() {
+func (p *Process) initCgroupV1() {
 	resources := &specs.LinuxResources{}
 	if p.Config.CpuLimit != nil {
 		resources.CPU = &specs.LinuxCPU{
@@ -61,7 +61,7 @@ func (p *ProcessBase) initCgroupV1() {
 	p.cgroup.enable = true
 }
 
-func (p *ProcessBase) initCgroupV2() {
+func (p *Process) initCgroupV2() {
 	resources := &cgroup2.Resources{}
 	if p.Config.CpuLimit != nil {
 		period := uint64(config.CF.CgroupPeriod)

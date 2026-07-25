@@ -199,7 +199,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	return
 }
 
-func (w *WsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *process.ProcessPty, write bool) {
+func (w *WsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc, proc *process.Process, write bool) {
 	log.Logger.Debugw("ws read thread started")
 	go func() {
 		for {

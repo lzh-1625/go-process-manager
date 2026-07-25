@@ -3,185 +3,49 @@
 package process
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
-	"io"
 	"os"
-	"time"
+	"os/exec"
 
-	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
-
 	"github.com/runletapp/go-console"
 )
 
-type ProcessPty struct {
-	*ProcessBase
-	cacheBytesBuf *bytes.Buffer
-	pty           console.Console
+type ptyImpl struct {
+	console.Console
+}
+
+func (p *ptyImpl) SetSize(cols, rows int) error {
+	return p.SetSize(cols, rows)
 }
 
 // Start starts the process.
-func (p *ProcessPty) Start() (err error) {
-	defer func() {
-		if err != nil {
-			p.Config.AutoRestart = false
-			p.SetState(types.ProcessStateWarning)
-			p.State.Info = "process start failed: " + err.Error()
-		}
-	}()
-	if ok := p.SetState(types.ProcessStateStarting); !ok {
-		log.Logger.Warnw("process is running, skip start")
-		return nil
-	}
+func NewPTY(cmd *exec.Cmd) (ptyInterface, error) {
 	pty, err := console.New(100, 100)
 	if err != nil {
 		log.Logger.Errorw("process start failed", "err", err)
-		return err
+		return nil, err
 	}
-	pty.SetCWD(p.WorkDir)
-	pty.SetENV(append(os.Environ(), p.Env...))
-	err = pty.Start(p.StartCommand)
+	pty.SetCWD(cmd.Dir)
+	pty.SetENV(append(os.Environ(), cmd.Env...))
+	err = pty.Start(append([]string{cmd.Path}, cmd.Args...))
 	if err != nil {
 		log.Logger.Errorw("process start failed", "err", err)
-		return err
+		return nil, err
 	}
-	p.pty = pty
 	pid, err := pty.Pid()
 	if err != nil {
 		log.Logger.Errorw("process start failed", "err", err)
-		return err
+		return nil, err
 	}
-	p.op, err = os.FindProcess(pid)
+	op, err := os.FindProcess(pid)
 	if err != nil {
 		log.Logger.Errorw("process start failed", "err", err)
-		return err
+		return nil, err
 	}
-	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
-	p.pInit()
-	if !p.SetState(types.ProcessStateRunning) {
-		return errors.New("state abnormal start failed")
-	}
-	p.push("process start success")
-	return nil
+	cmd.Process = op
+	return &ptyImpl{pty}, nil
 }
 
-// SetTerminalSize sets the process terminal size.
-func (p *ProcessPty) SetTerminalSize(cols, rows int) {
-	if cols == 0 || rows == 0 || len(p.writers) != 0 {
-		return
-	}
-	p.pty.SetSize(cols, rows)
+func (p *ptyImpl) Wait() {
 
-}
-
-// WriteBytes writes data to the process terminal.
-func (p *ProcessPty) WriteBytes(input []byte) (err error) {
-	_, err = p.pty.Write(input)
-	return
-}
-
-func (p *ProcessPty) readInit() {
-	log.Logger.Debugw("stdout read thread started", "process name", p.Name, "user", p.GetUserString())
-	buf := make([]byte, 1024)
-	for {
-		select {
-		case <-p.StopChan:
-			{
-				log.Logger.Debugw("stdout read thread exited", "process name", p.Name, "user", p.GetUserString())
-				return
-			}
-		default:
-			{
-				n, err := p.pty.Read(buf)
-				if err != nil {
-					log.Logger.Debugw("stdout read failed", "err", err)
-					return
-				}
-				p.bufHandle(buf[:n])
-				if len(p.writers) == 0 {
-					continue
-				}
-				p.wlock.RLock()
-				for _, v := range p.writers {
-					v.Write(buf[:n])
-				}
-				p.wlock.RUnlock()
-			}
-		}
-	}
-}
-
-// ReadCache reads the cached terminal data.
-// The process caches some recent output so that terminal clients can view a portion of its output history.
-func (p *ProcessPty) ReadCache(ws io.WriteCloser) error {
-	if p.cacheBytesBuf == nil {
-		return errors.New("cache is null")
-	}
-	_, err := ws.Write(p.cacheBytesBuf.Bytes())
-	return err
-}
-
-func (p *ProcessPty) bufHandle(b []byte) {
-	p.logReportHandler(b)
-	p.cacheBytesBuf.Write(b)
-	p.cacheBytesBuf.Next(len(b))
-}
-
-func (p *ProcessPty) pInit() {
-	log.Logger.Infow("create process success")
-	p.StopChan = make(chan struct{})
-	p.State.manualStopFlag = false
-	p.State.StartTime = time.Now()
-	p.writers = make(map[string]io.WriteCloser)
-	p.Pid = p.op.Pid
-	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
-	p.initPerformanceStatus()
-	p.initPsutil()
-	p.initLogHandler()
-	go p.watchDog()
-	go p.readInit()
-	go p.monitorHandler()
-}
-
-func (p *ProcessPty) watchDog() {
-	state, _ := p.op.Wait()
-	if p.logHandler != nil {
-		p.logHandler.Close()
-	}
-	if !p.SetState(types.ProcessStateStopped, func() bool {
-		close(p.StopChan)
-		p.pty.Close()
-		return true
-	}) {
-		return
-	}
-	if state.ExitCode() != 0 {
-		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
-		p.push(fmt.Sprintf("process stopped, exit code %d", state.ExitCode()))
-	} else {
-		log.Logger.Infow("process normal exit", "process name", p.Name)
-		p.push("process normal exit")
-	}
-	if !p.Config.AutoRestart || p.State.manualStopFlag { // not restart or manual close
-		return
-	}
-	if p.Config.CompulsoryRestart { // compulsory restart
-		p.Start()
-		return
-	}
-	if state.ExitCode() == 0 { // normal exit
-		return
-	}
-	if p.State.RestartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
-		p.Start()
-		p.State.RestartTimes++
-		return
-	}
-	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(types.ProcessStateWarning)
-	p.State.Info = "restart times abnormal"
-	p.push("restart times reached limit")
 }

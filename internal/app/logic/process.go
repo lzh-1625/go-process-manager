@@ -54,7 +54,7 @@ func (p *ProcessCtlLogic) SetProcessStateHandler(handler ProcessStateHandler) {
 	p.processStateHandler = handler
 }
 
-func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.ProcessPty) {
+func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.Process) {
 	p.processMap.Store(uuid, proc)
 }
 
@@ -63,7 +63,7 @@ func (p *ProcessCtlLogic) KillProcess(uuid int, wait bool) error {
 	if !ok {
 		return errors.New("process not exist")
 	}
-	result, ok := value.(*process.ProcessPty)
+	result, ok := value.(*process.Process)
 	if !ok {
 		return errors.New("process type error")
 	}
@@ -73,12 +73,12 @@ func (p *ProcessCtlLogic) KillProcess(uuid int, wait bool) error {
 	return result.Kill9()
 }
 
-func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.ProcessPty, error) {
+func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.Process, error) {
 	proc, ok := p.processMap.Load(uuid)
 	if !ok {
 		return nil, errors.New("process not exist")
 	}
-	result, ok := proc.(*process.ProcessPty)
+	result, ok := proc.(*process.Process)
 	if !ok {
 		return nil, errors.New("process type error")
 
@@ -89,7 +89,7 @@ func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.ProcessPty, error) {
 func (p *ProcessCtlLogic) KillAllProcess() {
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.ProcessPty)
+		process := value.(*process.Process)
 		wg.Go(func() {
 			process.Kill()
 		})
@@ -102,7 +102,7 @@ func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
 	stopPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStop)
 	wg := sync.WaitGroup{}
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.ProcessPty)
+		process := value.(*process.Process)
 		if !slices.Contains(stopPermissionProcess, process.Name) {
 			return true
 		}
@@ -174,7 +174,7 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 
 func (p *ProcessCtlLogic) ProcessStartAll() {
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.ProcessPty)
+		process := value.(*process.Process)
 		err := process.Start()
 		if err != nil {
 			log.Logger.Errorw("process start failed", "name", process.Name)
@@ -201,7 +201,7 @@ func (p *ProcessCtlLogic) ProcessInit() {
 func (p *ProcessCtlLogic) ProcesStartAllByUsername(userName string) {
 	startPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.ProcessPty)
+		process := value.(*process.Process)
 		if !slices.Contains(startPermissionProcess, process.Name) {
 			return true
 		}
@@ -226,7 +226,7 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	if !ok {
 		return errors.New("process get failed")
 	}
-	result, ok := proc.(*process.ProcessPty)
+	result, ok := proc.(*process.Process)
 	if !ok {
 		return errors.New("process type error")
 	}
@@ -248,7 +248,7 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	return p.processRepository.UpdateProcessConfig(config)
 }
 
-func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.ProcessPty) {
+func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Process) {
 	index, err := p.processRepository.AddProcessConfig(config)
 	if err != nil {
 		return nil
@@ -259,22 +259,22 @@ func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Proces
 	return
 }
 
-func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.ProcessPty, err error) {
+func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Process, err error) {
 	proc = p.createProcess(config)
 	p.AddProcess(config.UUID, proc)
 	err = proc.Start()
 	return
 }
 
-func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.ProcessPty) {
-	return process.NewProcessPty(cf,
-		process.SetAddWriterHook(func(p *process.ProcessBase, user string, c io.WriteCloser) {
+func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process) {
+	return process.NewProcess(cf,
+		process.SetAddWriterHook(func(p *process.Process, user string, c io.WriteCloser) {
 			ProcessWaitCond().Trigger()
 		}),
-		process.SetDelWriterHook(func(p *process.ProcessBase, user string) {
+		process.SetDelWriterHook(func(p *process.Process, user string) {
 			ProcessWaitCond().Trigger()
 		}),
-		process.SetLogHandler(config.CF.LogReportOptimization, func(proc *process.ProcessBase, log []byte) {
+		process.SetLogHandler(config.CF.LogReportOptimization, func(proc *process.Process, log []byte) {
 			logStr := string(log)
 			if strings.TrimSpace(utils.RemoveANSI(logStr)) == "" {
 				return
@@ -286,10 +286,10 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 				Time:  time.Now().UnixMilli(),
 			})
 		}),
-		process.SetPushHandle(func(proc *process.ProcessBase, pushIDs []int64, messagePlaceholders map[string]string) {
+		process.SetPushHandle(func(proc *process.Process, pushIDs []int64, messagePlaceholders map[string]string) {
 			p.pushLogic.Push(pushIDs, messagePlaceholders)
 		}),
-		process.SetStateHook(func(proc *process.ProcessBase, state types.ProcessState) {
+		process.SetStateHook(func(proc *process.Process, state types.ProcessState) {
 			ProcessWaitCond().Trigger()
 			p.createEvent(proc, state)
 			if p.processStateHandler != nil {
@@ -299,7 +299,7 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 	)
 }
 
-func (p *ProcessCtlLogic) createEvent(proc *process.ProcessBase, state types.ProcessState) {
+func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.ProcessState) {
 	var eventType types.EventType
 	kv := []string{}
 	switch state {
