@@ -15,7 +15,7 @@ type ptyImpl struct {
 }
 
 func (p *ptyImpl) SetSize(cols, rows int) error {
-	return p.SetSize(cols, rows)
+	return p.Console.SetSize(cols, rows)
 }
 
 // Start starts the process.

@@ -451,7 +451,8 @@ func (p *Process) Start() (err error) {
 	cmd.Env = append(os.Environ(), p.Env...)
 	ptyImpl, err := NewPTY(cmd)
 	if err != nil {
-
+		log.Logger.Warnw("process pty init failed")
+		return err
 	}
 	p.pty = ptyImpl
 	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
