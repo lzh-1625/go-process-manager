@@ -22,7 +22,7 @@ func (p *ptyImpl) SetSize(cols, rows int) error {
 }
 
 // Start starts the process.
-func NewPTY(cmd *exec.Cmd) (ptyInterface, error) {
+func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 	pf, err := pty.Start(cmd)
 	if err != nil || cmd.Process == nil {
 		log.Logger.Errorw("process start failed", "err", err)
@@ -32,5 +32,5 @@ func NewPTY(cmd *exec.Cmd) (ptyInterface, error) {
 }
 
 func (p *ptyImpl) Wait() {
-	
+
 }
