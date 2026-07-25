@@ -27,9 +27,8 @@
         <h3 class="text-h5 font-weight-medium text-grey-darken-1 mb-3">
           {{ $t('processPage.noProcess') }}
         </h3>
-        <p v-permission="1" class="text-body-1 text-grey mb-8">{{ $t('processPage.createFirst') }}</p>
-        <v-btn v-permission="1"
-
+        <p class="text-body-1 text-grey mb-8">{{ $t('processPage.createFirst') }}</p>
+        <v-btn v-permission="0"
           size="large"
           color="primary"
           variant="elevated"
@@ -70,7 +69,7 @@
       <v-tooltip location="start" :text="$t('processPage.createProcess')">
         <template v-slot:activator="{ props: tooltipProps }">
           <v-btn
-            v-permission="1"
+            v-permission="0"
             v-bind="tooltipProps"
             icon
             color="primary"

@@ -398,7 +398,7 @@ const copyToken = () => {
 
           <v-list nav dense>
             <v-list-item @click="control"> {{ $t("processCardPage.control") }} </v-list-item>
-            <v-list-item @click="del"> {{ $t("processCardPage.delete") }} </v-list-item>
+            <v-list-item @click="del" v-permission="0"> {{ $t("processCardPage.delete") }} </v-list-item>
             <v-list-item @click="openShareDialog"> {{ $t("processCardPage.createShareLink") }} </v-list-item>
           </v-list>
         </v-menu>
@@ -452,7 +452,7 @@ const copyToken = () => {
           />
           <!-- 编辑按钮 -->
           <v-btn
-            v-permission="1"
+            v-permission="0"
             @click="processConfigComponent?.openConfigDialog()"
             size="small"
             icon="mdi-pencil"
