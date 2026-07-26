@@ -122,6 +122,26 @@
           <v-form ref="formRef" v-model="formValid">
             <v-container fluid>
               <v-row dense>
+                <v-col cols="12" class="pt-0">
+                  <v-sheet class="placeholder-guide pa-3" rounded="lg">
+                    <div class="text-caption font-weight-medium mb-2">
+                      {{ $t('pushPage.placeholderTitle') }}
+                    </div>
+                    <div class="d-flex flex-wrap ga-2">
+                      <v-chip
+                        v-for="placeholder in placeholders"
+                        :key="placeholder.token"
+                        size="small"
+                        variant="tonal"
+                      >
+                        {{ placeholder.token }} · {{ placeholder.label }}
+                      </v-chip>
+                    </div>
+                    <div class="text-caption text-medium-emphasis mt-2">
+                      {{ $t('pushPage.placeholderUsage') }}
+                    </div>
+                  </v-sheet>
+                </v-col>
                 <v-col cols="12" sm="4">
                   <v-select
                     v-model="form.method"
@@ -139,19 +159,18 @@
                     variant="outlined"
                     density="comfortable"
                     :rules="[rules.required, rules.url]"
-                    placeholder="https://example.com/webhook"
+                    placeholder="https://example.com/webhook/{$name}?pid={$pid}"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12">
+                <v-col v-if="form.method === 'POST'" cols="12">
                   <v-textarea
                     v-model="form.body"
                     :label="$t('pushPage.requestBody')"
                     variant="outlined"
                     density="comfortable"
                     rows="4"
-                    placeholder='{"message": "{$message}", "user": "{$user}"}'
-                    :hint="$t('pushPage.placeholder')"
-                    persistent-hint
+                    placeholder='{"name": "{$name}", "user": "{$user}", "status": "{$status}", "pid": "{$pid}"}'
                   ></v-textarea>
                 </v-col>
                 <v-col cols="12">
@@ -250,6 +269,13 @@ const pageSize = ref(10);
 
 const methodOptions = ["GET", "POST"];
 
+const placeholders = computed(() => [
+  { token: "{$name}", label: t("pushPage.placeholderName") },
+  { token: "{$user}", label: t("pushPage.placeholderUser") },
+  { token: "{$status}", label: t("pushPage.placeholderStatus") },
+  { token: "{$pid}", label: t("pushPage.placeholderPid") },
+]);
+
 const defaultForm = {
   id: 0,
   method: "POST",
@@ -315,7 +341,7 @@ const loadPushList = async () => {
     }
   } catch (error) {
     console.error("加载推送列表失败:", error);
-    snackbarStore.showErrorMessage(t("pushPage.loadPushListFailed"));
+    snackbarStore.showErrorMessage(t("pushPage.loadPushFailed"));
   } finally {
     loading.value = false;
   }
@@ -448,5 +474,10 @@ onMounted(() => {
       }
     }
   }
+}
+
+.placeholder-guide {
+  background: rgba(var(--v-theme-primary), 0.06);
+  border: 1px solid rgba(var(--v-theme-primary), 0.18);
 }
 </style>

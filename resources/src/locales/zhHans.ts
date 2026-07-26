@@ -481,7 +481,14 @@ export default {
     enablePush: "启用推送",
     pushDesc: "推送配置描述",
     placeholder:
-      "占位符：{$name}进程名称 {$user}使用者 {$message}消息内容 {$status}进程状态",
+      "占位符：{$name}进程名称 {$user}使用者 {$status}进程状态 {$pid}进程PID",
+    placeholderTitle: "可用占位符",
+    placeholderUsage: "可用于推送 URL，以及 POST 请求体。",
+    urlPlaceholderHint: "URL 支持占位符，例如：/{$name}?pid={$pid}",
+    placeholderName: "进程名称",
+    placeholderUser: "使用者",
+    placeholderStatus: "进程状态",
+    placeholderPid: "进程 PID",
   },
   sharePage: {
     title: "分享链接管理",

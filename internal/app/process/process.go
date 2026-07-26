@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -50,7 +48,6 @@ type Process struct {
 	Config  struct {
 		AutoRestart       bool
 		CompulsoryRestart bool // Restart automatically after reaching the restart limit when CompulsoryRestart is true.
-		PushIDs           []int64
 		LogReport         bool
 		CgroupEnable      bool
 		MemoryLimit       *float32
@@ -117,8 +114,13 @@ func (p *Process) ReadCache(ws io.WriteCloser) error {
 }
 
 // GetOpertor returns the current operator name and clears it.
-func (p *Process) GetOpertor() string {
-	s := p.operate.user.Swap(nil)
+func (p *Process) GetOpertor(swap bool) string {
+	var s *string
+	if swap {
+		s = p.operate.user.Swap(nil)
+	} else {
+		s = p.operate.user.Load()
+	}
 	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) || s == nil {
 		return ""
 	}
@@ -233,7 +235,6 @@ func (p *Process) VerifyControl() bool {
 func (p *Process) setProcessConfig(pconfig model.Process) {
 	p.Config.AutoRestart = pconfig.AutoRestart
 	p.Config.LogReport = pconfig.LogReport
-	p.Config.PushIDs = utils.JsonStrToStruct[[]int64](pconfig.PushIDs)
 	p.Config.CompulsoryRestart = pconfig.CompulsoryRestart
 	p.Config.CgroupEnable = pconfig.CgroupEnable
 	p.Config.MemoryLimit = pconfig.MemoryLimit
@@ -243,20 +244,6 @@ func (p *Process) setProcessConfig(pconfig model.Process) {
 // ResetRestartTimes resets the restart count.
 func (p *Process) ResetRestartTimes() {
 	p.State.RestartTimes = 0
-}
-
-func (p *Process) push(message string) {
-	if len(p.Config.PushIDs) != 0 {
-		messagePlaceholders := map[string]string{
-			"{$name}":    p.Name,
-			"{$user}":    p.GetUserString(),
-			"{$message}": message,
-			"{$status}":  strconv.Itoa(int(p.State.State)),
-		}
-		if p.pushHandle != nil {
-			p.pushHandle(p, p.Config.PushIDs, messagePlaceholders)
-		}
-	}
 }
 
 func (p *Process) initPerformanceStatus() {
@@ -461,7 +448,6 @@ func (p *Process) Start() (err error) {
 	if !p.SetState(types.ProcessStateRunning) {
 		return errors.New("state abnormal start failed")
 	}
-	p.push("process start success")
 	return nil
 }
 
@@ -487,10 +473,8 @@ func (p *Process) watchDog() {
 	}
 	if state.ExitCode() != 0 {
 		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
-		p.push(fmt.Sprintf("process stopped, exit code %d", state.ExitCode()))
 	} else {
 		log.Logger.Infow("process normal exit", "process name", p.Name)
-		p.push("process normal exit")
 	}
 	if !p.Config.AutoRestart || p.State.manualStopFlag { // not restart or manual close
 		return
@@ -510,7 +494,6 @@ func (p *Process) watchDog() {
 	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
 	p.SetState(types.ProcessStateWarning)
 	p.State.Info = "restart times abnormal"
-	p.push("restart times reached limit")
 }
 
 type ProcessOptions func(*Process)

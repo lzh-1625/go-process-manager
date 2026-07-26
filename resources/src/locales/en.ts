@@ -491,7 +491,14 @@ export default {
     enablePush: "Enable Push",
     pushDesc: "Push configuration description",
     placeholder:
-      "Placeholders: {$name} process name {$user} user {$message} message content {$status} process status",
+      "Placeholders: {$name} process name {$user} user {$status} process status {$pid} process PID",
+    placeholderTitle: "Available placeholders",
+    placeholderUsage: "They can be used in the push URL and POST request body.",
+    urlPlaceholderHint: "The URL supports placeholders, for example: /{$name}?pid={$pid}",
+    placeholderName: "Process name",
+    placeholderUser: "User",
+    placeholderStatus: "Process status",
+    placeholderPid: "Process PID",
   },
   sharePage: {
     title: "Share Link Management",

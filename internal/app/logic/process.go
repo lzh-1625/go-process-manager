@@ -235,7 +235,6 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	}
 	defer result.Lock.Unlock()
 	result.Config.LogReport = config.LogReport
-	result.Config.PushIDs = utils.JsonStrToStruct[[]int64](config.PushIDs)
 	result.Config.CgroupEnable = config.CgroupEnable
 	result.Config.MemoryLimit = config.MemoryLimit
 	result.Config.CpuLimit = config.CpuLimit
@@ -286,11 +285,9 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 				Time:  time.Now().UnixMilli(),
 			})
 		}),
-		process.SetPushHandle(func(proc *process.Process, pushIDs []int64, messagePlaceholders map[string]string) {
-			p.pushLogic.Push(pushIDs, messagePlaceholders)
-		}),
 		process.SetStateHook(func(proc *process.Process, state types.ProcessState) {
 			ProcessWaitCond().Trigger()
+			p.push(proc, state)
 			p.createEvent(proc, state)
 			if p.processStateHandler != nil {
 				go p.processStateHandler(proc.Name, state)
@@ -315,6 +312,24 @@ func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.Process
 	default:
 		return
 	}
-	kv = append(kv, "operator", proc.GetOpertor())
+	kv = append(kv, "operator", proc.GetOpertor(true))
 	p.eventLogic.Create(proc.Name, eventType, kv...)
+}
+
+func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) {
+	if state == types.ProcessStateRunning || state == types.ProcessStateStopping {
+		return
+	}
+	data, err := p.processRepository.GetProcessConfigByID(proc.UUID)
+	if err != nil {
+		return
+	}
+	pushIDs := utils.JsonStrToStruct[[]int64](data.PushIDs)
+	messagePlaceholders := map[string]string{
+		"{$name}":   proc.Name,
+		"{$user}":   proc.GetOpertor(false),
+		"{$status}": state.String(),
+		"{$pid}":    strconv.Itoa(proc.Pid),
+	}
+	p.pushLogic.Push(pushIDs, messagePlaceholders)
 }
