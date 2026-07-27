@@ -293,13 +293,14 @@ func (p *Process) setProcessConfig(pconfig ProcessConfig) {
 	p.Config.MemoryLimit = pconfig.MemoryLimit
 	p.Config.CpuLimit = pconfig.CpuLimit
 	p.Config.CgroupSwapLimit = pconfig.CgroupSwapLimit
-	p.Config.CgroupPeriod = pconfig.CgroupPeriod
-	p.Config.ProcessControlExpireTime = pconfig.ProcessControlExpireTime
-	p.Config.KillWaitTime = pconfig.KillWaitTime
-	p.Config.PerformanceInfoListLength = pconfig.PerformanceInfoListLength
-	p.Config.PerformanceInfoInterval = pconfig.PerformanceInfoInterval
-	p.Config.ProcessMsgCacheBufLimit = pconfig.ProcessMsgCacheBufLimit
-	p.Config.ProcessRestartsLimit = pconfig.ProcessRestartsLimit
+	p.Config.CgroupPeriod = cmp.Or(pconfig.CgroupPeriod, 100000)
+	p.Config.ProcessControlExpireTime = cmp.Or(pconfig.ProcessControlExpireTime, time.Minute)
+	p.Config.KillWaitTime = cmp.Or(pconfig.KillWaitTime, time.Second*15)
+	p.Config.PerformanceInfoListLength = cmp.Or(pconfig.PerformanceInfoListLength, 30)
+	p.Config.PerformanceInfoInterval = cmp.Or(pconfig.PerformanceInfoInterval, time.Minute)
+	p.Config.ProcessMsgCacheBufLimit = cmp.Or(pconfig.ProcessMsgCacheBufLimit, 1024)
+	p.Config.ProcessRestartsLimit = cmp.Or(pconfig.ProcessRestartsLimit, 3)
+
 }
 
 // ResetRestartTimes resets the restart count.
@@ -598,14 +599,6 @@ func NewProcess(pconfig ProcessConfig, options ...ProcessOptions) *Process {
 		WorkDir:      pconfig.Cwd,
 		Env:          strings.Split(pconfig.Env, ";"),
 	}
-	p.Config.CgroupSwapLimit = pconfig.CgroupSwapLimit
-	p.Config.CgroupPeriod = cmp.Or(pconfig.CgroupPeriod, 100000)
-	p.Config.ProcessControlExpireTime = cmp.Or(pconfig.ProcessControlExpireTime, time.Minute)
-	p.Config.KillWaitTime = cmp.Or(pconfig.KillWaitTime, time.Second*15)
-	p.Config.PerformanceInfoListLength = cmp.Or(pconfig.PerformanceInfoListLength, 30)
-	p.Config.PerformanceInfoInterval = cmp.Or(pconfig.PerformanceInfoInterval, 60)
-	p.Config.ProcessMsgCacheBufLimit = cmp.Or(pconfig.ProcessMsgCacheBufLimit, 1024)
-	p.Config.ProcessRestartsLimit = cmp.Or(pconfig.ProcessRestartsLimit, 3)
 	for _, option := range options {
 		option(p)
 	}
