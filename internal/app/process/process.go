@@ -87,7 +87,6 @@ type Process struct {
 	stateHook     func(p *Process, state types.ProcessState)
 	addWriterHook func(p *Process, user string, c io.WriteCloser)
 	delWriterHook func(p *Process, user string)
-	pushHandle    func(p *Process, pushIDs []int64, messagePlaceholders map[string]string)
 }
 
 // SetOpertor sets the current process operator for a limited time.
@@ -524,13 +523,6 @@ func SetLogHandler(pipe bool, fn func(p *Process, log []byte)) ProcessOptions {
 	return func(p *Process) {
 		p.Config.logHandlerFn = fn
 		p.Config.logHandlerPipe = pipe
-	}
-}
-
-// push handle hook
-func SetPushHandle(fn func(p *Process, pushIDs []int64, messagePlaceholders map[string]string)) ProcessOptions {
-	return func(p *Process) {
-		p.pushHandle = fn
 	}
 }
 
