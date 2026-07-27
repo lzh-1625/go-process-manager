@@ -12,9 +12,9 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/lzh-1625/go_process_manager/pkg/process"
 
 	"github.com/gorilla/websocket"
 )
@@ -106,7 +106,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	if proc.State.State == types.ProcessStateRunning {
+	if proc.State.State == process.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
 		write := w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
 		w.eventLogic.Create(proc.Name, types.EventProcessConnect, "user", reqUser, "write", strconv.FormatBool(write))
@@ -147,7 +147,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if proc.HasWriter(guestName) {
 		return errors.New("connection already exists")
 	}
-	if proc.State.State != types.ProcessStateRunning {
+	if proc.State.State != process.ProcessStateRunning {
 		return errors.New("process not is running")
 	}
 	if !proc.VerifyControl() {

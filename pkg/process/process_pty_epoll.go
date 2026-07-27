@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/containerd/console"
-	"github.com/lzh-1625/go_process_manager/log"
 	"golang.org/x/sys/unix"
 
 	"github.com/creack/pty"
@@ -24,11 +23,11 @@ type epoller struct {
 var globalEpoller = sync.OnceValue(func() *epoller {
 	ep, err := console.NewEpoller()
 	if err != nil {
-		log.Logger.Panic(err)
+		panic(err)
 	}
 	ew, err := newProcessExitWatcher(context.TODO())
 	if err != nil {
-		log.Logger.Panic(err)
+		panic(err)
 	}
 	return &epoller{
 		exitEpoller: ew,
@@ -236,7 +235,7 @@ func (p *ptyImpl) SetSize(cols, rows int) error {
 func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 	pf, err := pty.Start(cmd)
 	if err != nil || cmd.Process == nil {
-		log.Logger.Errorw("process start failed", "err", err)
+		logger.Error("process start failed", "err", err)
 		return nil, err
 	}
 	pty.Setsize(pf, &pty.Winsize{
@@ -245,18 +244,18 @@ func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 	})
 	cs, _, err := console.NewPtyFromFile(pf)
 	if err != nil {
-		log.Logger.Errorw("console new pty from file failed", "err", err)
+		logger.Error("console new pty from file failed", "err", err)
 		return nil, err
 	}
 	ep, err := globalEpoller().readEpoller.Add(cs)
 	if err != nil {
-		log.Logger.Errorw("read epoller add failed", "err", err)
+		logger.Error("read epoller add failed", "err", err)
 		return nil, err
 	}
 
 	exitCh, err := globalEpoller().exitEpoller.Add(cmd.Process.Pid)
 	if err != nil {
-		log.Logger.Errorw("exit epoller add failed", "err", err)
+		logger.Error("exit epoller add failed", "err", err)
 		return nil, err
 	}
 

@@ -3,6 +3,7 @@ package process
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"errors"
 	"io"
 	"os"
@@ -14,14 +15,59 @@ import (
 	"time"
 
 	"github.com/google/shlex"
-	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/types"
-	"github.com/lzh-1625/go_process_manager/log"
-	"github.com/lzh-1625/go_process_manager/utils"
 
 	pu "github.com/shirou/gopsutil/process"
 )
+
+type ProcessState int32
+
+const (
+	ProcessStateStopped  ProcessState = iota // process is stopped
+	ProcessStateStarting                     // process is starting
+	ProcessStateWarning                      // process is in warning state
+	ProcessStateRunning                      // process is running
+	ProcessStateStopping                     // process is waiting stop
+)
+
+func (p ProcessState) String() string {
+	switch p {
+	case ProcessStateStopped:
+		return "stopped"
+	case ProcessStateStarting:
+		return "starting"
+	case ProcessStateWarning:
+		return "warning"
+	case ProcessStateRunning:
+		return "running"
+	case ProcessStateStopping:
+		return "stopping"
+	default:
+		return "unknown"
+	}
+}
+
+type ProcessConfig struct {
+	UUID                      int
+	Name                      string
+	Cmd                       string
+	Cwd                       string
+	AutoRestart               bool
+	CompulsoryRestart         bool
+	PushIDs                   string
+	LogReport                 bool
+	CgroupEnable              bool
+	MemoryLimit               *float32
+	CpuLimit                  *float32
+	Env                       string
+	CgroupSwapLimit           bool
+	CgroupPeriod              int64
+	ProcessControlExpireTime  time.Duration
+	KillWaitTime              time.Duration
+	PerformanceInfoListLength int
+	PerformanceInfoInterval   time.Duration
+	ProcessMsgCacheBufLimit   int
+	ProcessRestartsLimit      int
+}
 
 type ptyInterface interface {
 	io.ReadWriteCloser
@@ -46,19 +92,27 @@ type Process struct {
 	writers map[string]io.WriteCloser
 	wlock   sync.RWMutex
 	Config  struct {
-		AutoRestart       bool
-		CompulsoryRestart bool // Restart automatically after reaching the restart limit when CompulsoryRestart is true.
-		LogReport         bool
-		CgroupEnable      bool
-		MemoryLimit       *float32
-		CpuLimit          *float32
-		logHandlerPipe    bool
-		logHandlerFn      func(p *Process, log []byte)
+		AutoRestart               bool
+		CompulsoryRestart         bool // Restart automatically after reaching the restart limit when CompulsoryRestart is true.
+		LogReport                 bool
+		CgroupEnable              bool
+		MemoryLimit               *float32
+		CpuLimit                  *float32
+		CgroupSwapLimit           bool
+		CgroupPeriod              int64
+		ProcessControlExpireTime  time.Duration
+		KillWaitTime              time.Duration
+		PerformanceInfoListLength int
+		PerformanceInfoInterval   time.Duration
+		ProcessMsgCacheBufLimit   int
+		ProcessRestartsLimit      int
+		logHandlerPipe            bool
+		logHandlerFn              func(p *Process, log []byte)
 	}
 	State struct {
 		StartTime      time.Time
 		Info           string
-		State          types.ProcessState //0 not running, 1 running, 2 warning state
+		State          ProcessState //0 not running, 1 running, 2 warning state
 		stateLock      sync.Mutex
 		RestartTimes   int
 		manualStopFlag bool
@@ -84,7 +138,7 @@ type Process struct {
 	pty           ptyInterface
 
 	logHandler    io.WriteCloser
-	stateHook     func(p *Process, state types.ProcessState)
+	stateHook     func(p *Process, state ProcessState)
 	addWriterHook func(p *Process, user string, c io.WriteCloser)
 	delWriterHook func(p *Process, user string)
 }
@@ -120,7 +174,7 @@ func (p *Process) GetOpertor(swap bool) string {
 	} else {
 		s = p.operate.user.Load()
 	}
-	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) || s == nil {
+	if p.operate.time.Add(p.Config.KillWaitTime).After(time.Now()) || s == nil {
 		return ""
 	}
 	return *s
@@ -128,7 +182,7 @@ func (p *Process) GetOpertor(swap bool) string {
 
 // fn function execution successfully, set state
 // The process state cannot change while fn is running.
-func (p *Process) SetState(state types.ProcessState, fn ...func() bool) bool {
+func (p *Process) SetState(state ProcessState, fn ...func() bool) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
 	if !p.checkStateChange(p.State.State, state) {
@@ -146,16 +200,16 @@ func (p *Process) SetState(state types.ProcessState, fn ...func() bool) bool {
 	return true
 }
 
-func (p *Process) checkStateChange(old, new types.ProcessState) bool {
+func (p *Process) checkStateChange(old, new ProcessState) bool {
 	switch old {
-	case types.ProcessStateStarting:
-		return new == types.ProcessStateRunning || new == types.ProcessStateWarning
-	case types.ProcessStateRunning:
-		return new == types.ProcessStateStopping || new == types.ProcessStateStopped
-	case types.ProcessStateWarning, types.ProcessStateStopped:
-		return new == types.ProcessStateStarting
-	case types.ProcessStateStopping:
-		return new == types.ProcessStateStopped
+	case ProcessStateStarting:
+		return new == ProcessStateRunning || new == ProcessStateWarning
+	case ProcessStateRunning:
+		return new == ProcessStateStopping || new == ProcessStateStopped
+	case ProcessStateWarning, ProcessStateStopped:
+		return new == ProcessStateStarting
+	case ProcessStateStopping:
+		return new == ProcessStateStopped
 	default:
 		return true
 	}
@@ -190,7 +244,7 @@ func (p *Process) AddWriter(user string, c io.WriteCloser) {
 	defer p.wlock.Unlock()
 
 	if p.writers[user] != nil {
-		log.Logger.Error("connection already exists")
+		logger.Error("connection already exists")
 		return
 	}
 
@@ -219,7 +273,7 @@ func (p *Process) logReportHandler(log []byte) {
 // ProcessControl disconnects all current users and makes the specified user the controller.
 // Other users cannot operate the process terminal, and control is released automatically after a timeout.
 func (p *Process) ProcessControl(name string) {
-	p.Control.ControlExpiredTime = time.Now().Add(time.Second * time.Duration(config.CF.ProcessControlExpireTime))
+	p.Control.ControlExpiredTime = time.Now().Add(p.Config.ProcessControlExpireTime)
 	p.Control.Controller = name
 	for _, ws := range p.writers {
 		ws.Close()
@@ -231,13 +285,21 @@ func (p *Process) VerifyControl() bool {
 	return p.Control.Controller == "" || time.Now().After(p.Control.ControlExpiredTime)
 }
 
-func (p *Process) setProcessConfig(pconfig model.Process) {
+func (p *Process) setProcessConfig(pconfig ProcessConfig) {
 	p.Config.AutoRestart = pconfig.AutoRestart
 	p.Config.LogReport = pconfig.LogReport
 	p.Config.CompulsoryRestart = pconfig.CompulsoryRestart
 	p.Config.CgroupEnable = pconfig.CgroupEnable
 	p.Config.MemoryLimit = pconfig.MemoryLimit
 	p.Config.CpuLimit = pconfig.CpuLimit
+	p.Config.CgroupSwapLimit = pconfig.CgroupSwapLimit
+	p.Config.CgroupPeriod = pconfig.CgroupPeriod
+	p.Config.ProcessControlExpireTime = pconfig.ProcessControlExpireTime
+	p.Config.KillWaitTime = pconfig.KillWaitTime
+	p.Config.PerformanceInfoListLength = pconfig.PerformanceInfoListLength
+	p.Config.PerformanceInfoInterval = pconfig.PerformanceInfoInterval
+	p.Config.ProcessMsgCacheBufLimit = pconfig.ProcessMsgCacheBufLimit
+	p.Config.ProcessRestartsLimit = pconfig.ProcessRestartsLimit
 }
 
 // ResetRestartTimes resets the restart count.
@@ -246,9 +308,9 @@ func (p *Process) ResetRestartTimes() {
 }
 
 func (p *Process) initPerformanceStatus() {
-	p.PerformanceStatus.Cpu = make([]float64, config.CF.PerformanceInfoListLength)
-	p.PerformanceStatus.Mem = make([]float64, config.CF.PerformanceInfoListLength)
-	p.PerformanceStatus.Time = make([]time.Time, config.CF.PerformanceInfoListLength)
+	p.PerformanceStatus.Cpu = make([]float64, p.Config.PerformanceInfoListLength)
+	p.PerformanceStatus.Mem = make([]float64, p.Config.PerformanceInfoListLength)
+	p.PerformanceStatus.Time = make([]time.Time, p.Config.PerformanceInfoListLength)
 }
 
 func (p *Process) addPerformanceRecord(cpu, mem float64) {
@@ -278,18 +340,18 @@ func (p *Process) monitorHandler() {
 	if !p.monitor.enable {
 		return
 	}
-	defer log.Logger.Infow("performance monitoring ended")
-	ticker := time.NewTicker(time.Second * time.Duration(config.CF.PerformanceInfoInterval))
+	defer logger.Info("performance monitoring ended")
+	ticker := time.NewTicker(p.Config.PerformanceInfoInterval)
 	defer ticker.Stop()
 	for {
-		if p.State.State != types.ProcessStateRunning {
-			log.Logger.Debugw("process not running", "state", p.State.State)
+		if p.State.State != ProcessStateRunning {
+			logger.Debug("process not running", "state", p.State.State)
 			return
 		}
 
 		c, m, err := p.GetPerformanceInfo()
 		if err != nil {
-			log.Logger.Debugw("performance monitor exit", "err", err)
+			logger.Debug("performance monitor exit", "err", err)
 			return
 		}
 		p.addPerformanceRecord(c, m)
@@ -305,33 +367,33 @@ func (p *Process) initPsutil() {
 	pup, err := pu.NewProcess(int32(p.Pid))
 	if err != nil {
 		p.monitor.enable = false
-		log.Logger.Debug("pu process get failed")
+		logger.Debug("pu process get failed")
 	} else {
 		p.monitor.enable = true
-		log.Logger.Debug("pu process get success")
+		logger.Debug("pu process get success")
 		p.monitor.pu = pup
 	}
 }
 
 // Kill stops the process by sending SIGINT first, then forcibly kills it if it does not exit in time.
 func (p *Process) Kill() error {
-	if p.State.State != types.ProcessStateRunning {
+	if p.State.State != ProcessStateRunning {
 		return errors.New("can't kill not running process")
 	}
 	p.State.manualStopFlag = true
 	if err := p.op.Signal(syscall.SIGINT); err != nil {
-		log.Logger.Errorw("send SIGINT signal failed", "err", err)
+		logger.Error("send SIGINT signal failed", "err", err)
 		return p.op.Kill()
 	}
-	p.SetState(types.ProcessStateStopping)
+	p.SetState(ProcessStateStopping)
 	select {
 	case <-p.StopChan:
 		{
 			return nil
 		}
-	case <-time.After(time.Second * time.Duration(config.CF.KillWaitTime)):
+	case <-time.After(p.Config.KillWaitTime):
 		{
-			log.Logger.Debugw("process kill timeout, force stop process", "name", p.Name)
+			logger.Debug("process kill timeout, force stop process", "name", p.Name)
 			return p.op.Kill()
 		}
 	}
@@ -358,20 +420,20 @@ func (p *Process) initLogHandler() {
 }
 
 func (p *Process) readInit() {
-	log.Logger.Debugw("stdout read thread started", "process name", p.Name, "user", p.GetUserString())
+	logger.Debug("stdout read thread started", "process name", p.Name, "user", p.GetUserString())
 	buf := make([]byte, 1024)
 	for {
 		select {
 		case <-p.StopChan:
 			{
-				log.Logger.Debugw("stdout read thread exited", "process name", p.Name, "user", p.GetUserString())
+				logger.Debug("stdout read thread exited", "process name", p.Name, "user", p.GetUserString())
 				return
 			}
 		default:
 			{
 				n, err := p.pty.Read(buf)
 				if err != nil {
-					log.Logger.Debugw("stdout read failed", "err", err)
+					logger.Debug("stdout read failed", "err", err)
 					return
 				}
 				p.bufHandle(buf[:n])
@@ -403,13 +465,13 @@ func (p *Process) SetTerminalSize(cols, rows int) {
 }
 
 func (p *Process) pInit() {
-	log.Logger.Infow("create process success")
+	logger.Info("create process success")
 	p.StopChan = make(chan struct{})
 	p.State.manualStopFlag = false
 	p.State.StartTime = time.Now()
 	p.writers = make(map[string]io.WriteCloser)
 	p.Pid = p.op.Pid
-	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, config.CF.ProcessMsgCacheBufLimit))
+	p.cacheBytesBuf = bytes.NewBuffer(make([]byte, p.Config.ProcessMsgCacheBufLimit))
 	p.initPerformanceStatus()
 	p.initPsutil()
 	p.initCgroup()
@@ -424,12 +486,12 @@ func (p *Process) Start() (err error) {
 	defer func() {
 		if err != nil {
 			p.Config.AutoRestart = false
-			p.SetState(types.ProcessStateWarning)
+			p.SetState(ProcessStateWarning)
 			p.State.Info = "process start failed: " + err.Error()
 		}
 	}()
-	if ok := p.SetState(types.ProcessStateStarting); !ok {
-		log.Logger.Warnw("process is running, skip start")
+	if ok := p.SetState(ProcessStateStarting); !ok {
+		logger.Warn("process is running, skip start")
 		return nil
 	}
 	cmd := exec.Command(p.StartCommand[0], p.StartCommand[1:]...)
@@ -437,14 +499,14 @@ func (p *Process) Start() (err error) {
 	cmd.Env = append(os.Environ(), p.Env...)
 	pty, err := startWithPty(cmd)
 	if err != nil {
-		log.Logger.Warnw("process pty init failed")
+		logger.Warn("process pty init failed")
 		return err
 	}
 	p.pty = pty
-	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
+	logger.Info("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
 	p.op = cmd.Process
 	p.pInit()
-	if !p.SetState(types.ProcessStateRunning) {
+	if !p.SetState(ProcessStateRunning) {
 		return errors.New("state abnormal start failed")
 	}
 	return nil
@@ -456,13 +518,13 @@ func (p *Process) watchDog() {
 	if p.cgroup.enable && p.cgroup.delete != nil {
 		err := p.cgroup.delete()
 		if err != nil {
-			log.Logger.Errorw("cgroup delete failed", "err", err, "process name", p.Name)
+			logger.Error("cgroup delete failed", "err", err, "process name", p.Name)
 		}
 	}
 	if p.logHandler != nil {
 		p.logHandler.Close()
 	}
-	if !p.SetState(types.ProcessStateStopped, func() bool {
+	if !p.SetState(ProcessStateStopped, func() bool {
 		// process is already stopped or warning state, no need to repeat set state
 		close(p.StopChan)
 		p.pty.Close()
@@ -471,9 +533,9 @@ func (p *Process) watchDog() {
 		return
 	}
 	if state.ExitCode() != 0 {
-		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
+		logger.Info("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
 	} else {
-		log.Logger.Infow("process normal exit", "process name", p.Name)
+		logger.Info("process normal exit", "process name", p.Name)
 	}
 	if !p.Config.AutoRestart || p.State.manualStopFlag { // not restart or manual close
 		return
@@ -485,20 +547,20 @@ func (p *Process) watchDog() {
 	if state.ExitCode() == 0 { // normal exit
 		return
 	}
-	if p.State.RestartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
+	if p.State.RestartTimes < p.Config.ProcessRestartsLimit { // restart times not reached limit
 		p.Start()
 		p.State.RestartTimes++
 		return
 	}
-	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(types.ProcessStateWarning)
+	logger.Warn("restart times reached limit", "name", p.Name, "limit", p.Config.ProcessRestartsLimit)
+	p.SetState(ProcessStateWarning)
 	p.State.Info = "restart times abnormal"
 }
 
 type ProcessOptions func(*Process)
 
 // state change hook
-func SetStateHook(fn func(p *Process, state types.ProcessState)) ProcessOptions {
+func SetStateHook(fn func(p *Process, state ProcessState)) ProcessOptions {
 	return func(p *Process) {
 		p.stateHook = fn
 	}
@@ -527,15 +589,23 @@ func SetLogHandler(pipe bool, fn func(p *Process, log []byte)) ProcessOptions {
 }
 
 // NewProcessPty creates a process and configures its handlers.
-func NewProcess(pconfig model.Process, options ...ProcessOptions) *Process {
+func NewProcess(pconfig ProcessConfig, options ...ProcessOptions) *Process {
+	cmd, _ := shlex.Split(pconfig.Cmd)
 	p := &Process{
 		UUID:         pconfig.UUID,
 		Name:         pconfig.Name,
-		StartCommand: utils.UnwarpIgnore(shlex.Split(pconfig.Cmd)),
+		StartCommand: cmd,
 		WorkDir:      pconfig.Cwd,
 		Env:          strings.Split(pconfig.Env, ";"),
 	}
-
+	p.Config.CgroupSwapLimit = pconfig.CgroupSwapLimit
+	p.Config.CgroupPeriod = cmp.Or(pconfig.CgroupPeriod, 100000)
+	p.Config.ProcessControlExpireTime = cmp.Or(pconfig.ProcessControlExpireTime, time.Minute)
+	p.Config.KillWaitTime = cmp.Or(pconfig.KillWaitTime, time.Second*15)
+	p.Config.PerformanceInfoListLength = cmp.Or(pconfig.PerformanceInfoListLength, 30)
+	p.Config.PerformanceInfoInterval = cmp.Or(pconfig.PerformanceInfoInterval, 60)
+	p.Config.ProcessMsgCacheBufLimit = cmp.Or(pconfig.ProcessMsgCacheBufLimit, 1024)
+	p.Config.ProcessRestartsLimit = cmp.Or(pconfig.ProcessRestartsLimit, 3)
 	for _, option := range options {
 		option(p)
 	}
@@ -568,7 +638,7 @@ func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 	go func() {
 		scanner := bufio.NewScanner(pr)
 		if err := scanner.Err(); err != nil {
-			log.Logger.Warn(err)
+			logger.Warn(err.Error())
 			return
 		}
 		for scanner.Scan() {
@@ -577,7 +647,7 @@ func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 			}
 			fn(scanner.Bytes())
 		}
-		log.Logger.Debugw("process log handler by pipe closed")
+		logger.Debug("process log handler by pipe closed")
 	}()
 	return pl
 }

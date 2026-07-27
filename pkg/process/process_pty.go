@@ -7,7 +7,6 @@ import (
 	"os/exec"
 
 	"github.com/creack/pty"
-	"github.com/lzh-1625/go_process_manager/log"
 )
 
 type ptyImpl struct {
@@ -25,7 +24,7 @@ func (p *ptyImpl) SetSize(cols, rows int) error {
 func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 	pf, err := pty.Start(cmd)
 	if err != nil || cmd.Process == nil {
-		log.Logger.Errorw("process start failed", "err", err)
+		logger.Error("process start failed", "err", err)
 		return nil, err
 	}
 	return &ptyImpl{pf}, nil

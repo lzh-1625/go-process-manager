@@ -10,6 +10,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
+	"github.com/lzh-1625/go_process_manager/pkg/process"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
 
@@ -106,7 +107,7 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 		proc.SetOpertor(getUserName(ctx))
 		return nil
 	}
-	if prod.State.State == types.ProcessStateStarting || prod.State.State == types.ProcessStateRunning {
+	if prod.State.State == process.ProcessStateStarting || prod.State.State == process.ProcessStateRunning {
 		return errors.New("process is currently running")
 	}
 	prod.ResetRestartTimes() // Reset the current restart count when the process is started manually.

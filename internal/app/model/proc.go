@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/lzh-1625/go_process_manager/internal/app/types"
+	"github.com/lzh-1625/go_process_manager/pkg/process"
 )
 
 type ProcessInfo struct {
@@ -30,6 +30,6 @@ type Usage struct {
 }
 
 type State struct {
-	State types.ProcessState `json:"state"`
-	Info  string             `json:"info"`
+	State process.ProcessState `json:"state"`
+	Info  string               `json:"info"`
 }

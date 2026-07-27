@@ -13,10 +13,10 @@ import (
 	"github.com/google/shlex"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
+	"github.com/lzh-1625/go_process_manager/pkg/process"
 	"github.com/lzh-1625/go_process_manager/utils"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -31,7 +31,7 @@ type ProcessCtlLogic struct {
 	processStateHandler  ProcessStateHandler
 }
 
-type ProcessStateHandler func(processName string, state types.ProcessState)
+type ProcessStateHandler func(processName string, state process.ProcessState)
 
 func NewProcessCtlLogic(
 	processRepository *repository.ProcessRepository,
@@ -266,7 +266,7 @@ func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Proces
 }
 
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process) {
-	return process.NewProcess(cf,
+	return process.NewProcess(p.buildProcessConfig(cf),
 		process.SetAddWriterHook(func(p *process.Process, user string, c io.WriteCloser) {
 			ProcessWaitCond().Trigger()
 		}),
@@ -285,7 +285,7 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 				Time:  time.Now().UnixMilli(),
 			})
 		}),
-		process.SetStateHook(func(proc *process.Process, state types.ProcessState) {
+		process.SetStateHook(func(proc *process.Process, state process.ProcessState) {
 			ProcessWaitCond().Trigger()
 			p.push(proc, state)
 			p.createEvent(proc, state)
@@ -296,17 +296,17 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 	)
 }
 
-func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.ProcessState) {
+func (p *ProcessCtlLogic) createEvent(proc *process.Process, state process.ProcessState) {
 	var eventType types.EventType
 	kv := []string{}
 	switch state {
-	case types.ProcessStateRunning:
+	case process.ProcessStateRunning:
 		eventType = types.EventProcessStart
 		kv = append(kv, "restartTimes", strconv.Itoa(proc.State.RestartTimes))
-	case types.ProcessStateStopped:
+	case process.ProcessStateStopped:
 		eventType = types.EventProcessStop
 		kv = append(kv, "startTime", proc.State.StartTime.Format(time.DateTime))
-	case types.ProcessStateWarning:
+	case process.ProcessStateWarning:
 		eventType = types.EventProcessWarning
 		kv = append(kv, "reason", proc.State.Info, "startTime", proc.State.StartTime.Format(time.DateTime))
 	default:
@@ -316,8 +316,8 @@ func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.Process
 	p.eventLogic.Create(proc.Name, eventType, kv...)
 }
 
-func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) {
-	if state == types.ProcessStateRunning || state == types.ProcessStateStopping {
+func (p *ProcessCtlLogic) push(proc *process.Process, state process.ProcessState) {
+	if state == process.ProcessStateRunning || state == process.ProcessStateStopping {
 		return
 	}
 	data, err := p.processRepository.GetProcessConfigByID(proc.UUID)
@@ -332,4 +332,29 @@ func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) 
 		"{$pid}":    strconv.Itoa(proc.Pid),
 	}
 	p.pushLogic.Push(pushIDs, messagePlaceholders)
+}
+
+func (p *ProcessCtlLogic) buildProcessConfig(cf model.Process) process.ProcessConfig {
+	return process.ProcessConfig{
+		UUID:                      cf.UUID,
+		Name:                      cf.Name,
+		Cmd:                       cf.Cmd,
+		Cwd:                       cf.Cwd,
+		AutoRestart:               cf.AutoRestart,
+		CompulsoryRestart:         cf.CompulsoryRestart,
+		PushIDs:                   cf.PushIDs,
+		LogReport:                 cf.LogReport,
+		CgroupEnable:              cf.CgroupEnable,
+		MemoryLimit:               cf.MemoryLimit,
+		CpuLimit:                  cf.CpuLimit,
+		Env:                       cf.Env,
+		CgroupSwapLimit:           config.CF.CgroupSwapLimit,
+		CgroupPeriod:              config.CF.CgroupPeriod,
+		ProcessControlExpireTime:  time.Duration(config.CF.ProcessControlExpireTime) * time.Second,
+		KillWaitTime:              time.Duration(config.CF.KillWaitTime) * time.Second,
+		PerformanceInfoListLength: config.CF.PerformanceInfoListLength,
+		PerformanceInfoInterval:   time.Duration(config.CF.PerformanceInfoInterval) * time.Second,
+		ProcessMsgCacheBufLimit:   config.CF.ProcessMsgCacheBufLimit,
+		ProcessRestartsLimit:      config.CF.ProcessRestartsLimit,
+	}
 }

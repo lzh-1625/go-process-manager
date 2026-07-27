@@ -8,15 +8,11 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/lzh-1625/go_process_manager/config"
-	"github.com/lzh-1625/go_process_manager/internal/app/model"
-	"github.com/lzh-1625/go_process_manager/internal/app/types"
 )
 
 func TestProcess(t *testing.T) {
 	var log string
-	process := NewProcess(model.Process{
+	process := NewProcess(ProcessConfig{
 		Name:      "test",
 		Cmd:       "sh -c 'sleep 1 && echo test'",
 		Cwd:       ".",
@@ -35,7 +31,7 @@ func TestProcess(t *testing.T) {
 
 func TestPipeLogHandler(t *testing.T) {
 	var log string
-	process := NewProcess(model.Process{
+	process := NewProcess(ProcessConfig{
 		Name:      "test",
 		Cmd:       "sh",
 		Cwd:       ".",
@@ -74,11 +70,11 @@ func (t *testWriter) Close() error {
 }
 
 func TestProcessWriter(t *testing.T) {
-	config.CF.KillWaitTime = 1
-	process := NewProcess(model.Process{
-		Name: "test",
-		Cmd:  "sh",
-		Cwd:  ".",
+	process := NewProcess(ProcessConfig{
+		Name:         "test",
+		Cmd:          "sh",
+		Cwd:          ".",
+		KillWaitTime: time.Second,
 	})
 	process.Start()
 	tw := &testWriter{
@@ -99,13 +95,13 @@ func TestProcessWriter(t *testing.T) {
 }
 
 func TestProcessAtomic(t *testing.T) {
-	config.CF.KillWaitTime = 1
-	process := NewProcess(model.Process{
-		Name: "test",
-		Cmd:  "sleep 100",
-		Cwd:  ".",
+	process := NewProcess(ProcessConfig{
+		Name:         "test",
+		Cmd:          "sleep 100",
+		Cwd:          ".",
+		KillWaitTime: time.Second,
 	},
-		SetStateHook(func(p *Process, state types.ProcessState) {
+		SetStateHook(func(p *Process, state ProcessState) {
 			t.Logf("state: %v", state)
 		}),
 	)

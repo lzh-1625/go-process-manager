@@ -5,6 +5,7 @@ import (
 	"path"
 
 	"github.com/lzh-1625/go_process_manager/config"
+	"github.com/lzh-1625/go_process_manager/pkg/process"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -42,4 +43,22 @@ func init() {
 	}
 	log, _ := config.Build()
 	Logger = log.Sugar()
+	process.SetLogger(processLoggerImpl{Logger: Logger})
+}
+
+type processLoggerImpl struct {
+	Logger *zap.SugaredLogger
+}
+
+func (p processLoggerImpl) Debug(msg string, keysAndValues ...any) {
+	p.Logger.Debugw(msg, keysAndValues...)
+}
+func (p processLoggerImpl) Info(msg string, keysAndValues ...any) {
+	p.Logger.Infow(msg, keysAndValues...)
+}
+func (p processLoggerImpl) Warn(msg string, keysAndValues ...any) {
+	p.Logger.Warnw(msg, keysAndValues...)
+}
+func (p processLoggerImpl) Error(msg string, keysAndValues ...any) {
+	p.Logger.Errorw(msg, keysAndValues...)
 }
