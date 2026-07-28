@@ -16,6 +16,7 @@ type ptyImpl struct {
 func (p *ptyImpl) SetSize(cols, rows int) error {
 	return p.Console.SetSize(cols, rows)
 }
+func (p *ptyImpl) Wait() {}
 
 // Start starts the process.
 func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
@@ -43,8 +44,4 @@ func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 	}
 	cmd.Process = op
 	return &ptyImpl{pty}, nil
-}
-
-func (p *ptyImpl) Wait() {
-
 }

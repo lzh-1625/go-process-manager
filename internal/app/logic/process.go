@@ -331,7 +331,7 @@ func (p *ProcessCtlLogic) push(proc *process.Process, state process.ProcessState
 		"{$status}": state.String(),
 		"{$pid}":    strconv.Itoa(proc.Pid),
 	}
-	p.pushLogic.Push(pushIDs, messagePlaceholders)
+	go p.pushLogic.Push(pushIDs, messagePlaceholders)
 }
 
 func (p *ProcessCtlLogic) buildProcessConfig(cf model.Process) process.ProcessConfig {

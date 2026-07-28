@@ -20,6 +20,8 @@ func (p *ptyImpl) SetSize(cols, rows int) error {
 	})
 }
 
+func (p *ptyImpl) Wait() {}
+
 // Start starts the process.
 func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 	pf, err := pty.Start(cmd)
@@ -28,8 +30,4 @@ func startWithPty(cmd *exec.Cmd) (ptyInterface, error) {
 		return nil, err
 	}
 	return &ptyImpl{pf}, nil
-}
-
-func (p *ptyImpl) Wait() {
-
 }

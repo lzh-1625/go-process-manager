@@ -221,21 +221,21 @@ func (w *WsApi) startWsConnect(wci *WsConnetInstance, cancel context.CancelFunc,
 		pongChan <- struct{}{}
 		return nil
 	})
-	timer := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Second)
 	go func() {
-		defer timer.Stop()
+		defer ticker.Stop()
+		defer cancel()
 		for {
 			wci.wsLock.Lock()
 			wci.WsConnect.WriteMessage(websocket.PingMessage, nil)
 			wci.wsLock.Unlock()
 			select {
-			case <-timer.C:
-				cancel()
+			case <-ticker.C:
 				return
 			case <-pongChan:
 			}
 			time.Sleep(time.Second * time.Duration(config.CF.WsHealthCheckInterval))
-			timer.Reset(time.Second)
+			ticker.Reset(time.Second)
 		}
 	}()
 
