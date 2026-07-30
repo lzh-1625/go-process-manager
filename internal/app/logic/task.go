@@ -157,12 +157,12 @@ func (t *TaskLogic) CreateApiKey(id int) error {
 }
 
 // RunTaskByKey triggers a task using an API key.
-func (t *TaskLogic) RunTaskByKey(key string) error {
+func (t *TaskLogic) RunTaskByKey(ctx context.Context, key string) error {
 	data, err := t.taskRepository.GetTaskByKey(key)
 	if err != nil {
 		return errors.New("don't exist key")
 	}
-	go t.RunTaskByID(data.ID)
+	go t.RunTaskByID(ctx, data.ID)
 	return nil
 }
 
@@ -175,12 +175,12 @@ func (t *TaskLogic) RunTaskByTriggerEvent(processName string, event types.Proces
 	log.Logger.Infow("get trigger task", "count", len(taskList), "prcess", processName, "trigger event", event)
 	for _, v := range taskList {
 		log.Logger.Infow("execute trigger task", "taskID", v.ID)
-		t.RunTaskByID(v.ID)
+		t.RunTaskByID(context.TODO(), v.ID)
 	}
 }
 
 // RunTaskByID runs the task with the specified ID.
-func (t *TaskLogic) RunTaskByID(id int) error {
+func (t *TaskLogic) RunTaskByID(ctx context.Context, id int) error {
 	task, err := t.getTaskJob(id)
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func (t *TaskLogic) RunTaskByID(id int) error {
 	if task.Running {
 		return errors.New("task is running")
 	}
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	task.Cancel = cancel
 	task.Run(ctx)

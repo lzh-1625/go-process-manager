@@ -76,11 +76,13 @@ func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	proc.SetOpertor(getUserName(ctx))
-	if req.SIGKILL {
-		return proc.Kill9()
-	}
-	return proc.Kill()
+	return proc.Operate(getUserName(ctx), func() error {
+		if req.SIGKILL {
+			return proc.Kill9()
+		}
+		return proc.Kill()
+	})
+
 }
 
 func (p *ProcApi) StartProcess(ctx *echo.Context) error {
@@ -93,25 +95,17 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 	if !p.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationStart) {
 		return errors.New("not permission")
 	}
-	prod, err := p.processCtlLogic.GetProcess(req.UUID)
+	proc, err := p.processCtlLogic.GetProcess(req.UUID)
 	if err != nil {
-		proConfig, err := p.processCtlLogic.GetProcessConfigByID(req.UUID)
-		if err != nil {
-			return err
-		}
-		proc, err := p.processCtlLogic.RunProcess(*proConfig)
-		if err != nil {
-			return err
-		}
-		proc.SetOpertor(getUserName(ctx))
-		return nil
+		return err
 	}
-	if prod.State.State == types.ProcessStateStarting || prod.State.State == types.ProcessStateRunning {
+	if proc.State.State == types.ProcessStateStarting || proc.State.State == types.ProcessStateRunning {
 		return errors.New("process is currently running")
 	}
-	prod.ResetRestartTimes() // Reset the current restart count when the process is started manually.
-	prod.SetOpertor(getUserName(ctx))
-	return prod.Start()
+	proc.ResetRestartTimes() // Reset the current restart count when the process is started manually.
+	return proc.Operate(getUserName(ctx), func() error {
+		return proc.Start()
+	})
 }
 
 func (p *ProcApi) StartAllProcess(ctx *echo.Context) error {

@@ -40,7 +40,7 @@
         <v-expand-transition>
           <div v-show="showFilter" class="px-5 pb-4">
             <v-row dense>
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12" sm="6" md="2">
                 <v-text-field
                   :label="$t('common.name')"
                   variant="outlined"
@@ -50,7 +50,17 @@
                   hide-details
                 />
               </v-col>
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12" sm="6" md="2">
+                <v-text-field
+                  :label="$t('eventPage.user')"
+                  variant="outlined"
+                  density="compact"
+                  v-model="searchForm.user"
+                  clearable
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" sm="6" md="2">
                 <v-select
                   :label="$t('eventPage.eventType')"
                   variant="outlined"
@@ -63,25 +73,20 @@
                   hide-details
                 />
               </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  :label="$t('eventPage.additionalKey')"
+              <v-col cols="12" md="6">
+                <v-combobox
+                  :label="$t('eventPage.additionalInfo')"
+                  :hint="$t('eventPage.additionalFilterHint')"
+                  :delimiters="[',']"
+                  persistent-hint
                   variant="outlined"
                   density="compact"
-                  v-model="searchForm.key"
+                  v-model="searchForm.keyValues"
+                  multiple
+                  chips
+                  closable-chips
                   clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  :label="$t('eventPage.additionalValue')"
-                  variant="outlined"
-                  :disabled="!searchForm.key||searchForm.key==''"
-                  density="compact"
-                  v-model="searchForm.value"
-                  clearable
-                  hide-details
+                  hide-no-data
                 />
               </v-col>
               <v-col cols="12" sm="6" md="3">
@@ -152,13 +157,19 @@
                   {{ item.name }}
                 </v-chip>
               </td>
+              <td>{{ item.user || "-" }}</td>
               <td>
                 <div v-if="item.additional" class="additional-info">
                   <template
                     v-for="(value, key) in parseAdditional(item.additional)"
                     :key="key"
                   >
-                    <v-chip size="x-small" variant="outlined" class="mr-1 mb-1">
+                    <v-chip
+                      size="x-small"
+                      variant="outlined"
+                      class="mr-1 mb-1 cursor-pointer"
+                      @click="addKeyValue(key, value)"
+                    >
                       {{ key }}: {{ value }}
                     </v-chip>
                   </template>
@@ -168,7 +179,7 @@
               <td>{{ formatTime(item.createdTime) }}</td>
             </tr>
             <tr v-if="eventData.length === 0">
-              <td colspan="4" class="text-center text-secondary pa-8">
+              <td colspan="5" class="text-center text-secondary pa-8">
                 {{ $t('common.noData') }}
               </td>
             </tr>
@@ -206,6 +217,7 @@ const snackbarStore = useSnackbarStore();
 const headers = computed(() => [
   { text: t("eventPage.eventType"), align: "start", value: "type" },
   { text: t("common.name"), sortable: false, value: "name" },
+  { text: t("eventPage.user"), sortable: false, value: "user" },
   { text: t("eventPage.additionalInfo"), sortable: false, value: "additional" },
   { text: t("common.time"), value: "createdTime" },
 ]);
@@ -231,11 +243,11 @@ const showFilter = ref(false);
 // 搜索表单
 const searchForm = ref({
   name: "",
+  user: "",
   type: "" as EventType | "",
   startTime: "",
   endTime: "",
-  key: "",
-  value: "",
+  keyValues: [] as string[],
 });
 
 // 计算总页数
@@ -294,6 +306,13 @@ const parseAdditional = (additional: string): Record<string, string> => {
   }
 };
 
+const addKeyValue = (key: string, value: string) => {
+  const keyValue = value ? `${key}:${value}` : key;
+  if (!searchForm.value.keyValues.includes(keyValue)) {
+    searchForm.value.keyValues.push(keyValue);
+  }
+};
+
 // 格式化时间
 const formatTime = (timestamp: string) => {
   if (!timestamp) return "-";
@@ -319,6 +338,10 @@ const buildQuery = (): EventListReq => {
     query.name = searchForm.value.name;
   }
 
+  if (searchForm.value.user) {
+    query.user = searchForm.value.user;
+  }
+
   if (searchForm.value.type) {
     query.type = searchForm.value.type as EventType;
   }
@@ -330,11 +353,8 @@ const buildQuery = (): EventListReq => {
   if (searchForm.value.endTime) {
     query.endTime = new Date(searchForm.value.endTime).getTime();
   }
-  if (searchForm.value.key) {
-    query.key = searchForm.value.key;
-  }
-  if (searchForm.value.value) {
-    query.value = searchForm.value.value;
+  if (searchForm.value.keyValues.length > 0) {
+    query.keyValue = searchForm.value.keyValues.join(",");
   }
 
   return query;
@@ -371,11 +391,11 @@ const searchEvents = () => {
 const resetSearch = () => {
   searchForm.value = {
     name: "",
+    user: "",
     type: "",
     startTime: "",
     endTime: "",
-    key: "",
-    value: "",
+    keyValues: [],
   };
   currentPage.value = 1;
   loadEvents();

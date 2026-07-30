@@ -58,7 +58,7 @@ func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.Process) {
 	p.processMap.Store(uuid, proc)
 }
 
-func (p *ProcessCtlLogic) KillProcess(uuid int, wait bool) error {
+func (p *ProcessCtlLogic) KillProcess(uuid int) error {
 	value, ok := p.processMap.Load(uuid)
 	if !ok {
 		return errors.New("process not exist")
@@ -67,10 +67,7 @@ func (p *ProcessCtlLogic) KillProcess(uuid int, wait bool) error {
 	if !ok {
 		return errors.New("process type error")
 	}
-	if wait {
-		return result.Kill()
-	}
-	return result.Kill9()
+	return result.Kill()
 }
 
 func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.Process, error) {
@@ -115,7 +112,7 @@ func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
 }
 
 func (p *ProcessCtlLogic) DeleteProcess(uuid int) error {
-	p.KillProcess(uuid, true)
+	p.KillProcess(uuid)
 	p.processMap.Delete(uuid)
 	return p.processRepository.DeleteProcessConfig(uuid)
 }
@@ -312,8 +309,7 @@ func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.Process
 	default:
 		return
 	}
-	kv = append(kv, "operator", proc.GetOpertor(true))
-	p.eventLogic.Create(proc.Name, eventType, kv...)
+	p.eventLogic.Create(proc.Name, proc.GetOperator(), eventType, kv...)
 }
 
 func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) {
@@ -327,7 +323,7 @@ func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) 
 	pushIDs := utils.JsonStrToStruct[[]int64](data.PushIDs)
 	messagePlaceholders := map[string]string{
 		"{$name}":   proc.Name,
-		"{$user}":   proc.GetOpertor(false),
+		"{$user}":   proc.GetOperator(),
 		"{$status}": state.String(),
 		"{$pid}":    strconv.Itoa(proc.Pid),
 	}

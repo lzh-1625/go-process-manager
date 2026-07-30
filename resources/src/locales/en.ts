@@ -357,9 +357,11 @@ export default {
   eventPage: {
     title: "System Events",
     eventType: "Event Type",
+    user: "User",
     additionalInfo: "Additional Info",
     additionalKey: "Additional Key",
     additionalValue: "Additional Value",
+    additionalFilterHint: "Format: key:value,key:value,key",
     totalEvents: "Total {n} events",
     loadEventsFailed: "Failed to load events",
     loadEventsError: "Error loading events",

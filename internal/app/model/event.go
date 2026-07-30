@@ -9,6 +9,7 @@ import (
 type Event struct {
 	ID          uint64          `gorm:"primaryKey;autoIncrement;column:id" json:"id"`
 	Name        string          `gorm:"column:name" json:"name"`
+	User        string          `gorm:"column:user" json:"user"`
 	Type        types.EventType `gorm:"column:type" json:"type"`
 	Additional  string          `gorm:"column:additional" json:"additional"`
 	CreatedTime time.Time       `gorm:"column:created_time" json:"createdTime"`
@@ -25,8 +26,8 @@ type EventListReq struct {
 	EndTime   int64           `query:"endTime"`
 	Type      types.EventType `query:"type"`
 	Name      string          `query:"name"`
-	Key       string          `query:"key"`
-	Value     string          `query:"value"`
+	User      string          `query:"user"`
+	KeyValue  string          `query:"keyValue"`
 }
 
 type EventListResp struct {

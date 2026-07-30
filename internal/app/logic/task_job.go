@@ -49,9 +49,16 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 	if ctx.Value(types.CtxTaskTraceID{}) == nil {
 		ctx = context.WithValue(ctx, types.CtxTaskTraceID{}, uuid.NewString())
 	}
-	t.eventLogic.Create(t.TaskConfig.Name, types.EventTaskStart, "traceID", ctx.Value(types.CtxTaskTraceID{}).(string))
+	var user, tarceID string
+	if v, ok := ctx.Value(types.CtxTaskUser{}).(string); ok {
+		user = v
+	}
+	if v, ok := ctx.Value(types.CtxTaskTraceID{}).(string); ok {
+		tarceID = v
+	}
+	t.eventLogic.Create(t.TaskConfig.Name, user, types.EventTaskStart, "traceID", tarceID)
 	defer func() {
-		t.eventLogic.Create(t.TaskConfig.Name, types.EventTaskStop, "traceID", ctx.Value(types.CtxTaskTraceID{}).(string), "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
+		t.eventLogic.Create(t.TaskConfig.Name, user, types.EventTaskStop, "traceID", tarceID, "success", strconv.FormatBool(err == nil), "time", time.Since(t.StartTime).String())
 	}()
 	logger = logger.With("traceID", ctx.Value(types.CtxTaskTraceID{}).(string))
 	t.Running = true

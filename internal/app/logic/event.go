@@ -20,13 +20,14 @@ func NewEventLogic(eventRepository *repository.EventRepository) *EventLogic {
 	}
 }
 
-func (e *EventLogic) Create(name string, eventType types.EventType, additionalKv ...string) {
+func (e *EventLogic) Create(name string, user string, eventType types.EventType, additionalKv ...string) {
 	if len(additionalKv)%2 != 0 {
 		log.Logger.Errorw("parameters length error", "args", additionalKv)
 		return
 	}
 	data := model.Event{
 		Name:        name,
+		User:        user,
 		CreatedTime: time.Now(),
 		Type:        eventType,
 	}

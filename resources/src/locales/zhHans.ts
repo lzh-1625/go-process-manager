@@ -350,9 +350,11 @@ export default {
   eventPage: {
     title: "系统事件",
     eventType: "事件类型",
+    user: "用户",
     additionalInfo: "附加信息",
     additionalKey: "附加键",
     additionalValue: "附加值",
+    additionalFilterHint: "格式：key:value,key:value,key",
     totalEvents: "共 {n} 条事件",
     loadEventsFailed: "加载事件失败",
     loadEventsError: "加载事件出错",

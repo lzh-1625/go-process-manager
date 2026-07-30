@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
 	"go.uber.org/fx"
@@ -19,6 +21,7 @@ func main() {
 			g.UseDB(db)
 			g.ApplyBasic(repository.Tables...)
 			g.Execute()
+			os.Exit(0)
 		}),
 	).Run()
 }

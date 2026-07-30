@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/robfig/cron/v3"
 )
 
@@ -70,7 +72,9 @@ func (t *TaskApi) StartTask(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	go t.taskLogic.RunTaskByID(req.ID)
+	go t.taskLogic.RunTaskByID(
+		context.WithValue(context.Background(), types.CtxTaskUser{}, getUserName(ctx)), req.ID,
+	)
 	return nil
 }
 
@@ -97,7 +101,7 @@ func (t *TaskApi) EditTask(ctx *echo.Context) error {
 }
 
 func (t *TaskApi) RunTaskByKey(ctx *echo.Context) error {
-	return t.taskLogic.RunTaskByKey(ctx.Param("key"))
+	return t.taskLogic.RunTaskByKey(context.TODO(), ctx.Param("key"))
 }
 
 func (t *TaskApi) CreateTaskApiKey(ctx *echo.Context) error {

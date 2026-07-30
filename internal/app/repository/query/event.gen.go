@@ -29,6 +29,7 @@ func newEvent(db *gorm.DB, opts ...gen.DOOption) event {
 	_event.ALL = field.NewAsterisk(tableName)
 	_event.ID = field.NewUint64(tableName, "id")
 	_event.Name = field.NewString(tableName, "name")
+	_event.User = field.NewString(tableName, "user")
 	_event.Type = field.NewString(tableName, "type")
 	_event.Additional = field.NewString(tableName, "additional")
 	_event.CreatedTime = field.NewTime(tableName, "created_time")
@@ -44,6 +45,7 @@ type event struct {
 	ALL         field.Asterisk
 	ID          field.Uint64
 	Name        field.String
+	User        field.String
 	Type        field.String
 	Additional  field.String
 	CreatedTime field.Time
@@ -65,6 +67,7 @@ func (e *event) updateTableName(table string) *event {
 	e.ALL = field.NewAsterisk(table)
 	e.ID = field.NewUint64(table, "id")
 	e.Name = field.NewString(table, "name")
+	e.User = field.NewString(table, "user")
 	e.Type = field.NewString(table, "type")
 	e.Additional = field.NewString(table, "additional")
 	e.CreatedTime = field.NewTime(table, "created_time")
@@ -84,9 +87,10 @@ func (e *event) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (e *event) fillFieldMap() {
-	e.fieldMap = make(map[string]field.Expr, 5)
+	e.fieldMap = make(map[string]field.Expr, 6)
 	e.fieldMap["id"] = e.ID
 	e.fieldMap["name"] = e.Name
+	e.fieldMap["user"] = e.User
 	e.fieldMap["type"] = e.Type
 	e.fieldMap["additional"] = e.Additional
 	e.fieldMap["created_time"] = e.CreatedTime

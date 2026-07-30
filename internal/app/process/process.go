@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -76,10 +75,7 @@ type Process struct {
 		enable bool
 		delete func() error
 	}
-	operate struct {
-		user atomic.Pointer[string]
-		time time.Time
-	}
+	operate       string
 	cacheBytesBuf *bytes.Buffer
 	pty           ptyInterface
 
@@ -87,13 +83,6 @@ type Process struct {
 	stateHook     func(p *Process, state types.ProcessState)
 	addWriterHook func(p *Process, user string, c io.WriteCloser)
 	delWriterHook func(p *Process, user string)
-}
-
-// SetOpertor sets the current process operator for a limited time.
-func (p *Process) SetOpertor(operator string) {
-	if p.operate.user.CompareAndSwap(nil, &operator) {
-		p.operate.time = time.Now()
-	}
 }
 
 func (p *Process) bufHandle(b []byte) {
@@ -113,35 +102,36 @@ func (p *Process) ReadCache(ws io.WriteCloser) error {
 }
 
 // GetOpertor returns the current operator name and clears it.
-func (p *Process) GetOpertor(swap bool) string {
-	var s *string
-	if swap {
-		s = p.operate.user.Swap(nil)
-	} else {
-		s = p.operate.user.Load()
+func (p *Process) GetOperator() string {
+	return p.operate
+}
+
+// GetOpertor returns the current operator name and clears it.
+func (p *Process) Operate(operator string, fn func() error) error {
+	if operator != p.operate {
+		p.Lock.Lock()
+		defer p.Lock.Unlock()
+		p.operate = operator
+		defer func() {
+			p.operate = ""
+		}()
 	}
-	if p.operate.time.Unix() < time.Now().Unix()-int64(config.CF.KillWaitTime) || s == nil {
-		return ""
-	}
-	return *s
+	return fn()
 }
 
 // fn function execution successfully, set state
-// The process state cannot change while fn is running.
-func (p *Process) SetState(state types.ProcessState, fn ...func() bool) bool {
+func (p *Process) setState(state types.ProcessState, afterHookFns ...func()) bool {
 	p.State.stateLock.Lock()
 	defer p.State.stateLock.Unlock()
 	if !p.checkStateChange(p.State.State, state) {
 		return false
 	}
-	for _, v := range fn {
-		if !v() {
-			return false
-		}
-	}
 	p.State.State = state
 	if p.stateHook != nil {
 		p.stateHook(p, state)
+	}
+	for _, fn := range afterHookFns {
+		fn()
 	}
 	return true
 }
@@ -321,9 +311,9 @@ func (p *Process) Kill() error {
 	p.State.manualStopFlag = true
 	if err := p.op.Signal(syscall.SIGINT); err != nil {
 		log.Logger.Errorw("send SIGINT signal failed", "err", err)
-		return p.op.Kill()
+		return p.Kill9()
 	}
-	p.SetState(types.ProcessStateStopping)
+	p.setState(types.ProcessStateStopping)
 	select {
 	case <-p.StopChan:
 		{
@@ -332,14 +322,18 @@ func (p *Process) Kill() error {
 	case <-time.After(time.Second * time.Duration(config.CF.KillWaitTime)):
 		{
 			log.Logger.Debugw("process kill timeout, force stop process", "name", p.Name)
-			return p.op.Kill()
+			return p.Kill9()
 		}
 	}
 }
 
 // Stop the process immediately.
 func (p *Process) Kill9() error {
-	return p.op.Kill()
+	if err := p.op.Kill(); err != nil {
+		return err
+	}
+	<-p.StopChan
+	return nil
 }
 
 func (p *Process) initLogHandler() {
@@ -424,11 +418,11 @@ func (p *Process) Start() (err error) {
 	defer func() {
 		if err != nil {
 			p.Config.AutoRestart = false
-			p.SetState(types.ProcessStateWarning)
+			p.setState(types.ProcessStateWarning)
 			p.State.Info = "process start failed: " + err.Error()
 		}
 	}()
-	if ok := p.SetState(types.ProcessStateStarting); !ok {
+	if ok := p.setState(types.ProcessStateStarting); !ok {
 		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}
@@ -444,7 +438,7 @@ func (p *Process) Start() (err error) {
 	log.Logger.Infow("process start success", "process name", p.Name, "restart times", p.State.RestartTimes)
 	p.op = cmd.Process
 	p.pInit()
-	if !p.SetState(types.ProcessStateRunning) {
+	if !p.setState(types.ProcessStateRunning) {
 		return errors.New("state abnormal start failed")
 	}
 	return nil
@@ -462,12 +456,8 @@ func (p *Process) watchDog() {
 	if p.logHandler != nil {
 		p.logHandler.Close()
 	}
-	if !p.SetState(types.ProcessStateStopped, func() bool {
-		// process is already stopped or warning state, no need to repeat set state
-		close(p.StopChan)
-		p.pty.Close()
-		return true
-	}) {
+	p.pty.Close()
+	if !p.setState(types.ProcessStateStopped, func() { close(p.StopChan) }) {
 		return
 	}
 	if state.ExitCode() != 0 {
@@ -491,7 +481,7 @@ func (p *Process) watchDog() {
 		return
 	}
 	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)
-	p.SetState(types.ProcessStateWarning)
+	p.setState(types.ProcessStateWarning)
 	p.State.Info = "restart times abnormal"
 }
 

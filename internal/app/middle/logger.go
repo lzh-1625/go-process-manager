@@ -81,10 +81,10 @@ func (e *EventLoggerMiddleware) EventLogger(next echo.HandlerFunc) echo.HandlerF
 
 		e.eventLogic.Create(
 			c.Request().Method,
+			user,
 			types.EventApiRequest,
 			"uri", c.Request().URL.Path,
 			"method", c.Request().Method,
-			"user", user,
 			"status", strconv.Itoa(func() int { _, s := echo.ResolveResponseStatus(c.Response(), err); return s }()),
 		)
 		return err

@@ -12,6 +12,7 @@ export type EventType =
 export interface Event {
   id: number;
   name: string;
+  user: string;
   type: EventType;
   additional: string;
   createdTime: string;
@@ -25,8 +26,8 @@ export interface EventListReq {
   endTime?: number;
   type?: EventType;
   name?: string;
-  key?: string;
-  value?: string;
+  user?: string;
+  keyValue?: string;
 }
 
 // 事件列表响应
@@ -34,4 +35,3 @@ export interface EventListResp {
   total: number;
   data: Event[];
 }
-

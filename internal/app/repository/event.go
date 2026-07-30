@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -36,20 +37,28 @@ func (e *EventRepository) GetList(req model.EventListReq) ([]*model.Event, int64
 	if req.Type != "" {
 		tx = tx.Where(e.query.Event.Type.Eq(string(req.Type)))
 	}
+	if req.User != "" {
+		tx = tx.Where(e.query.Event.User.Eq(req.User))
+	}
 	if req.Name != "" {
 		tx = tx.Where(e.query.Event.Name.Like("%" + req.Name + "%"))
 	}
-	if req.Key != "" && req.Value == "" {
-		tx = tx.Where(
-			gen.Cond(datatypes.JSONQuery(e.query.Event.Additional.ColumnName().String()).HasKey(req.Key))...,
-		)
-	}
-	if req.Key != "" && req.Value != "" {
-		tx = tx.Where(
-			gen.Cond(datatypes.JSONQuery(e.query.Event.Additional.ColumnName().String()).Equals(req.Value, req.Key))...,
-		)
-	}
+	for _, v := range strings.Split(req.KeyValue, ",") {
+		key, value, _ := strings.Cut(v, ":")
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		if key != "" && value == "" {
+			tx = tx.Where(
+				gen.Cond(datatypes.JSONQuery(e.query.Event.Additional.ColumnName().String()).HasKey(key))...,
+			)
+		}
+		if key != "" && value != "" {
+			tx = tx.Where(
+				gen.Cond(datatypes.JSONQuery(e.query.Event.Additional.ColumnName().String()).Equals(value, key))...,
+			)
+		}
 
+	}
 	return tx.Order(e.query.Event.CreatedTime.Desc()).FindByPage((req.Page-1)*req.Size, req.Size)
 }
 

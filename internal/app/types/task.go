@@ -19,3 +19,5 @@ const (
 )
 
 type CtxTaskTraceID struct{}
+
+type CtxTaskUser struct{}
