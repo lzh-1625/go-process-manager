@@ -112,9 +112,14 @@ func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
 }
 
 func (p *ProcessCtlLogic) DeleteProcess(uuid int) error {
-	p.KillProcess(uuid)
+	if err := p.KillProcess(uuid); err != nil {
+		return err
+	}
+	if err := p.processRepository.DeleteProcessConfig(uuid); err != nil {
+		return err
+	}
 	p.processMap.Delete(uuid)
-	return p.processRepository.DeleteProcessConfig(uuid)
+	return nil
 }
 
 func (p *ProcessCtlLogic) GetProcessList() []model.ProcessInfo {
@@ -231,6 +236,9 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 		return errors.New("process is being used")
 	}
 	defer result.Lock.Unlock()
+	if err := p.processRepository.UpdateProcessConfig(config); err != nil {
+		return err
+	}
 	result.Config.LogReport = config.LogReport
 	result.Config.CgroupEnable = config.CgroupEnable
 	result.Config.MemoryLimit = config.MemoryLimit
@@ -241,7 +249,7 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	result.WorkDir = config.Cwd
 	result.Name = config.Name
 	result.Env = strings.Split(config.Env, ";")
-	return p.processRepository.UpdateProcessConfig(config)
+	return nil
 }
 
 func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Process) {
