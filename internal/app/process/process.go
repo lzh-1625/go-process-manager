@@ -36,7 +36,7 @@ type Process struct {
 	StartCommand []string
 	WorkDir      string
 	Env          []string
-	Lock         sync.Mutex
+	lock         sync.Mutex
 	StopChan     chan struct{}
 	Control      struct {
 		Controller         string
@@ -58,7 +58,6 @@ type Process struct {
 		StartTime      time.Time
 		Info           string
 		State          types.ProcessState //0 not running, 1 running, 2 warning state
-		stateLock      sync.Mutex
 		RestartTimes   int
 		manualStopFlag bool
 	}
@@ -75,7 +74,10 @@ type Process struct {
 		enable bool
 		delete func() error
 	}
-	operate       string
+	operate struct {
+		lock     sync.Mutex
+		operator string
+	}
 	cacheBytesBuf *bytes.Buffer
 	pty           ptyInterface
 
@@ -103,17 +105,17 @@ func (p *Process) ReadCache(ws io.WriteCloser) error {
 
 // GetOpertor returns the current operator name and clears it.
 func (p *Process) GetOperator() string {
-	return p.operate
+	return p.operate.operator
 }
 
-// GetOpertor returns the current operator name and clears it.
+// Perform process modification operations through the operator.
 func (p *Process) Operate(operator string, fn func() error) error {
-	if operator != p.operate {
-		p.Lock.Lock()
-		defer p.Lock.Unlock()
-		p.operate = operator
+	if operator != p.operate.operator {
+		p.operate.lock.Lock()
+		defer p.operate.lock.Unlock()
+		p.operate.operator = operator
 		defer func() {
-			p.operate = ""
+			p.operate.operator = ""
 		}()
 	}
 	return fn()
@@ -121,8 +123,6 @@ func (p *Process) Operate(operator string, fn func() error) error {
 
 // fn function execution successfully, set state
 func (p *Process) setState(state types.ProcessState, afterHookFns ...func()) bool {
-	p.State.stateLock.Lock()
-	defer p.State.stateLock.Unlock()
 	if !p.checkStateChange(p.State.State, state) {
 		return false
 	}
@@ -415,6 +415,10 @@ func (p *Process) pInit() {
 
 // Start starts the process.
 func (p *Process) Start() (err error) {
+	if !p.lock.TryLock() {
+		return errors.New("process is currently being operated on")
+	}
+	defer p.lock.Unlock()
 	defer func() {
 		if err != nil {
 			p.Config.AutoRestart = false
@@ -447,6 +451,7 @@ func (p *Process) Start() (err error) {
 func (p *Process) watchDog() {
 	p.pty.Wait()
 	state, _ := p.op.Wait()
+	p.lock.Lock()
 	if p.cgroup.enable && p.cgroup.delete != nil {
 		err := p.cgroup.delete()
 		if err != nil {
@@ -456,10 +461,14 @@ func (p *Process) watchDog() {
 	if p.logHandler != nil {
 		p.logHandler.Close()
 	}
-	p.pty.Close()
-	if !p.setState(types.ProcessStateStopped, func() { close(p.StopChan) }) {
+	if !p.setState(types.ProcessStateStopped) {
+		log.Logger.Errorw("", "name", p.Name, "state", p.State.State.String())
+		p.lock.Unlock()
 		return
 	}
+	p.pty.Close()
+	close(p.StopChan)
+	p.lock.Unlock()
 	if state.ExitCode() != 0 {
 		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
 	} else {

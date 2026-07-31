@@ -259,6 +259,10 @@ const controlledByOther = computed(
     props.data.controller !== localStorage.getItem("name")
 );
 
+const canDelete = computed(
+  () => props.data.state.state === 0 || props.data.state.state === 2
+);
+
 const control = () => {
   getContorl(props.data.uuid).then((e) => {
     if (e.code === 0) {
@@ -267,11 +271,29 @@ const control = () => {
   });
 };
 
+const deleteDialog = ref(false);
+const deleting = ref(false);
+
+const openDeleteDialog = () => {
+  if (!canDelete.value) {
+    return;
+  }
+  deleteDialog.value = true;
+};
+
 const del = () => {
+  if (!canDelete.value || deleting.value) {
+    return;
+  }
+
+  deleting.value = true;
   deleteProcessConfig(props.data.uuid).then((e) => {
     if (e.code === 0) {
+      deleteDialog.value = false;
       snackbarStore.showSuccessMessage(t("processCardPage.deleteSuccess"));
     }
+  }).finally(() => {
+    deleting.value = false;
   });
 };
 
@@ -398,7 +420,19 @@ const copyToken = () => {
 
           <v-list nav dense>
             <v-list-item @click="control"> {{ $t("processCardPage.control") }} </v-list-item>
-            <v-list-item @click="del" v-permission="0"> {{ $t("processCardPage.delete") }} </v-list-item>
+            <v-tooltip location="top" :disabled="canDelete" :text="$t('processCardPage.deleteUnavailable')">
+              <template v-slot:activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps">
+                  <v-list-item
+                    v-permission="0"
+                    :disabled="!canDelete"
+                    @click="openDeleteDialog"
+                  >
+                    {{ $t("processCardPage.delete") }}
+                  </v-list-item>
+                </span>
+              </template>
+            </v-tooltip>
             <v-list-item @click="openShareDialog"> {{ $t("processCardPage.createShareLink") }} </v-list-item>
           </v-list>
         </v-menu>
@@ -472,6 +506,27 @@ const copyToken = () => {
       :data="props.data"
       ref="processConfigComponent"
     ></ProcessConfig>
+
+    <v-dialog v-model="deleteDialog" max-width="480" persistent>
+      <v-card class="rounded-xl">
+        <v-card-title class="text-h6 font-weight-medium">
+          {{ $t("processCardPage.confirmDelete") }}
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pt-6">
+          {{ $t("processCardPage.deleteConfirmMessage", { name: props.data.name }) }}
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions class="justify-end pa-4">
+          <v-btn :disabled="deleting" @click="deleteDialog = false">
+            {{ $t("processCardPage.cancel") }}
+          </v-btn>
+          <v-btn color="error" :loading="deleting" @click="del">
+            {{ $t("processCardPage.confirmDelete") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- 分享链接对话框 -->
     <v-dialog v-model="shareDialog" max-width="600">

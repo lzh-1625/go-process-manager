@@ -54,7 +54,7 @@ func (p *ProcessCtlLogic) SetProcessStateHandler(handler ProcessStateHandler) {
 	p.processStateHandler = handler
 }
 
-func (p *ProcessCtlLogic) AddProcess(uuid int, proc *process.Process) {
+func (p *ProcessCtlLogic) addProcess(uuid int, proc *process.Process) {
 	p.processMap.Store(uuid, proc)
 }
 
@@ -83,38 +83,15 @@ func (p *ProcessCtlLogic) GetProcess(uuid int) (*process.Process, error) {
 	return result, nil
 }
 
-func (p *ProcessCtlLogic) KillAllProcess() {
-	wg := sync.WaitGroup{}
-	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.Process)
-		wg.Go(func() {
-			process.Kill()
-		})
-		return true
-	})
-	wg.Wait()
-}
-
-func (p *ProcessCtlLogic) KillAllProcessByUserName(userName string) {
-	stopPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStop)
-	wg := sync.WaitGroup{}
-	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.Process)
-		if !slices.Contains(stopPermissionProcess, process.Name) {
-			return true
-		}
-		wg.Go(func() {
-			process.Kill()
-		})
-		return true
-	})
-	wg.Wait()
-}
-
 func (p *ProcessCtlLogic) DeleteProcess(uuid int) error {
-	if err := p.KillProcess(uuid); err != nil {
+	proc, err := p.GetProcess(uuid)
+	if err != nil {
 		return err
 	}
+	if proc.State.State != types.ProcessStateStopped && proc.State.State != types.ProcessStateWarning {
+		return errors.New("stop the process before deleting it")
+	}
+
 	if err := p.processRepository.DeleteProcessConfig(uuid); err != nil {
 		return err
 	}
@@ -174,22 +151,11 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 	return processInfoList
 }
 
-func (p *ProcessCtlLogic) ProcessStartAll() {
-	p.processMap.Range(func(key, value any) bool {
-		process := value.(*process.Process)
-		err := process.Start()
-		if err != nil {
-			log.Logger.Errorw("process start failed", "name", process.Name)
-		}
-		return true
-	})
-}
-
 func (p *ProcessCtlLogic) ProcessInit() {
 	config := p.processRepository.GetAllProcessConfig()
 	for _, v := range config {
 		proc := p.createProcess(*v)
-		p.AddProcess(v.UUID, proc)
+		p.addProcess(v.UUID, proc)
 		if v.AutoRestart {
 			err := proc.Start()
 			if err != nil {
@@ -200,17 +166,22 @@ func (p *ProcessCtlLogic) ProcessInit() {
 	}
 }
 
-func (p *ProcessCtlLogic) ProcesStartAllByUsername(userName string) {
+func (p *ProcessCtlLogic) ForEach(fn func(proc *process.Process)) {
+	p.processMap.Range(func(key, value any) bool {
+		process := value.(*process.Process)
+		fn(process)
+		return true
+	})
+}
+
+func (p *ProcessCtlLogic) ForEachByOwner(userName string, fn func(proc *process.Process)) {
 	startPermissionProcess := p.permissionRepository.GetProcessNameByPermission(userName, types.OperationStart)
 	p.processMap.Range(func(key, value any) bool {
 		process := value.(*process.Process)
 		if !slices.Contains(startPermissionProcess, process.Name) {
 			return true
 		}
-		err := process.Start()
-		if err != nil {
-			log.Logger.Errorw("process start failed", "name", process.Name)
-		}
+		fn(process)
 		return true
 	})
 }
@@ -232,10 +203,6 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	if !ok {
 		return errors.New("process type error")
 	}
-	if !result.Lock.TryLock() {
-		return errors.New("process is being used")
-	}
-	defer result.Lock.Unlock()
 	if err := p.processRepository.UpdateProcessConfig(config); err != nil {
 		return err
 	}
@@ -259,14 +226,7 @@ func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Proces
 	}
 	config.UUID = index
 	proc = p.createProcess(config)
-	p.AddProcess(config.UUID, proc)
-	return
-}
-
-func (p *ProcessCtlLogic) RunProcess(config model.Process) (proc *process.Process, err error) {
-	proc = p.createProcess(config)
-	p.AddProcess(config.UUID, proc)
-	err = proc.Start()
+	p.addProcess(config.UUID, proc)
 	return
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
+	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -129,7 +130,9 @@ var runCmd = &cobra.Command{
 					OnStop: func(ctx context.Context) error {
 						c.Stop()
 						log.Logger.Infow("waiting for all process to stop")
-						processCtlLogic.KillAllProcess()
+						processCtlLogic.ForEach(func(proc *process.Process) {
+							proc.Kill()
+						})
 						logHandler.Close()
 						print(stopTitle)
 						return nil

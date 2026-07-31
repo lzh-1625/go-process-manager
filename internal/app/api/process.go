@@ -3,12 +3,14 @@ package api
 import (
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
+	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/utils"
 )
@@ -109,20 +111,44 @@ func (p *ProcApi) StartProcess(ctx *echo.Context) error {
 }
 
 func (p *ProcApi) StartAllProcess(ctx *echo.Context) error {
+	user := getUserName(ctx)
 	if isAdmin(ctx) {
-		p.processCtlLogic.ProcessStartAll()
+		p.processCtlLogic.ForEach(func(proc *process.Process) {
+			proc.Operate(user, func() error {
+				return proc.Start()
+			})
+		})
 	} else {
-		p.processCtlLogic.ProcesStartAllByUsername(getUserName(ctx))
+		p.processCtlLogic.ForEachByOwner(user, func(proc *process.Process) {
+			proc.Operate(user, func() error {
+				return proc.Start()
+			})
+		})
 	}
 	return nil
 }
 
 func (p *ProcApi) KillAllProcess(ctx *echo.Context) error {
+	user := getUserName(ctx)
+	wg := sync.WaitGroup{}
 	if isAdmin(ctx) {
-		p.processCtlLogic.KillAllProcess()
+		p.processCtlLogic.ForEach(func(proc *process.Process) {
+			wg.Go(func() {
+				proc.Operate(user, func() error {
+					return proc.Kill()
+				})
+			})
+		})
 	} else {
-		p.processCtlLogic.KillAllProcessByUserName(getUserName(ctx))
+		p.processCtlLogic.ForEachByOwner(user, func(proc *process.Process) {
+			wg.Go(func() {
+				proc.Operate(user, func() error {
+					return proc.Kill()
+				})
+			})
+		})
 	}
+	wg.Wait()
 	return nil
 }
 

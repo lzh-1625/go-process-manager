@@ -42,7 +42,9 @@ func TestPipeLogHandler(t *testing.T) {
 		LogReport: true,
 	},
 		SetLogHandler(true, func(p *Process, content []byte) {
-			log = string(content)
+			if log == "" {
+				log = string(content)
+			}
 		}),
 	)
 	process.Start()
