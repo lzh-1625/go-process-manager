@@ -149,3 +149,67 @@ func TestProcessAtomic(t *testing.T) {
 	})
 	wg.Wait()
 }
+
+func TestProcessOperateRetainsOperatorUntilAllSameOperatorCallsFinish(t *testing.T) {
+	proc := NewProcess(model.Process{})
+	firstEntered := make(chan struct{})
+	firstRelease := make(chan struct{})
+	firstDone := make(chan struct{})
+	secondEntered := make(chan struct{})
+	secondRelease := make(chan struct{})
+	secondDone := make(chan struct{})
+	bobEntered := make(chan struct{})
+
+	go func() {
+		defer close(firstDone)
+		if err := proc.Operate("alice", func() error {
+			close(firstEntered)
+			<-firstRelease
+			return nil
+		}); err != nil {
+			t.Errorf("first alice operation failed: %v", err)
+		}
+	}()
+	<-firstEntered
+
+	go func() {
+		defer close(secondDone)
+		if err := proc.Operate("alice", func() error {
+			close(secondEntered)
+			<-secondRelease
+			return nil
+		}); err != nil {
+			t.Errorf("second alice operation failed: %v", err)
+		}
+	}()
+	<-secondEntered
+
+	close(firstRelease)
+	<-firstDone
+	if got := proc.GetOperator(); got != "alice" {
+		t.Fatalf("operator = %q after first operation exits, want alice", got)
+	}
+
+	go func() {
+		if err := proc.Operate("bob", func() error {
+			close(bobEntered)
+			return nil
+		}); err != nil {
+			t.Errorf("bob operation failed: %v", err)
+		}
+	}()
+
+	select {
+	case <-bobEntered:
+		t.Fatal("bob entered while alice operation was still running")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(secondRelease)
+	<-secondDone
+	select {
+	case <-bobEntered:
+	case <-time.After(time.Second):
+		t.Fatal("bob did not enter after all alice operations finished")
+	}
+}

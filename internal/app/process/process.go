@@ -76,7 +76,9 @@ type Process struct {
 	}
 	operate struct {
 		lock     sync.Mutex
+		cond     *sync.Cond
 		operator string
+		active   int
 	}
 	cacheBytesBuf *bytes.Buffer
 	pty           ptyInterface
@@ -103,21 +105,34 @@ func (p *Process) ReadCache(ws io.WriteCloser) error {
 	return err
 }
 
-// GetOpertor returns the current operator name and clears it.
+// GetOperator returns the current operator name.
 func (p *Process) GetOperator() string {
+	p.operate.lock.Lock()
+	defer p.operate.lock.Unlock()
 	return p.operate.operator
 }
 
 // Perform process modification operations through the operator.
 func (p *Process) Operate(operator string, fn func() error) error {
-	if operator != p.operate.operator {
+	p.operate.lock.Lock()
+	for p.operate.active > 0 && p.operate.operator != operator {
+		p.operate.cond.Wait()
+	}
+	if p.operate.active == 0 {
+		p.operate.operator = operator
+	}
+	p.operate.active++
+	p.operate.lock.Unlock()
+
+	defer func() {
 		p.operate.lock.Lock()
 		defer p.operate.lock.Unlock()
-		p.operate.operator = operator
-		defer func() {
+		p.operate.active--
+		if p.operate.active == 0 {
 			p.operate.operator = ""
-		}()
-	}
+			p.operate.cond.Broadcast()
+		}
+	}()
 	return fn()
 }
 
@@ -534,7 +549,7 @@ func NewProcess(pconfig model.Process, options ...ProcessOptions) *Process {
 		WorkDir:      pconfig.Cwd,
 		Env:          strings.Split(pconfig.Env, ";"),
 	}
-
+	p.operate.cond = sync.NewCond(&p.operate.lock)
 	for _, option := range options {
 		option(p)
 	}
