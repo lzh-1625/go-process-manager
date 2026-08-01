@@ -430,9 +430,11 @@ func (p *Process) pInit() {
 
 // Start starts the process.
 func (p *Process) Start() (err error) {
-	if !p.lock.TryLock() {
-		return errors.New("process is currently being operated on")
+	if ok := p.setState(types.ProcessStateStarting); !ok {
+		log.Logger.Warnw("process is running, skip start")
+		return nil
 	}
+	p.lock.Lock()
 	defer p.lock.Unlock()
 	defer func() {
 		if err != nil {
