@@ -237,10 +237,10 @@ func (p *ProcApi) ProcessCreateShare(ctx *echo.Context) error {
 	}); err != nil {
 		return err
 	}
-	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
-		Data: map[string]any{
-			"token": token,
-		},
+	return ctx.JSON(http.StatusOK, model.Response[any]{
+		Data: struct {
+			Token string `json:"token"`
+		}{token},
 		Message: "success",
 		Code:    0,
 	})
