@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ProcessItem } from "~/src/types/process/process";
+import { ProcessItem, ProcessState } from "~/src/types/process/process";
 import { useI18n } from "vue-i18n";
 import echarts from "@/plugins/echarts";
 import TerminalPty from "./TerminalPty.vue";
@@ -475,7 +475,11 @@ const copyToken = () => {
             density="comfortable"
             :color="props.data.state.state === 4 ? 'red' : undefined"
             :loading="stopLoading && props.data.state.state !== 4"
-            :disabled="stopLoading && props.data.state.state !== 4"
+            :disabled="
+              props.data.state.state === ProcessState.Stopped ||
+              props.data.state.state === ProcessState.Warning ||
+              (stopLoading && props.data.state.state !== ProcessState.Stopping)
+            "
           />
           <!-- 编辑按钮 -->
           <v-btn
