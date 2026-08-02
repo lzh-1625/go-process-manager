@@ -430,7 +430,7 @@ func (p *Process) pInit() {
 
 // Start starts the process.
 func (p *Process) Start() (err error) {
-	if ok := p.setState(types.ProcessStateStarting); !ok {
+	if p.State.State == types.ProcessStateRunning {
 		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}

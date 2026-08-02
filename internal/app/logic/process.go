@@ -219,10 +219,13 @@ func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
 	return nil
 }
 
-func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Process) {
+func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Process, err error) {
+	if args, err := shlex.Split(config.Cmd); len(args) == 0 || err != nil {
+		return nil, errors.New("invalid command")
+	}
 	index, err := p.processRepository.AddProcessConfig(config)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	config.UUID = index
 	proc = p.createProcess(config)

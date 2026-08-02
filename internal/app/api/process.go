@@ -37,9 +37,9 @@ func (p *ProcApi) CreateProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	proc := p.processCtlLogic.NewProcess(req)
-	if proc == nil {
-		return errors.New("create process failed")
+	proc, err := p.processCtlLogic.NewProcess(req)
+	if err != nil {
+		return err
 	}
 	return ctx.JSON(http.StatusOK, model.Response[map[string]any]{
 		Data: map[string]any{
