@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useI18n } from "vue-i18n";
 import { postProcessConfig } from "~/src/api/process";
 import { getPushList } from "~/src/api/push";
-import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { ProcessConfig } from "~/src/types/process/process";
 
-const { t } = useI18n();
-const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
 const configForm = ref<Partial<ProcessConfig>>({
   termType: "pty",
@@ -72,7 +68,6 @@ const create = () => {
 
   postProcessConfig(configForm.value).then((e) => {
     if (e.code === 0) {
-      snackbarStore.showSuccessMessage(t("processCreatePage.createSuccess"));
       dialog.value = false;
       // 清空表单
       envVars.value = [];

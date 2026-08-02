@@ -12,6 +12,7 @@ import {
 } from "~/src/api/process";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
+import { isProcessStartDisabled } from "~/src/utils/processState";
 
 const { t } = useI18n();
 let chartInstance: echarts.ECharts;
@@ -148,11 +149,7 @@ type ConfigHandle = {
 const processConfigComponent = ref<ConfigHandle | null>(null);
 
 const handleStart = () => {
-  startProcess(props.data.uuid).then((e) => {
-    if (e.code === 0) {
-      snackbarStore.showSuccessMessage(t("processCardPage.startSuccess"));
-    }
-  });
+  void startProcess(props.data.uuid);
 };
 
 const handleStop = () => {
@@ -161,11 +158,7 @@ const handleStop = () => {
   }
 
   stopLoading.value = true;
-  killProcess(props.data.uuid, props.data.state.state === 4).then((e) => {
-    if (e.code === 0) {
-      snackbarStore.showSuccessMessage(t("processCardPage.stopSuccess"));
-    }
-  }).finally(() => {
+  killProcess(props.data.uuid, props.data.state.state === 4).finally(() => {
     stopLoading.value = false;
   });
 };
@@ -290,7 +283,6 @@ const del = () => {
   deleteProcessConfig(props.data.uuid).then((e) => {
     if (e.code === 0) {
       deleteDialog.value = false;
-      snackbarStore.showSuccessMessage(t("processCardPage.deleteSuccess"));
     }
   }).finally(() => {
     deleting.value = false;
@@ -472,6 +464,7 @@ const copyToken = () => {
             icon="mdi-play"
             variant="text"
             density="comfortable"
+            :disabled="isProcessStartDisabled(props.data.state.state)"
           />
           <!-- 停止按钮 -->
           <v-btn

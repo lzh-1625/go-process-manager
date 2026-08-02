@@ -190,6 +190,10 @@ import {
 import ProcessCreate from "~/src/components/process/ProcessCreate.vue";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { ProcessItem } from "~/src/types/process/process";
+import {
+  detectProcessChanges,
+  type ProcessChange,
+} from "~/src/utils/processNotifications";
 type CreateHandle = {
   createProcessDialog: () => void;
   test: () => void;
@@ -207,10 +211,60 @@ const fab = ref(false);
 const initFirst = ref(false);
 
 const version = ref(0);
+let previousProcessData: ProcessItem[] | null = null;
+
+const sortProcessData = (items?: ProcessItem[]) =>
+  [...(items || [])].sort((a, b) => a.name.localeCompare(b.name));
+
+const snapshotProcessData = (items: ProcessItem[]) =>
+  items.map((item) => ({
+    ...item,
+    state: { ...item.state },
+  }));
+
+const notifyProcessChange = (change: ProcessChange) => {
+  switch (change.type) {
+    case "created":
+      snackbarStore.showSuccessMessage(
+        t("processPage.processCreated", { name: change.name }),
+      );
+      break;
+    case "deleted":
+      snackbarStore.showInfoMessage(
+        t("processPage.processDeleted", { name: change.name }),
+      );
+      break;
+    case "started":
+      snackbarStore.showSuccessMessage(
+        t("processPage.processStarted", { name: change.name }),
+      );
+      break;
+    case "stopping":
+      snackbarStore.showInfoMessage(
+        t("processPage.processStopping", { name: change.name }),
+      );
+      break;
+    case "stopped":
+      snackbarStore.showInfoMessage(
+        t("processPage.processStopped", { name: change.name }),
+      );
+      break;
+    case "warning":
+      snackbarStore.showWarningMessage(
+        t("processPage.processWarning", {
+          name: change.name,
+          info: change.info || t("processPage.warningNoDetails"),
+        }),
+      );
+      break;
+  }
+};
 
 const initProcessData = () => {
   getProcessList().then((e) => {
-    processData.value = e.data?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+    const nextProcessData = sortProcessData(e.data);
+    processData.value = nextProcessData;
+    previousProcessData = snapshotProcessData(nextProcessData);
     initFirst.value = true;
     getProcessListWait();
   });
@@ -242,9 +296,7 @@ const executeStartAll = () => {
   startingAll.value = true;
   startProcessAll()
     .then((e) => {
-      if (e.code === 0) {
-        snackbarStore.showSuccessMessage(t("processPage.startAllSuccess"));
-      } else {
+      if (e.code !== 0) {
         snackbarStore.showErrorMessage(t("processPage.startFailed"));
       }
     })
@@ -262,9 +314,7 @@ const executeKillAll = () => {
   killingAll.value = true;
   killProcessAll()
     .then((e) => {
-      if (e.code === 0) {
-        snackbarStore.showSuccessMessage(t("processPage.stopAllSuccess"));
-      } else {
+      if (e.code !== 0) {
         snackbarStore.showErrorMessage(t("processPage.stopFailed"));
       }
     })
@@ -314,9 +364,14 @@ const getProcessListWait = () => {
     .then((response) => {
       clearRetryTimer();
       version.value = parseInt(response.headers?.version || "0");
-      processData.value = response.data.data.sort((a: { name: string; }, b: { name: any; }) =>
-        a.name.localeCompare(b.name)
-      );
+      const nextProcessData = sortProcessData(response.data.data);
+      if (previousProcessData) {
+        detectProcessChanges(previousProcessData, nextProcessData).forEach(
+          notifyProcessChange,
+        );
+      }
+      processData.value = nextProcessData;
+      previousProcessData = snapshotProcessData(nextProcessData);
       getProcessListWait();
     })
     .catch((error) => {

@@ -274,6 +274,13 @@ export default {
     stopAllSuccess: "All processes stopped",
     stopFailed: "Stop failed",
     stopError: "Stop error",
+    processCreated: "Process {name} was created",
+    processDeleted: "Process {name} was deleted",
+    processStarted: "Process {name} started",
+    processStopping: "Process {name} is stopping",
+    processStopped: "Process {name} stopped",
+    processWarning: "Process {name} warning: {info}",
+    warningNoDetails: "No details available",
   },
   processCreatePage: {
     title: "Add Process",

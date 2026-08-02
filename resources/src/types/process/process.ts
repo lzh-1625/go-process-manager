@@ -14,13 +14,16 @@ export interface ProcessItem {
 }
 
 export interface State {
-  state: number;
-  info: Info;
+  state: ProcessState;
+  info: string;
 }
 
-export enum Info {
-  Empty = "",
-  重启次数异常 = "重启次数异常",
+export enum ProcessState {
+  Stopped = 0,
+  Starting = 1,
+  Warning = 2,
+  Running = 3,
+  Stopping = 4,
 }
 
 export enum TermType {

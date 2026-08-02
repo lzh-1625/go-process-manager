@@ -1,13 +1,20 @@
 import { defineStore } from "pinia";
 
-type MessageType = "" | "info" | "success" | "error" | "warning";
+export type MessageType = "" | "info" | "success" | "error" | "warning";
+
+export interface SnackbarMessage {
+  id: number;
+  message: string;
+  type: MessageType;
+}
+
+const maxVisibleMessages = 5;
 
 export const useSnackbarStore = defineStore({
   id: "snackbarStore",
   state: () => ({
-    isShow: false,
-    message: "",
-    type: "",
+    nextId: 1,
+    notifications: [] as SnackbarMessage[],
   }),
 
   persist: {
@@ -17,31 +24,38 @@ export const useSnackbarStore = defineStore({
 
   getters: {},
   actions: {
-    showMessage(message) {
-      this.isShow = true;
-      this.message = message;
-      this.type = "";
+    enqueueMessage(message: string, type: MessageType) {
+      this.notifications.push({ id: this.nextId++, message, type });
+      const overflow = this.notifications.length - maxVisibleMessages;
+      if (overflow > 0) {
+        this.notifications.splice(0, overflow);
+      }
     },
 
-    showErrorMessage(message) {
-      this.isShow = true;
-      this.message = message;
-      this.type = "error";
+    removeMessage(id: number) {
+      const index = this.notifications.findIndex(
+        (notification) => notification.id === id,
+      );
+      if (index >= 0) {
+        this.notifications.splice(index, 1);
+      }
     },
-    showSuccessMessage(message) {
-      this.isShow = true;
-      this.message = message;
-      this.type = "success";
+
+    showMessage(message: string) {
+      this.enqueueMessage(message, "");
     },
-    showInfoMessage(message) {
-      this.isShow = true;
-      this.message = message;
-      this.type = "info";
+
+    showErrorMessage(message: string) {
+      this.enqueueMessage(message, "error");
     },
-    showWarningMessage(message) {
-      this.isShow = true;
-      this.message = message;
-      this.type = "warning";
+    showSuccessMessage(message: string) {
+      this.enqueueMessage(message, "success");
+    },
+    showInfoMessage(message: string) {
+      this.enqueueMessage(message, "info");
+    },
+    showWarningMessage(message: string) {
+      this.enqueueMessage(message, "warning");
     },
   },
 });

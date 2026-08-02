@@ -61,9 +61,6 @@ class RequestHttp {
           snackbarStore.showErrorMessage(data.message);
           return Promise.reject(data);
         }
-        if (data.code > 0) {
-          snackbarStore.showSuccessMessage(data.message);
-        }
         return data;
       },
       (error: AxiosError) => {
