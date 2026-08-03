@@ -46,7 +46,7 @@ func (w *WaitCond) Trigger() {
 func (w *WaitCond) Wait(ctx context.Context, getVersion func() int64) {
 	w.Lock.RLock()
 	version := getVersion()
-	if version != 0 && w.Version.Load() > version {
+	if version < w.Version.Load() {
 		w.Lock.RUnlock()
 		return
 	}
