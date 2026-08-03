@@ -43,11 +43,13 @@ func (w *WaitCond) Trigger() {
 }
 
 // Wait blocks until an event is broadcast or the context is canceled.
-func (w *WaitCond) Wait(ctx context.Context, version int64) {
-	if w.Version.Load() > version {
+func (w *WaitCond) Wait(ctx context.Context, getVersion func() int64) {
+	w.Lock.RLock()
+	version := getVersion()
+	if version != 0 && w.Version.Load() > version {
+		w.Lock.RUnlock()
 		return
 	}
-	w.Lock.RLock()
 	ch := w.Ch
 	w.Lock.RUnlock()
 
