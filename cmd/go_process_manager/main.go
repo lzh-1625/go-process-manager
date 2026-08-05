@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -130,9 +131,11 @@ var runCmd = &cobra.Command{
 					OnStop: func(ctx context.Context) error {
 						c.Stop()
 						log.Logger.Infow("waiting for all process to stop")
+						wg := sync.WaitGroup{}
 						processCtlLogic.ForEach(func(proc *process.Process) {
-							proc.Kill()
+							wg.Go(func() { proc.Kill() })
 						})
+						wg.Wait()
 						logHandler.Close()
 						print(stopTitle)
 						return nil
