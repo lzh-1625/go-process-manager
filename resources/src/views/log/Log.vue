@@ -32,11 +32,12 @@
           <div v-show="showFilter" class="px-4 px-sm-5 pb-4">
             <v-row dense class="align-center">
               <v-col cols="12" sm="12" md="12">
-                <v-text-field
+                <v-combobox
                   :label="$t('logPage.logContent')"
                   variant="outlined"
                   density="compact"
                   v-model="searchForm.log"
+                  :items="logSearchHistory"
                   clearable
                   hide-details
                   prepend-inner-icon="mdi-magnify"
@@ -295,6 +296,9 @@ const currentPage = ref(1);
 const pageSize = ref(25);
 const loading = ref(false);
 const showFilter = ref(false);
+const LOG_SEARCH_HISTORY_STORAGE_KEY = "logSearchHistory";
+const MAX_LOG_SEARCH_HISTORY = 10;
+const logSearchHistory = ref<string[]>([]);
 
 const searchForm = ref({
   name: [] as string[],
@@ -309,6 +313,38 @@ const searchForm = ref({
 const totalPages = computed(() => Math.ceil(totalLogs.value / pageSize.value));
 
 // ── 工具函数 ──────────────────────────────────────────────────────────────
+const loadLogSearchHistory = () => {
+  try {
+    const storedHistory = JSON.parse(
+      localStorage.getItem(LOG_SEARCH_HISTORY_STORAGE_KEY) ?? "[]",
+    );
+    if (Array.isArray(storedHistory)) {
+      logSearchHistory.value = storedHistory
+        .filter((item): item is string => typeof item === "string" && item.trim())
+        .slice(0, MAX_LOG_SEARCH_HISTORY);
+    }
+  } catch {
+    // Ignore unavailable or malformed browser storage.
+  }
+};
+
+const saveLogSearchHistory = () => {
+  const keyword = searchForm.value.log.trim();
+  if (!keyword) return;
+
+  const history = [
+    keyword,
+    ...logSearchHistory.value.filter((item) => item !== keyword),
+  ].slice(0, MAX_LOG_SEARCH_HISTORY);
+  logSearchHistory.value = history;
+
+  try {
+    localStorage.setItem(LOG_SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(history));
+  } catch {
+    // Keep the in-memory history available when browser storage is unavailable.
+  }
+};
+
 const convertAnsiToHtml = (text: string) => {
   if (!text) return "";
   return ansiConverter
@@ -370,7 +406,10 @@ const loadLogs = async (options?: { page?: number }) => {
   }
 };
 
-const searchLogs = () => loadLogs({ page: 1 });
+const searchLogs = () => {
+  saveLogSearchHistory();
+  loadLogs({ page: 1 });
+};
 const resetSearch = () => {
   searchForm.value = {
     name: [] as string[],
@@ -401,6 +440,7 @@ const loadProcessList = async () => {
 
 onMounted(() => {
   if (smAndDown.value) showFilter.value = false;
+  loadLogSearchHistory();
   loadProcessList();
   loadLogs();
 });
