@@ -63,7 +63,7 @@ const initSocket = (url: string) => {
   };
 
   socket.onclose = () => {
-    snackbarStore.showErrorMessage(t("processCardPage.terminalDisconnected"));
+    snackbarStore.showInfoMessage(t("processCardPage.terminalDisconnected"));
     dialog.value = false;
   };
 

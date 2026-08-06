@@ -57,7 +57,7 @@ const initSocket = (url) => {
   };
 
   socket.onclose = () => {
-    snackbarStore.showErrorMessage(t("shareTerminal.connectionClosed"));
+    snackbarStore.showInfoMessage(t("shareTerminal.connectionClosed"));
     cleanup();
   };
 
