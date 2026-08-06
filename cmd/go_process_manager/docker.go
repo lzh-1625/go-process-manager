@@ -40,12 +40,21 @@ func superviseContainer(ctx context.Context, containerName string) {
 	}
 	defer cli.Close()
 
-	cli.ContainerStart(ctx, containerName, container.StartOptions{})
-	out, err := cli.ContainerLogs(ctx, containerName, container.LogsOptions{
+	info, err := cli.ContainerInspect(ctx, containerName)
+	if err != nil {
+		panic(err)
+	}
+	var opt = container.LogsOptions{
 		ShowStdout: true,
 		Follow:     true,
-		Since:      strconv.FormatInt(time.Now().Unix(), 10),
-	})
+	}
+	if info.State.Status != container.StateRunning {
+		_ = cli.ContainerStart(ctx, containerName, container.StartOptions{})
+		opt.Tail = "50"
+	} else {
+		opt.Since = strconv.FormatInt(time.Now().Unix(), 10)
+	}
+	out, err := cli.ContainerLogs(ctx, containerName, opt)
 	if err != nil {
 		panic(err)
 	}
