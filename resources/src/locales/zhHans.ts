@@ -339,6 +339,8 @@ export default {
     title: "日志查看",
     processName: "进程名",
     logContent: "日志内容",
+    searchSyntaxHint:
+      "查询语法：普通文本或 ^文本为包含；~文本为通配符；!文本或 !^文本为排除；多个条件用空格分隔，包含空格时使用引号。",
     user: "使用者",
     sortBy: "排序方式",
     auto: "自动",

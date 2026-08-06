@@ -346,6 +346,8 @@ export default {
     title: "Log Viewer",
     processName: "Process Name",
     logContent: "Log Content",
+    searchSyntaxHint:
+      "Syntax: plain text or ^text includes; ~text uses a wildcard; !text or !^text excludes; separate conditions with spaces and quote text that contains spaces.",
     user: "User",
     sortBy: "Sort By",
     auto: "Auto",

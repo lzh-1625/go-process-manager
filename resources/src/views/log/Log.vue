@@ -42,7 +42,25 @@
                   hide-details
                   prepend-inner-icon="mdi-magnify"
                   @keyup.enter="searchLogs"
-                />
+                >
+                  <template #append-inner>
+                    <v-tooltip
+                      :text="$t('logPage.searchSyntaxHint')"
+                      location="top"
+                    >
+                      <template #activator="{ props }">
+                        <v-btn
+                          v-bind="props"
+                          icon="mdi-alert-circle-outline"
+                          size="x-small"
+                          variant="text"
+                          density="compact"
+                          :aria-label="$t('logPage.searchSyntaxHint')"
+                        />
+                      </template>
+                    </v-tooltip>
+                  </template>
+                </v-combobox>
               </v-col>
             </v-row>
             <v-row dense>
