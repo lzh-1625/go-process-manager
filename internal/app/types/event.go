@@ -10,4 +10,5 @@ const (
 	EventTaskStart      EventType = "TaskStart"
 	EventTaskStop       EventType = "TaskStop"
 	EventApiRequest     EventType = "ApiRequest"
+	EventPush           EventType = "PushRequest"
 )

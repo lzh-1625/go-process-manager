@@ -298,5 +298,5 @@ func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) 
 		"{$status}": state.String(),
 		"{$pid}":    strconv.Itoa(proc.Pid),
 	}
-	p.pushLogic.Push(pushIDs, messagePlaceholders)
+	go p.pushLogic.Push(pushIDs, messagePlaceholders)
 }

@@ -1,25 +1,30 @@
 package logic
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository"
+	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 )
 
 type PushLogic struct {
 	httpClient     *http.Client
 	pushRepository *repository.PushRepository
+	evenLogic      *EventLogic
 }
 
-func NewPushLogic(pushRepository *repository.PushRepository) *PushLogic {
+func NewPushLogic(pushRepository *repository.PushRepository, evenLogic *EventLogic) *PushLogic {
 	return &PushLogic{
 		httpClient:     http.DefaultClient,
 		pushRepository: pushRepository,
+		evenLogic:      evenLogic,
 	}
 }
 
@@ -33,19 +38,27 @@ func (p *PushLogic) Push(ids []int64, placeholders map[string]string) {
 			if v.Method == http.MethodPost {
 				reader = strings.NewReader(p.getReplaceMessage(placeholders, v.Body, false))
 			}
+
+			var pushArgs []string
+			for k, v := range placeholders {
+				pushArgs = append(pushArgs, k, v)
+			}
 			req, err := http.NewRequest(v.Method, url, reader)
 			if err != nil {
+				p.evenLogic.Create(fmt.Sprintf("ID:%d", v.ID), "", types.EventPush, append(pushArgs, "success", "false", "err", err.Error())...)
 				log.Logger.Warnw("push failed", "err", err, "remark", v.Remark)
 				continue
 			}
 			req.Header.Add("content-type", "application/json")
 			resp, err = p.httpClient.Do(req)
 			if err != nil {
+				p.evenLogic.Create(fmt.Sprintf("ID:%d", v.ID), "", types.EventPush, append(pushArgs, "success", "false", "err", err.Error())...)
 				log.Logger.Warnw("push failed", "err", err, "remark", v.Remark)
 				continue
 			}
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
+			p.evenLogic.Create(fmt.Sprintf("ID:%d", v.ID), "", types.EventPush, append(pushArgs, "success", "true", "code", strconv.Itoa(resp.StatusCode))...)
 		}
 	}
 }
