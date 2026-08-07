@@ -109,7 +109,6 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if proc.State.State == types.ProcessStateRunning {
 		proc.SetTerminalSize(req.Cols, req.Rows)
 		write := w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
-		w.eventLogic.Create(proc.Name, reqUser, types.EventProcessConnect, "write", strconv.FormatBool(write))
 		w.startWsConnect(wci, cancel, proc, write)
 		proc.AddWriter(reqUser, wci)
 		defer proc.DeleteWriter(reqUser)
@@ -178,7 +177,6 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	w.eventLogic.Create(proc.Name, guestName, types.EventProcessConnect, "by", data.CreateBy, "write", strconv.FormatBool(data.Write))
 	w.startWsConnect(wci, cancel, proc, data.Write)
 	proc.AddWriter(guestName, wci)
 	defer proc.DeleteWriter(guestName)

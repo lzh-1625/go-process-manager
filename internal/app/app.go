@@ -14,7 +14,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func NewApp() *fx.App {
+func NewApp(opts ...fx.Option) *fx.App {
 	return fx.New(
 		fx.NopLogger,
 		fx.StopTimeout(time.Second*5+time.Duration(config.CF.KillWaitTime)*time.Second),
@@ -32,7 +32,10 @@ func NewApp() *fx.App {
 				OnStart: func(ctx context.Context) error {
 					go func() {
 						log.Logger.Infow("starting echo server", "listen", config.CF.Listen)
-						err := r.Start(config.CF.Listen)
+						sc := echo.StartConfig{
+							Address: config.CF.Listen,
+						}
+						err := sc.Start(ctx, r)
 						if err != nil {
 							log.Logger.Panicw("start echo server failed", "err", err)
 						}
@@ -63,5 +66,6 @@ func NewApp() *fx.App {
 				},
 			})
 		}),
+		fx.Options(opts...),
 	)
 }
