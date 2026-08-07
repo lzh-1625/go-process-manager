@@ -256,7 +256,7 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (*process.Process, err
 			}
 		}),
 	)
-	if !p.processMap.CompareAndSwap(cf.UUID, nil, proc) {
+	if _, loaded := p.processMap.LoadOrStore(cf.UUID, proc); loaded {
 		return nil, fmt.Errorf("process UUID %d already exists", cf.UUID)
 	}
 	return proc, nil
