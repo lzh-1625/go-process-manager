@@ -37,7 +37,7 @@ func (p *ProcApi) CreateProcess(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	proc, err := p.processCtlLogic.NewProcess(req)
+	proc, err := p.processCtlLogic.CreateProcess(req)
 	if err != nil {
 		return err
 	}
