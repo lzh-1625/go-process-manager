@@ -377,6 +377,7 @@ export default {
     apiRequest: "API请求",
     taskStart: "任务启动",
     taskStop: "任务停止",
+    pushRequest: "推送请求",
   },
   taskPage: {
     title: "任务",

@@ -230,6 +230,7 @@ const eventTypes = computed(() => [
   { label: t("eventPage.processWarning"), value: "ProcessWarning" },
   { label: t("eventPage.taskStart"), value: "TaskStart" },
   { label: t("eventPage.taskStop"), value: "TaskStop" },
+  { label: t("eventPage.pushRequest"), value: "PushRequest" },
 ]);
 
 // 数据
@@ -265,6 +266,7 @@ const getEventTypeColor = (type: EventType) => {
     TaskStart: "info",
     ApiRequest: "primary",
     TaskStop: "secondary",
+    PushRequest: "primary",
   };
   return colorMap[type] || "grey";
 };
@@ -279,6 +281,7 @@ const getEventTypeIcon = (type: EventType) => {
     ProcessConnect: "mdi-console",
     TaskStart: "mdi-clock-start",
     TaskStop: "mdi-clock-end",
+    PushRequest: "mdi-send",
   };
   return iconMap[type] || "mdi-information";
 };
@@ -293,6 +296,7 @@ const getEventTypeLabel = (type: EventType) => {
     ProcessConnect: t("eventPage.processConnect"),
     TaskStart: t("eventPage.taskStart"),
     TaskStop: t("eventPage.taskStop"),
+    PushRequest: t("eventPage.pushRequest"),
   };
   return labelMap[type] || type;
 };

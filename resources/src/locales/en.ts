@@ -384,6 +384,7 @@ export default {
     apiRequest: "API Request",
     taskStart: "Task Start",
     taskStop: "Task Stop",
+    pushRequest: "Push Request",
   },
   taskPage: {
     title: "Tasks",

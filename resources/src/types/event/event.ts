@@ -6,7 +6,8 @@ export type EventType =
   | "ProcessConnect"
   | "TaskStart"
   | "TaskStop"
-  | "ApiRequest";
+  | "ApiRequest"
+  | "PushRequest";
 
 // 事件模型
 export interface Event {
