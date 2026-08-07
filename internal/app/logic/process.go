@@ -2,6 +2,7 @@ package logic
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"runtime"
 	"slices"
@@ -52,10 +53,6 @@ func NewProcessCtlLogic(
 
 func (p *ProcessCtlLogic) SetProcessStateHandler(handler ProcessStateHandler) {
 	p.processStateHandler = handler
-}
-
-func (p *ProcessCtlLogic) addProcess(uuid int, proc *process.Process) {
-	p.processMap.Store(uuid, proc)
 }
 
 func (p *ProcessCtlLogic) KillProcess(uuid int) error {
@@ -154,8 +151,11 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 func (p *ProcessCtlLogic) ProcessInit() {
 	config := p.processRepository.GetAllProcessConfig()
 	for _, v := range config {
-		proc := p.createProcess(*v)
-		p.addProcess(v.UUID, proc)
+		proc, err := p.createProcess(*v)
+		if err != nil {
+			log.Logger.Error("initialize process start failed", "name", v.Name, "err", err)
+			continue
+		}
 		if v.AutoRestart {
 			err := proc.Start()
 			if err != nil {
@@ -195,31 +195,27 @@ func (p *ProcessCtlLogic) GetProcessConfigByName(name string) (*model.Process, e
 }
 
 func (p *ProcessCtlLogic) UpdateProcessConfig(config model.Process) error {
-	proc, ok := p.processMap.Load(config.UUID)
-	if !ok {
-		return errors.New("process get failed")
-	}
-	result, ok := proc.(*process.Process)
-	if !ok {
-		return errors.New("process type error")
+	proc, err := p.GetProcess(config.UUID)
+	if err != nil {
+		return err
 	}
 	if err := p.processRepository.UpdateProcessConfig(config); err != nil {
 		return err
 	}
-	result.Config.LogReport = config.LogReport
-	result.Config.CgroupEnable = config.CgroupEnable
-	result.Config.MemoryLimit = config.MemoryLimit
-	result.Config.CpuLimit = config.CpuLimit
-	result.Config.AutoRestart = config.AutoRestart
-	result.Config.CompulsoryRestart = config.CompulsoryRestart
-	result.StartCommand = utils.UnwarpIgnore(shlex.Split(config.Cmd))
-	result.WorkDir = config.Cwd
-	result.Name = config.Name
-	result.Env = strings.Split(config.Env, ";")
+	proc.Config.LogReport = config.LogReport
+	proc.Config.CgroupEnable = config.CgroupEnable
+	proc.Config.MemoryLimit = config.MemoryLimit
+	proc.Config.CpuLimit = config.CpuLimit
+	proc.Config.AutoRestart = config.AutoRestart
+	proc.Config.CompulsoryRestart = config.CompulsoryRestart
+	proc.StartCommand = utils.UnwarpIgnore(shlex.Split(config.Cmd))
+	proc.WorkDir = config.Cwd
+	proc.Name = config.Name
+	proc.Env = strings.Split(config.Env, ";")
 	return nil
 }
 
-func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Process, err error) {
+func (p *ProcessCtlLogic) CreateProcess(config model.Process) (proc *process.Process, err error) {
 	if args, err := shlex.Split(config.Cmd); len(args) == 0 || err != nil {
 		return nil, errors.New("invalid command")
 	}
@@ -228,13 +224,11 @@ func (p *ProcessCtlLogic) NewProcess(config model.Process) (proc *process.Proces
 		return nil, err
 	}
 	config.UUID = index
-	proc = p.createProcess(config)
-	p.addProcess(config.UUID, proc)
-	return
+	return p.createProcess(config)
 }
 
-func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process) {
-	return process.NewProcess(cf,
+func (p *ProcessCtlLogic) createProcess(cf model.Process) (*process.Process, error) {
+	proc := process.NewProcess(cf,
 		process.SetAddWriterHook(func(p *process.Process, user string, c io.WriteCloser) {
 			ProcessWaitCond().Trigger()
 		}),
@@ -262,6 +256,10 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (proc *process.Process
 			}
 		}),
 	)
+	if !p.processMap.CompareAndSwap(cf.UUID, nil, proc) {
+		return nil, fmt.Errorf("process UUID %d already exists", cf.UUID)
+	}
+	return proc, nil
 }
 
 func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.ProcessState) {
