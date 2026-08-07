@@ -122,11 +122,19 @@ func (t *TaskJob) Run(ctx context.Context) (err error) {
 }
 
 func (t *TaskJob) initCronHandle() error {
-	if _, err := cron.ParseStandard(t.TaskConfig.CronExpression); err != nil { // cron expression validation
+	cp := cron.NewParser(
+		cron.SecondOptional |
+			cron.Minute |
+			cron.Hour |
+			cron.Dom |
+			cron.Month |
+			cron.Dow,
+	)
+	if _, err := cp.Parse(t.TaskConfig.CronExpression); err != nil { // cron expression validation
 		log.Logger.Errorw("cron parse failed", "cron", t.TaskConfig.CronExpression, "err", err)
 		return err
 	}
-	c := cron.New()
+	c := cron.New(cron.WithParser(cp))
 	_, err := c.AddFunc(t.TaskConfig.CronExpression, func() {
 		log.Logger.Infow("cron task start")
 		if t.Running {

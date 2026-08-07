@@ -3,8 +3,13 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"os"
+	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -322,6 +327,89 @@ func TestTask(t *testing.T) {
 				return
 			}
 
+			const (
+				cronTaskName     = "cron-test"
+				cronExpression   = "* * * * * *"
+				expectedOutput   = "123qwe"
+				cronWait         = 1500 * time.Millisecond
+				disabledCronWait = 2500 * time.Millisecond
+			)
+			tempFilePath := path.Join(t.TempDir(), "tempFile")
+			cronProc, err := processCtlLogic.CreateProcess(model.Process{
+				Name: "echo",
+				Cmd:  fmt.Sprintf(`sh -c "echo %s > %s"`, expectedOutput, tempFilePath),
+				Cwd:  "./",
+			})
+			if err != nil {
+				t.Errorf("failed to create cron process %q for task %q: %v", "echo", cronTaskName, err)
+				return
+			}
+
+			err = taskLogic.CreateTask(model.Task{
+				ID:              10000,
+				Operation:       types.TaskStart,
+				OperationTarget: cronProc.UUID,
+				Name:            cronTaskName,
+				CronExpression:  cronExpression,
+				Enable:          true,
+			})
+			if err != nil {
+				t.Errorf("failed to create enabled cron task %q with expression %q: %v", cronTaskName, cronExpression, err)
+				return
+			}
+			time.Sleep(cronWait)
+			b, err := os.ReadFile(tempFilePath)
+			if err != nil {
+				t.Errorf("failed to read cron output %q after waiting %s for task %q: %v", tempFilePath, cronWait, cronTaskName, err)
+				return
+			}
+			if actualOutput := strings.TrimSuffix(string(b), "\n"); actualOutput != expectedOutput {
+				t.Errorf("unexpected cron output in %q for task %q: got %q, want %q", tempFilePath, cronTaskName, actualOutput, expectedOutput)
+				return
+			}
+			if err := os.Remove(tempFilePath); err != nil {
+				t.Errorf("failed to remove cron output %q before disabling task %q: %v", tempFilePath, cronTaskName, err)
+				return
+			}
+			if err := taskLogic.EditTask(&model.Task{
+				ID:              10000,
+				Operation:       types.TaskStart,
+				OperationTarget: cronProc.UUID,
+				Name:            cronTaskName,
+				CronExpression:  cronExpression,
+				Enable:          false,
+			}); err != nil {
+				t.Errorf("failed to disable cron task %q: %v", cronTaskName, err)
+				return
+			}
+			time.Sleep(disabledCronWait)
+			_, err = os.Stat(tempFilePath)
+			if !errors.Is(err, fs.ErrNotExist) {
+				t.Errorf("expected disabled cron task %q not to recreate output %q after waiting %s; stat error: %v", cronTaskName, tempFilePath, disabledCronWait, err)
+				return
+			}
+			err = taskLogic.EditTask(&model.Task{
+				ID:              10000,
+				Operation:       types.TaskStart,
+				OperationTarget: cronProc.UUID,
+				Name:            cronTaskName,
+				CronExpression:  cronExpression,
+				Enable:          true,
+			})
+			if err != nil {
+				t.Errorf("failed to re-enable cron task %q: %v", cronTaskName, err)
+				return
+			}
+			time.Sleep(cronWait)
+			b, err = os.ReadFile(tempFilePath)
+			if err != nil {
+				t.Errorf("failed to read cron output %q after re-enabling task %q and waiting %s: %v", tempFilePath, cronTaskName, cronWait, err)
+				return
+			}
+			if actualOutput := strings.TrimSuffix(string(b), "\n"); actualOutput != expectedOutput {
+				t.Errorf("unexpected cron output in %q after re-enabling task %q: got %q, want %q", tempFilePath, cronTaskName, actualOutput, expectedOutput)
+				return
+			}
 		}))
 	}))
 	app.Start(ctx)
