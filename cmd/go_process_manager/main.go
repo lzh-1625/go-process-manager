@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/lzh-1625/go_process_manager/internal/app"
 	"github.com/spf13/cobra"
 )
@@ -82,7 +84,7 @@ var runCmd = &cobra.Command{
 	Long:  `Run gpm in the foreground.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		print(startTitle)
-		app.NewApp().Run()
+		app.NewApp(context.TODO()).Run()
 		print(stopTitle)
 	},
 }

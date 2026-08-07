@@ -25,7 +25,7 @@ func TestProcess(t *testing.T) {
 	config.CF.ConfigDir = t.TempDir()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	app := NewApp(fx.Invoke(func(processCtlLogic *logic.ProcessCtlLogic,
+	app := NewApp(ctx, fx.Invoke(func(processCtlLogic *logic.ProcessCtlLogic,
 		lc fx.Lifecycle) {
 		lc.Append(fx.StartHook(func() {
 			defer cancel()
@@ -117,7 +117,7 @@ func TestEvent(t *testing.T) {
 	config.CF.ConfigDir = t.TempDir()
 	config.CF.KillWaitTime = 1
 	ctx, cancel := context.WithCancel(context.Background())
-	app := NewApp(fx.Invoke(func(
+	app := NewApp(ctx, fx.Invoke(func(
 		processCtlLogic *logic.ProcessCtlLogic,
 		eventLogic *logic.EventLogic,
 		pushLogic *logic.PushLogic,
@@ -247,7 +247,7 @@ func TestTask(t *testing.T) {
 	config.CF.ConfigDir = t.TempDir()
 	config.CF.KillWaitTime = 1
 	ctx, cancel := context.WithCancel(context.Background())
-	app := NewApp(fx.Invoke(func(
+	app := NewApp(ctx, fx.Invoke(func(
 		processCtlLogic *logic.ProcessCtlLogic,
 		eventLogic *logic.EventLogic,
 		taskLogic *logic.TaskLogic,

@@ -14,7 +14,8 @@ import (
 	"go.uber.org/fx"
 )
 
-func NewApp(opts ...fx.Option) *fx.App {
+func NewApp(ctx context.Context, opts ...fx.Option) *fx.App {
+	ctx, cancel := context.WithCancel(ctx)
 	return fx.New(
 		fx.NopLogger,
 		fx.StopTimeout(time.Second*5+time.Duration(config.CF.KillWaitTime)*time.Second),
@@ -29,7 +30,7 @@ func NewApp(opts ...fx.Option) *fx.App {
 		) {
 			c := cron.New()
 			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
+				OnStart: func(_ context.Context) error {
 					go func() {
 						log.Logger.Infow("starting echo server", "listen", config.CF.Listen)
 						sc := echo.StartConfig{
@@ -54,6 +55,7 @@ func NewApp(opts ...fx.Option) *fx.App {
 					return nil
 				},
 				OnStop: func(ctx context.Context) error {
+					cancel()
 					c.Stop()
 					log.Logger.Infow("waiting for all process to stop")
 					wg := sync.WaitGroup{}
