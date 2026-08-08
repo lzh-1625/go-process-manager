@@ -460,7 +460,7 @@ func TestApi(t *testing.T) {
 
 			pid1 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
 				Name:      "test1",
-				Cmd:       `cmd /c "echo 111\n111\n"`,
+				Cmd:       `echo 111`,
 				LogReport: true,
 			}).Data["uuid"]
 			_ = req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
@@ -470,17 +470,17 @@ func TestApi(t *testing.T) {
 
 			processinfo := req[[]model.ProcessInfo](http.MethodGet, e, "/api/process", adminToken, struct{}{})
 			if len(processinfo.Data) != 2 {
-				t.Error("")
+				t.Errorf("expected admin to list 2 processes; got %d: %+v", len(processinfo.Data), processinfo.Data)
 			}
 
 			processinfo = req[[]model.ProcessInfo](http.MethodGet, e, "/api/process", userToken, struct{}{})
 			if len(processinfo.Data) != 0 {
-				t.Error("")
+				t.Errorf("expected user without process permissions to list no processes; got %d: %+v", len(processinfo.Data), processinfo.Data)
 			}
 
 			respStart := req[any](http.MethodPut, e, "/api/process", userToken, map[string]any{"uuid": pid1})
 			if respStart.Code == 0 {
-				t.Error("")
+				t.Errorf("expected user without start permission to be denied starting process %d; got successful response: %+v", pid1, respStart)
 			}
 
 			req[model.User](http.MethodPut, e, "/api/permission", token, model.Permission{
@@ -492,12 +492,12 @@ func TestApi(t *testing.T) {
 
 			processinfo = req[[]model.ProcessInfo](http.MethodGet, e, "/api/process", userToken, struct{}{})
 			if len(processinfo.Data) != 1 || processinfo.Data[0].UUID != int(pid1) {
-				t.Error("")
+				t.Errorf("expected user to list only permitted process %d; got %+v", pid1, processinfo.Data)
 			}
 
 			respStart = req[any](http.MethodPut, e, "/api/process", userToken, map[string]any{"uuid": pid1})
 			if respStart.Code != 0 {
-				t.Error("")
+				t.Errorf("expected user with start permission to start process %d; got response: %+v", pid1, respStart)
 			}
 			time.Sleep(time.Second * 3)
 
@@ -505,7 +505,7 @@ func TestApi(t *testing.T) {
 			logReq.Page.Size = 100
 			logResp := req[model.LogResp](http.MethodPost, e, "/api/log", userToken, logReq)
 			if len(logResp.Data.Data) != 0 {
-				t.Error("")
+				t.Errorf("expected user without log permission to receive no logs for process %d; got %d records: %+v", pid1, len(logResp.Data.Data), logResp.Data.Data)
 			}
 
 			req[model.User](http.MethodPut, e, "/api/permission", token, model.Permission{
@@ -518,7 +518,7 @@ func TestApi(t *testing.T) {
 
 			logResp = req[model.LogResp](http.MethodPost, e, "/api/log", userToken, logReq)
 			if len(logResp.Data.Data) == 0 {
-				t.Error("")
+				t.Errorf("expected user with log permission to receive logs for process %d; got empty response: %+v", pid1, logResp)
 			}
 		}))
 	}))
