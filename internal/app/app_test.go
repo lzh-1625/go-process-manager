@@ -1,23 +1,28 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/labstack/echo/v5"
 	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/process"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
+	"github.com/lzh-1625/go_process_manager/utils"
 	"go.uber.org/fx"
 )
 
@@ -413,4 +418,88 @@ func TestTask(t *testing.T) {
 		}))
 	}))
 	app.Start(ctx)
+}
+
+func TestApi(t *testing.T) {
+	config.CF.ConfigDir = t.TempDir()
+	config.CF.KillWaitTime = 1
+	ctx, cancel := context.WithCancel(context.Background())
+	app := NewApp(ctx, fx.Invoke(func(
+		e *echo.Echo,
+		lc fx.Lifecycle) {
+		lc.Append(fx.StartHook(func() {
+			defer cancel()
+			resp := req[map[string]any](http.MethodPost, e, "/api/user/login", "", model.LoginHandlerReq{
+				Account:  logic.DefaultRootAccount,
+				Password: logic.DefaultRootPassword,
+			})
+			token := resp.Data["token"].(string)
+
+			req[model.User](http.MethodPost, e, "/api/user", token, model.User{
+				Account:  "admin",
+				Password: "admin",
+				Role:     types.RoleAdmin,
+			})
+			resp1 := req[map[string]any](http.MethodPost, e, "/api/user", "", model.LoginHandlerReq{
+				Account:  "admin",
+				Password: "admin",
+			})
+			userToken := resp1.Data["token"].(string)
+
+			req[model.User](http.MethodPost, e, "/api/user", token, model.User{
+				Account:  "user",
+				Password: "user",
+				Role:     types.RoleUser,
+			})
+			resp2 := req[map[string]any](http.MethodPost, e, "/api/user", "", model.LoginHandlerReq{
+				Account:  "user",
+				Password: "user",
+			})
+
+			adminToken := resp2.Data["token"].(string)
+
+			pid1 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
+				Name: "test1",
+				Cmd:  "echo 111",
+			}).Data["uuid"]
+			pid2 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
+				Name: "test2",
+				Cmd:  "echo 222",
+			}).Data["uuid"]
+			pid3 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
+				Name: "test3",
+				Cmd:  "echo 333",
+			}).Data["uuid"]
+
+			req[model.User](http.MethodPut, e, "/api/permission", token, model.Permission{
+				Account:  "user",
+				Pid:      pid1,
+				Owned:    true,
+				Start:    true,
+				Stop:     true,
+				Terminal: true,
+				Write:    true,
+				Log:      true,
+			})
+
+			processinfo := req[model.ProcessInfo](http.MethodGet, e, "/api/process", token, struct{}{})
+
+		}))
+	}))
+	app.Start(ctx)
+}
+
+func req[T any](method string, e *echo.Echo, uri string, token string, body any) model.Response[T] {
+	req := httptest.NewRequest(
+		method,
+		uri,
+		bytes.NewBufferString(utils.StructToJsonStr(body)),
+	)
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", token)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	resp := model.Response[T]{}
+	json.NewDecoder(rec.Body).Decode(&resp)
+	return resp
 }
