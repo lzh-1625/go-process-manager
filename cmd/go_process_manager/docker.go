@@ -49,10 +49,10 @@ func superviseContainer(ctx context.Context, containerName string) {
 		Follow:     true,
 	}
 	if info.State.Status != container.StateRunning {
-		_ = cli.ContainerStart(ctx, containerName, container.StartOptions{})
-		opt.Tail = "50"
-	} else {
 		opt.Since = strconv.FormatInt(time.Now().Unix(), 10)
+		_ = cli.ContainerStart(ctx, containerName, container.StartOptions{})
+	} else {
+		opt.Tail = "50"
 	}
 	out, err := cli.ContainerLogs(ctx, containerName, opt)
 	if err != nil {
