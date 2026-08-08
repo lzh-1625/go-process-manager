@@ -440,50 +440,86 @@ func TestApi(t *testing.T) {
 				Password: "admin",
 				Role:     types.RoleAdmin,
 			})
-			resp1 := req[map[string]any](http.MethodPost, e, "/api/user", "", model.LoginHandlerReq{
+			resp1 := req[map[string]any](http.MethodPost, e, "/api/user/login", token, model.LoginHandlerReq{
 				Account:  "admin",
 				Password: "admin",
 			})
-			userToken := resp1.Data["token"].(string)
+			adminToken := resp1.Data["token"].(string)
 
 			req[model.User](http.MethodPost, e, "/api/user", token, model.User{
 				Account:  "user",
 				Password: "user",
 				Role:     types.RoleUser,
 			})
-			resp2 := req[map[string]any](http.MethodPost, e, "/api/user", "", model.LoginHandlerReq{
+			resp2 := req[map[string]any](http.MethodPost, e, "/api/user/login", "", model.LoginHandlerReq{
 				Account:  "user",
 				Password: "user",
 			})
 
-			adminToken := resp2.Data["token"].(string)
+			userToken := resp2.Data["token"].(string)
 
 			pid1 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
-				Name: "test1",
-				Cmd:  "echo 111",
+				Name:      "test1",
+				Cmd:       `cmd /c "echo 111\n111\n"`,
+				LogReport: true,
 			}).Data["uuid"]
-			pid2 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
+			_ = req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
 				Name: "test2",
 				Cmd:  "echo 222",
 			}).Data["uuid"]
-			pid3 := req[map[string]int32](http.MethodPost, e, "/api/process/config", token, model.Process{
-				Name: "test3",
-				Cmd:  "echo 333",
-			}).Data["uuid"]
+
+			processinfo := req[[]model.ProcessInfo](http.MethodGet, e, "/api/process", adminToken, struct{}{})
+			if len(processinfo.Data) != 2 {
+				t.Error("")
+			}
+
+			processinfo = req[[]model.ProcessInfo](http.MethodGet, e, "/api/process", userToken, struct{}{})
+			if len(processinfo.Data) != 0 {
+				t.Error("")
+			}
+
+			respStart := req[any](http.MethodPut, e, "/api/process", userToken, map[string]any{"uuid": pid1})
+			if respStart.Code == 0 {
+				t.Error("")
+			}
 
 			req[model.User](http.MethodPut, e, "/api/permission", token, model.Permission{
-				Account:  "user",
-				Pid:      pid1,
-				Owned:    true,
-				Start:    true,
-				Stop:     true,
-				Terminal: true,
-				Write:    true,
-				Log:      true,
+				Account: "user",
+				Pid:     pid1,
+				Owned:   true,
+				Start:   true,
 			})
 
-			processinfo := req[model.ProcessInfo](http.MethodGet, e, "/api/process", token, struct{}{})
+			processinfo = req[[]model.ProcessInfo](http.MethodGet, e, "/api/process", userToken, struct{}{})
+			if len(processinfo.Data) != 1 || processinfo.Data[0].UUID != int(pid1) {
+				t.Error("")
+			}
 
+			respStart = req[any](http.MethodPut, e, "/api/process", userToken, map[string]any{"uuid": pid1})
+			if respStart.Code != 0 {
+				t.Error("")
+			}
+			time.Sleep(time.Second * 3)
+
+			logReq := model.GetLogReq{}
+			logReq.Page.Size = 100
+			logResp := req[model.LogResp](http.MethodPost, e, "/api/log", userToken, logReq)
+			if len(logResp.Data.Data) != 0 {
+				t.Error("")
+			}
+
+			req[model.User](http.MethodPut, e, "/api/permission", token, model.Permission{
+				Account: "user",
+				Pid:     pid1,
+				Owned:   true,
+				Start:   true,
+				Log:     true,
+			})
+
+			logResp = req[model.LogResp](http.MethodPost, e, "/api/log", userToken, logReq)
+			if len(logResp.Data.Data) == 0 {
+				t.Error("")
+			}
 		}))
 	}))
 	app.Start(ctx)

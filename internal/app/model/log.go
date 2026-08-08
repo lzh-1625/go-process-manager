@@ -109,14 +109,3 @@ type BleveProcessLog struct {
 	Name       string `json:"name"`
 	Using      string `json:"using"`
 }
-
-type QueryBody struct {
-	MinScore int `json:"min_score,omitempty"`
-	Query    struct {
-		Bool struct {
-			Must               []any `json:"must,omitempty"`
-			Should             []any `json:"should,omitempty"`
-			MinimumShouldMatch int   `json:"minimum_should_match,omitempty"`
-		} `json:"bool"`
-	} `json:"query"`
-}
