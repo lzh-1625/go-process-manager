@@ -59,7 +59,10 @@ func superviseContainer(ctx context.Context, containerName string) {
 		panic(err)
 	}
 
-	go stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	go func() {
+		stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+		os.Exit(0)
+	}()
 	ch := make(chan os.Signal, 1)
 	signal.Notify(
 		ch,
