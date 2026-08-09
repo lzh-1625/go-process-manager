@@ -12,6 +12,7 @@ import "xterm/css/xterm.css";
 const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
+const terminalDisconnected = ref(false);
 const props = defineProps<{
   data: ProcessItem;
 }>();
@@ -24,6 +25,7 @@ const fitAddon = new FitAddon();
 
 defineExpose({
   wsConnect: () => {
+    terminalDisconnected.value = false;
     dialog.value = true;
   },
 });
@@ -63,8 +65,12 @@ const initSocket = (url: string) => {
   };
 
   socket.onclose = () => {
+    terminalDisconnected.value = true;
+    if (term) {
+      term.options.disableStdin = true;
+      term.options.cursorBlink = false;
+    }
     snackbarStore.showInfoMessage(t("processCardPage.terminalDisconnected"));
-    dialog.value = false;
   };
 
   socket.onerror = (err) => {
@@ -156,9 +162,12 @@ onUnmounted(() => {
         dark
         style="height: 35px; flex-grow: 0"
       >
-        <v-toolbar-title style="height: 100%"
-          >{{ props.data.name }}</v-toolbar-title
-        >
+        <v-toolbar-title style="height: 100%">
+          {{ props.data.name }}
+          <span v-if="terminalDisconnected" class="terminal-disconnected">
+            {{ $t("processCardPage.terminalDisconnected") }}
+          </span>
+        </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items style="height: 35px">
           <v-btn icon dense dark @click="wsClose">
@@ -178,6 +187,12 @@ onUnmounted(() => {
 <style>
 #xterm .terminal {
   height: 100%;
+}
+
+.terminal-disconnected {
+  margin-left: 8px;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 #xterm .xterm-viewport {

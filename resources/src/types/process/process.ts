@@ -1,7 +1,7 @@
 export interface ProcessItem {
   name: string;
   uuid: number;
-  startTime: Date;
+  startTime: string;
   user: string;
   controller: string;
   controlExpiredTime: string;

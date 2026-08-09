@@ -252,6 +252,10 @@ const controlledByOther = computed(
     props.data.controller !== localStorage.getItem("name")
 );
 
+const terminalUnavailable = computed(
+  () => props.data.startTime === "0001-01-01 00:00:00"
+);
+
 const canDelete = computed(
   () => props.data.state.state === 0 || props.data.state.state === 2
 );
@@ -452,7 +456,7 @@ const copyToken = () => {
                   icon="mdi-console"
                   variant="text"
                   density="comfortable"
-                  :disabled="controlledByOther"
+                  :disabled="controlledByOther || terminalUnavailable"
                 />
               </span>
             </template>

@@ -106,13 +106,14 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	if proc.State.State == types.ProcessStateRunning {
-		proc.SetTerminalSize(req.Cols, req.Rows)
-		write := w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
-		w.startWsConnect(wci, cancel, proc, write)
-		proc.AddWriter(reqUser, wci)
-		defer proc.DeleteWriter(reqUser)
+	if proc.State.State != types.ProcessStateRunning {
+		return nil
 	}
+	proc.SetTerminalSize(req.Cols, req.Rows)
+	write := w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
+	w.startWsConnect(wci, cancel, proc, write)
+	proc.AddWriter(reqUser, wci)
+	defer proc.DeleteWriter(reqUser)
 	conn.SetCloseHandler(func(_ int, _ string) error {
 		cancel()
 		return nil
