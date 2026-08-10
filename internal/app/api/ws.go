@@ -119,6 +119,8 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 		return nil
 	})
 	select {
+	case <-proc.StopChan:
+		log.Logger.Infow("ws connection closed", "reason", "process stopped, force close ws connection")
 	case <-timer.C:
 		log.Logger.Infow("ws connection closed", "reason", "connection timeout")
 	case <-wsCtx.Done():
