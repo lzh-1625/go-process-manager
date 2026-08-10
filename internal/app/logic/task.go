@@ -132,16 +132,19 @@ func (t *TaskLogic) EditTask(data *model.Task) error {
 	if tj.Running {
 		return errors.New("can't edit running task")
 	}
-	if err := t.taskRepository.EditTask(data); err != nil {
-		return err
-	}
-
-	if err := tj.EditStatus(data.Enable); err != nil {
-		return err
-	}
-
 	if data.ApiEnable && data.Key == nil {
 		data.Key = new(utils.RandString(10))
+	}
+
+	tx := t.taskRepository.Begin()
+	defer tx.Commit()
+	if err := t.taskRepository.EditTask(tx, data); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tj.EditStatus(data.Enable); err != nil {
+		tx.Rollback()
+		return err
 	}
 
 	tj.TaskConfig = data

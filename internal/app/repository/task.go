@@ -42,8 +42,8 @@ func (t *TaskRepository) DeleteTask(id int) (err error) {
 	return
 }
 
-func (t *TaskRepository) EditTask(data *model.Task) (err error) {
-	err = t.query.Task.Save(data)
+func (t *TaskRepository) EditTask(tx *query.QueryTx, data *model.Task) (err error) {
+	err = tx.Task.Save(data)
 	return
 }
 
@@ -73,4 +73,8 @@ func (t *TaskRepository) GetTriggerTask(processName string, event types.ProcessS
 		Where(t.query.Task.TriggerEvent.Eq(int32(event))).
 		Scan(&result)
 	return result
+}
+
+func (t *TaskRepository) Begin() *query.QueryTx {
+	return t.query.Begin()
 }
