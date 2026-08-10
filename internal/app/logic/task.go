@@ -92,18 +92,17 @@ func (t *TaskLogic) GetTaskByID(id int) (*model.Task, error) {
 
 // DeleteTask deletes a task.
 func (t *TaskLogic) DeleteTask(id int) (err error) {
-
 	if tj, err := t.getTaskJob(id); err == nil {
 		if tj.Running {
 			return errors.New("task is running, can't delete")
 		}
 	}
-	t.StopTaskJob(id)
-	t.taskJobMap.Delete(id)
 	err = t.taskRepository.DeleteTask(id)
 	if err != nil {
 		return
 	}
+	t.StopTaskJob(id)
+	t.taskJobMap.Delete(id)
 	return
 }
 
@@ -115,6 +114,7 @@ func (t *TaskLogic) CreateTask(data model.Task) error {
 	}
 	taskID, err := t.taskRepository.AddTask(data)
 	if err != nil {
+		tj.Cron.Stop()
 		return err
 	}
 	tj.TaskConfig.ID = taskID
@@ -132,6 +132,9 @@ func (t *TaskLogic) EditTask(data *model.Task) error {
 	if tj.Running {
 		return errors.New("can't edit running task")
 	}
+	if err := t.taskRepository.EditTask(data); err != nil {
+		return err
+	}
 
 	if err := tj.EditStatus(data.Enable); err != nil {
 		return err
@@ -142,7 +145,7 @@ func (t *TaskLogic) EditTask(data *model.Task) error {
 	}
 
 	tj.TaskConfig = data
-	return t.taskRepository.EditTask(data)
+	return nil
 }
 
 // CreateApiKey creates an API key that can trigger a task.
