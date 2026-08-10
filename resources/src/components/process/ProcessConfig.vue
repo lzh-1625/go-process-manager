@@ -30,14 +30,20 @@ const props = defineProps<{
 
 defineExpose({
   openConfigDialog: () => {
-    getConfig();
-    initPushItem();
+    Promise.all([getConfig(), initPushItem()]).then(() => {
+      const existingPushIds = new Set(
+        pushItems.value.map((item) => String(item.value))
+      );
+      pushSelectedValues.value = pushSelectedValues.value.filter((id) =>
+        existingPushIds.has(String(id))
+      );
+    });
     dialog.value = true;
   },
 });
 
 const getConfig = () => {
-  getProcessConfig(props.data.uuid).then((e) => {
+  return getProcessConfig(props.data.uuid).then((e) => {
     // 使用 Object.assign 来更新响应式对象，而不是替换它
     if (e.data) {
       Object.assign(configForm.value, e.data);
@@ -100,7 +106,7 @@ const editConfig = () => {
 };
 
 const initPushItem = () => {
-  getPushList().then((resp) => {
+  return getPushList().then((resp) => {
     // 3. 更新 ref 的 .value
     if (resp.data) {
       pushItems.value = resp.data.map((e) => ({
