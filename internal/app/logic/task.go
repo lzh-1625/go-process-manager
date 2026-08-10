@@ -11,6 +11,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
 	"github.com/lzh-1625/go_process_manager/log"
 	"github.com/lzh-1625/go_process_manager/utils"
+	"github.com/robfig/cron/v3"
 )
 
 type TaskLogic struct {
@@ -124,6 +125,21 @@ func (t *TaskLogic) CreateTask(data model.Task) error {
 
 // EditTask updates a task.
 func (t *TaskLogic) EditTask(data *model.Task) error {
+	if data.CronExpression != "" {
+		cp := cron.NewParser(
+			cron.SecondOptional |
+				cron.Minute |
+				cron.Hour |
+				cron.Dom |
+				cron.Month |
+				cron.Dow,
+		)
+		if _, err := cp.Parse(data.CronExpression); err != nil { // cron expression validation
+			log.Logger.Errorw("cron parse failed", "cron", data.CronExpression, "err", err)
+			return err
+		}
+	}
+
 	tj, err := t.getTaskJob(data.ID)
 	if err != nil {
 		return err

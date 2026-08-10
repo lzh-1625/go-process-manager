@@ -8,7 +8,6 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/logic"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/types"
-	"github.com/robfig/cron/v3"
 )
 
 type TaskApi struct {
@@ -94,9 +93,6 @@ func (t *TaskApi) EditTask(ctx *echo.Context) error {
 		return err
 	}
 
-	if _, err := cron.ParseStandard(req.CronExpression); err != nil && req.CronExpression != "" { // cron expression validation
-		return err
-	}
 	return t.taskLogic.EditTask(&req)
 }
 

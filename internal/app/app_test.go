@@ -415,6 +415,77 @@ func TestTask(t *testing.T) {
 				t.Errorf("unexpected cron output in %q after re-enabling task %q: got %q, want %q", tempFilePath, cronTaskName, actualOutput, expectedOutput)
 				return
 			}
+
+			if err := taskLogic.EditTask(&model.Task{
+				ID:              10000,
+				Operation:       types.TaskStart,
+				OperationTarget: cronProc.UUID,
+				Name:            cronTaskName,
+				CronExpression:  "123",
+				Enable:          true,
+			}); err == nil {
+				t.Errorf("failed to disable cron task %q: %v", cronTaskName, err)
+				return
+			}
+			if err := os.Remove(tempFilePath); err != nil {
+				t.Errorf("failed to remove cron output %q before disabling task %q: %v", tempFilePath, cronTaskName, err)
+				return
+			}
+
+			time.Sleep(cronWait)
+			b, err = os.ReadFile(tempFilePath)
+			if err != nil {
+				t.Errorf("failed to read cron output %q after re-enabling task %q and waiting %s: %v", tempFilePath, cronTaskName, cronWait, err)
+				return
+			}
+
+			if err := taskLogic.EditTask(&model.Task{
+				ID:              10000,
+				Operation:       types.TaskStart,
+				OperationTarget: cronProc.UUID,
+				Name:            cronTaskName,
+				CronExpression:  "123",
+				Enable:          false,
+			}); err == nil {
+				t.Errorf("failed to disable cron task %q: %v", cronTaskName, err)
+				return
+			}
+
+			if err := os.Remove(tempFilePath); err != nil {
+				t.Errorf("failed to remove cron output %q before disabling task %q: %v", tempFilePath, cronTaskName, err)
+				return
+			}
+
+			time.Sleep(cronWait)
+			b, err = os.ReadFile(tempFilePath)
+			if err != nil {
+				t.Errorf("failed to read cron output %q after re-enabling task %q and waiting %s: %v", tempFilePath, cronTaskName, cronWait, err)
+				return
+			}
+
+			if err := taskLogic.EditTask(&model.Task{
+				ID:              10000,
+				Operation:       types.TaskStart,
+				OperationTarget: cronProc.UUID,
+				Name:            cronTaskName,
+				CronExpression:  "",
+				Enable:          false,
+			}); err != nil {
+				t.Errorf("failed to disable cron task %q: %v", cronTaskName, err)
+				return
+			}
+			if err := os.Remove(tempFilePath); err != nil {
+				t.Errorf("failed to remove cron output %q before disabling task %q: %v", tempFilePath, cronTaskName, err)
+				return
+			}
+
+			time.Sleep(disabledCronWait)
+			_, err = os.Stat(tempFilePath)
+			if !errors.Is(err, fs.ErrNotExist) {
+				t.Errorf("expected disabled cron task %q not to recreate output %q after waiting %s; stat error: %v", cronTaskName, tempFilePath, disabledCronWait, err)
+				return
+			}
+
 		}))
 	}))
 	app.Start(ctx)
