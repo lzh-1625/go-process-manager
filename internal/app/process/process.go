@@ -575,6 +575,9 @@ func (p *processLogHandlerByPipe) Close() error {
 	return nil
 }
 
+// Write logs to a pipe, then collect them in another goroutine after a newline is read.
+// This avoids truncating logs before the line terminator whenever possible.
+// Buffered logs are not collected until the next newline is received.
 func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 	pr, pw := io.Pipe()
 	pl := &processLogHandlerByPipe{
@@ -587,6 +590,7 @@ func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 			log.Logger.Warn(err)
 			return
 		}
+		// Read through the next newline, or truncate early to prevent unbounded lines from blocking the terminal buffer.
 		scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 			for i, b := range data {
 				if b == '\n' {
@@ -602,9 +606,6 @@ func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 			return 0, nil, nil
 		})
 		for scanner.Scan() {
-			if fn == nil {
-				continue
-			}
 			fn(scanner.Bytes())
 		}
 		log.Logger.Debugw("process log handler by pipe closed")
@@ -625,6 +626,8 @@ func (p *processLogHandler) Close() error {
 	return nil
 }
 
+// Read all logs from the buffer immediately.
+// Fast log writes may cause logs to be truncated.
 func newProcessLogHandler(fn func([]byte)) io.WriteCloser {
 	return &processLogHandler{
 		fn: fn,
