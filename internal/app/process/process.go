@@ -587,6 +587,20 @@ func newProcessLogHandlerByPipe(fn func([]byte)) io.WriteCloser {
 			log.Logger.Warn(err)
 			return
 		}
+		scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+			for i, b := range data {
+				if b == '\n' {
+					return i + 1, data[:i], nil
+				}
+				if i+1 >= 4096 {
+					return i + 1, data[:i+1], nil
+				}
+			}
+			if atEOF && len(data) > 0 {
+				return len(data), data, nil
+			}
+			return 0, nil, nil
+		})
 		for scanner.Scan() {
 			if fn == nil {
 				continue
