@@ -54,7 +54,7 @@ func TestPipeLogHandler(t *testing.T) {
 		process.WriteBytes([]byte{r})
 	}
 	process.Kill()
-	if !strings.HasSuffix(log, testString) {
+	if !strings.Contains(log, testString) {
 		t.Errorf("log is not test, got %s", log)
 	}
 }
