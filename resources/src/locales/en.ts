@@ -278,6 +278,7 @@ export default {
     processDeleted: "Process {name} was deleted",
     processStarted: "Process {name} started",
     processStopping: "Process {name} is stopping",
+    processWaitingRestart: "Process {name} is waiting to restart",
     processStopped: "Process {name} stopped",
     processWarning: "Process {name} warning: {info}",
     warningNoDetails: "No details available",

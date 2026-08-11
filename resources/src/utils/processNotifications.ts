@@ -10,6 +10,7 @@ export type ProcessChange =
   | (ProcessChangeBase & { type: "deleted" })
   | (ProcessChangeBase & { type: "started" })
   | (ProcessChangeBase & { type: "stopping" })
+  | (ProcessChangeBase & { type: "waitingRestart" })
   | (ProcessChangeBase & { type: "stopped" })
   | (ProcessChangeBase & { type: "warning"; info: string });
 
@@ -75,6 +76,8 @@ export const detectProcessChanges = (
       changes.push(processChange("started", process));
     } else if (process.state.state === ProcessState.Stopping) {
       changes.push(processChange("stopping", process));
+    } else if (process.state.state === ProcessState.WaitingRestart) {
+      changes.push(processChange("waitingRestart", process));
     } else if (process.state.state === ProcessState.Stopped) {
       changes.push(processChange("stopped", process));
     }

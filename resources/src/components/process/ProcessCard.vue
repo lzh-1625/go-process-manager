@@ -369,6 +369,15 @@ const copyToken = () => {
         >
           mdi-loading
         </v-icon>
+        <v-icon
+          v-if="props.data.state.state === ProcessState.WaitingRestart"
+          color="orange"
+          class="mdi-spin"
+          x-large
+          style="float: left"
+        >
+          mdi-restart
+        </v-icon>
         <v-tooltip
           v-if="props.data.state.state == 2"
           location="top"

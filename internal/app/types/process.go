@@ -3,11 +3,12 @@ package types
 type ProcessState int32
 
 const (
-	ProcessStateStopped  ProcessState = iota // process is stopped
-	ProcessStateStarting                     // process is starting
-	ProcessStateWarning                      // process is in warning state
-	ProcessStateRunning                      // process is running
-	ProcessStateStopping                     // process is waiting stop
+	ProcessStateStopped        ProcessState = iota // process is stopped
+	ProcessStateStarting                           // process is starting
+	ProcessStateWarning                            // process is in warning state
+	ProcessStateRunning                            // process is running
+	ProcessStateStopping                           // process is waiting stop
+	ProcessStateWaitingRestart                     // process is waiting restart
 )
 
 func (p ProcessState) String() string {
@@ -22,6 +23,8 @@ func (p ProcessState) String() string {
 		return "running"
 	case ProcessStateStopping:
 		return "stopping"
+	case ProcessStateWaitingRestart:
+		return "waiting restart"
 	default:
 		return "unknown"
 	}

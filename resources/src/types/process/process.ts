@@ -24,6 +24,7 @@ export enum ProcessState {
   Warning = 2,
   Running = 3,
   Stopping = 4,
+  WaitingRestart = 5,
 }
 
 export enum TermType {

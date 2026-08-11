@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -60,6 +61,7 @@ type Process struct {
 		State          types.ProcessState //0 not running, 1 running, 2 warning state
 		RestartTimes   int
 		manualStopFlag bool
+		lock           sync.Mutex
 	}
 	PerformanceStatus struct {
 		Cpu  []float64
@@ -138,10 +140,13 @@ func (p *Process) Operate(operator string, fn func() error) error {
 
 // fn function execution successfully, set state
 func (p *Process) setState(state types.ProcessState, afterHookFns ...func()) bool {
+	p.State.lock.Lock()
 	if !p.checkStateChange(p.State.State, state) {
+		p.State.lock.Unlock()
 		return false
 	}
 	p.State.State = state
+	p.State.lock.Unlock()
 	if p.stateHook != nil {
 		p.stateHook(p, state)
 	}
@@ -157,8 +162,10 @@ func (p *Process) checkStateChange(old, new types.ProcessState) bool {
 		return new == types.ProcessStateRunning || new == types.ProcessStateWarning
 	case types.ProcessStateRunning:
 		return new == types.ProcessStateStopping || new == types.ProcessStateStopped
-	case types.ProcessStateWarning, types.ProcessStateStopped:
+	case types.ProcessStateWarning, types.ProcessStateWaitingRestart:
 		return new == types.ProcessStateStarting
+	case types.ProcessStateStopped:
+		return new == types.ProcessStateStarting || new == types.ProcessStateWaitingRestart
 	case types.ProcessStateStopping:
 		return new == types.ProcessStateStopped
 	default:
@@ -436,15 +443,7 @@ func (p *Process) Start() (err error) {
 	}
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	defer func() {
-		if err != nil {
-			p.Config.AutoRestart = false
-			p.setState(types.ProcessStateWarning)
-			p.State.Info = "process start failed: " + err.Error()
-		}
-	}()
 	if ok := p.setState(types.ProcessStateStarting); !ok {
-		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}
 	cmd := exec.Command(p.StartCommand[0], p.StartCommand[1:]...)
@@ -452,7 +451,9 @@ func (p *Process) Start() (err error) {
 	cmd.Env = append(os.Environ(), p.Env...)
 	pty, err := startWithPty(cmd)
 	if err != nil {
-		log.Logger.Warnw("process pty init failed")
+		p.Config.AutoRestart = false
+		p.setState(types.ProcessStateWarning)
+		p.State.Info = "process start failed: " + err.Error()
 		return err
 	}
 	p.pty = pty
@@ -463,6 +464,24 @@ func (p *Process) Start() (err error) {
 		return errors.New("state abnormal start failed")
 	}
 	return nil
+}
+
+// 等待条件允许后执行重启
+func (p *Process) waitingRestart() {
+	if !p.setState(types.ProcessStateWaitingRestart) {
+		log.Logger.Warn("当前状态跳过重启等待", "name", p.Name, "state", p.State.State.String())
+		return
+	}
+	restartTimeFormat := time.Now().Add(time.Second * time.Duration(p.State.RestartTimes)).Format(time.DateTime)
+	p.State.Info = fmt.Sprintf("等待%s时进行重启", restartTimeFormat)
+	log.Logger.Info(restartTimeFormat)
+	time.Sleep(time.Second * time.Duration(p.State.RestartTimes))
+
+	if p.State.State != types.ProcessStateWaitingRestart {
+		log.Logger.Warn("当前状态跳过重启", "name", p.Name, "state", p.State.State.String())
+	}
+	p.State.RestartTimes++
+	p.Start()
 }
 
 func (p *Process) watchDog() {
@@ -495,15 +514,15 @@ func (p *Process) watchDog() {
 		return
 	}
 	if p.Config.CompulsoryRestart { // compulsory restart
-		p.Start()
+		p.waitingRestart()
 		return
 	}
 	if state.ExitCode() == 0 { // normal exit
 		return
 	}
 	if p.State.RestartTimes < config.CF.ProcessRestartsLimit { // restart times not reached limit
-		p.Start()
 		p.State.RestartTimes++
+		p.Start()
 		return
 	}
 	log.Logger.Warnw("restart times reached limit", "name", p.Name, "limit", config.CF.ProcessRestartsLimit)

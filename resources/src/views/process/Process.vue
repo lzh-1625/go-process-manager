@@ -244,6 +244,11 @@ const notifyProcessChange = (change: ProcessChange) => {
         t("processPage.processStopping", { name: change.name }),
       );
       break;
+    case "waitingRestart":
+      snackbarStore.showInfoMessage(
+        t("processPage.processWaitingRestart", { name: change.name }),
+      );
+      break;
     case "stopped":
       snackbarStore.showInfoMessage(
         t("processPage.processStopped", { name: change.name }),

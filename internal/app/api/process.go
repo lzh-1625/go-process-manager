@@ -78,6 +78,7 @@ func (p *ProcApi) KillProcess(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
+	proc.ResetRestartTimes()
 	return proc.Operate(getUserName(ctx), func() error {
 		if req.SIGKILL {
 			return proc.Kill9()
@@ -114,12 +115,14 @@ func (p *ProcApi) StartAllProcess(ctx *echo.Context) error {
 	user := getUserName(ctx)
 	if isAdmin(ctx) {
 		p.processCtlLogic.ForEach(func(proc *process.Process) {
+			proc.ResetRestartTimes()
 			proc.Operate(user, func() error {
 				return proc.Start()
 			})
 		})
 	} else {
 		p.processCtlLogic.ForEachByOwner(user, func(proc *process.Process) {
+			proc.ResetRestartTimes()
 			proc.Operate(user, func() error {
 				return proc.Start()
 			})
@@ -134,6 +137,7 @@ func (p *ProcApi) KillAllProcess(ctx *echo.Context) error {
 	if isAdmin(ctx) {
 		p.processCtlLogic.ForEach(func(proc *process.Process) {
 			wg.Go(func() {
+				proc.ResetRestartTimes()
 				proc.Operate(user, func() error {
 					return proc.Kill()
 				})
@@ -142,6 +146,7 @@ func (p *ProcApi) KillAllProcess(ctx *echo.Context) error {
 	} else {
 		p.processCtlLogic.ForEachByOwner(user, func(proc *process.Process) {
 			wg.Go(func() {
+				proc.ResetRestartTimes()
 				proc.Operate(user, func() error {
 					return proc.Kill()
 				})

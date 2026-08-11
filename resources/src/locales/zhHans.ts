@@ -271,6 +271,7 @@ export default {
     processDeleted: "进程 {name} 已删除",
     processStarted: "进程 {name} 已启动",
     processStopping: "进程 {name} 正在停止",
+    processWaitingRestart: "进程 {name} 等待重启",
     processStopped: "进程 {name} 已停止",
     processWarning: "进程 {name} 警告：{info}",
     warningNoDetails: "暂无详细信息",
