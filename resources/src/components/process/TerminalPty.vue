@@ -167,6 +167,16 @@ onUnmounted(() => {
           <span v-if="terminalDisconnected" class="terminal-disconnected">
             {{ $t("processCardPage.terminalDisconnected") }}
           </span>
+          <v-chip
+            v-if="props.data.controller"
+            size="small"
+            color="warning"
+            variant="tonal"
+            prepend-icon="mdi-account-lock"
+            class="ml-2"
+          >
+            {{ $t("processCardPage.terminalControlledBy", { controller: props.data.controller }) }}
+          </v-chip>
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-items style="height: 35px">

@@ -25,8 +25,8 @@ export function startProcess(uuid) {
   return api.put("/process", { uuid }).then((res) => res);
 }
 
-export function getContorl(uuid) {
-  return api.get("/process/control", { uuid }).then((res) => res);
+export function getContorl(uuid: number, time: number) {
+  return api.get("/process/control", { uuid, time }).then((res) => res);
 }
 
 export function getProcessConfig(uuid) {

@@ -13,6 +13,10 @@ import {
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
 import { isProcessStartDisabled } from "~/src/utils/processState";
+import {
+  CONTROL_DURATION_DEFAULT,
+  isControlDuration,
+} from "~/src/utils/controlDuration";
 
 const { t } = useI18n();
 let chartInstance: echarts.ECharts;
@@ -260,9 +264,22 @@ const canDelete = computed(
   () => props.data.state.state === 0 || props.data.state.state === 2
 );
 
-const control = () => {
-  getContorl(props.data.uuid).then((e) => {
+const controlDialog = ref(false);
+const controlDuration = ref(CONTROL_DURATION_DEFAULT);
+const isControlDurationValid = computed(() => isControlDuration(controlDuration.value));
+
+const openControlDialog = () => {
+  controlDuration.value = CONTROL_DURATION_DEFAULT;
+  controlDialog.value = true;
+};
+
+const submitControl = () => {
+  if (!isControlDurationValid.value) {
+    return;
+  }
+  getContorl(props.data.uuid, controlDuration.value).then((e) => {
     if (e.code === 0) {
+      controlDialog.value = false;
       snackbarStore.showSuccessMessage(t("processCardPage.controlSuccess"));
     }
   });
@@ -424,7 +441,7 @@ const copyToken = () => {
           </template>
 
           <v-list nav dense>
-            <v-list-item @click="control"> {{ $t("processCardPage.control") }} </v-list-item>
+            <v-list-item @click="openControlDialog"> {{ $t("processCardPage.control") }} </v-list-item>
             <v-tooltip location="top" :disabled="canDelete" :text="$t('processCardPage.deleteUnavailable')">
               <template v-slot:activator="{ props: tooltipProps }">
                 <span v-bind="tooltipProps">
@@ -465,7 +482,7 @@ const copyToken = () => {
                   icon="mdi-console"
                   variant="text"
                   density="comfortable"
-                  :disabled="controlledByOther || terminalUnavailable"
+                  :disabled="terminalUnavailable"
                 />
               </span>
             </template>
@@ -516,6 +533,37 @@ const copyToken = () => {
       :data="props.data"
       ref="processConfigComponent"
     ></ProcessConfig>
+
+    <v-dialog v-model="controlDialog" max-width="480">
+      <v-card class="rounded-xl">
+        <v-card-title class="text-h6 font-weight-medium">
+          {{ $t("processCardPage.control") }}
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pt-6">
+          <p class="mb-4">{{ $t("processCardPage.controlDescription") }}</p>
+          <v-text-field
+            v-model.number="controlDuration"
+            type="number"
+            :min="1"
+            :max="3600"
+            :label="$t('processCardPage.controlDuration')"
+            :hint="$t('processCardPage.controlDurationHint')"
+            :rules="[(value) => isControlDuration(value) || $t('processCardPage.controlDurationRule')]"
+            persistent-hint
+          ></v-text-field>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions class="justify-end pa-4">
+          <v-btn @click="controlDialog = false">
+            {{ $t("processCardPage.cancel") }}
+          </v-btn>
+          <v-btn color="primary" :disabled="!isControlDurationValid" @click="submitControl">
+            {{ $t("processCardPage.confirm") }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="deleteDialog" max-width="480" persistent>
       <v-card class="rounded-xl">
