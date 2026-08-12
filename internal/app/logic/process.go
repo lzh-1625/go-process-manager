@@ -282,7 +282,7 @@ func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.Process
 }
 
 func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) {
-	if state == types.ProcessStateRunning || state == types.ProcessStateStopping {
+	if state == types.ProcessStateRunning || state == types.ProcessStateStopping || state == types.ProcessStateWaitingRestart {
 		return
 	}
 	data, err := p.processRepository.GetProcessConfigByID(proc.UUID)
