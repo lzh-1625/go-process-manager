@@ -43,7 +43,7 @@ const initWebSocketPty = (token) => {
   const initialCols = Math.floor(window.innerWidth / 9);
   const initialRows = Math.floor(window.innerHeight / 19);
 
-  const baseUrl = `ws://${window.location.hostname}:8797/api/ws/share`;
+  const baseUrl = `ws://${window.location.hostname}:${window.location.port}/api/ws/share`;
   const url = `${baseUrl}?token=${token}&cols=${initialCols}&rows=${initialRows}`;
 
   initSocket(url);
