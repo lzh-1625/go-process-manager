@@ -37,7 +37,6 @@ type Process struct {
 	StartCommand []string
 	WorkDir      string
 	Env          []string
-	lock         sync.Mutex
 	StopChan     chan struct{}
 	Control      struct {
 		Controller         string
@@ -141,12 +140,16 @@ func (p *Process) Operate(operator string, fn func() error) error {
 // fn function execution successfully, set state
 func (p *Process) setState(state types.ProcessState, afterHookFns ...func()) bool {
 	p.State.lock.Lock()
-	if !p.checkStateChange(p.State.State, state) {
+	old := p.State.State
+	if !p.checkStateChange(old, state) {
 		p.State.lock.Unlock()
 		return false
 	}
 	p.State.State = state
 	p.State.lock.Unlock()
+	if old == state {
+		return true
+	}
 	if p.stateHook != nil {
 		p.stateHook(p, state)
 	}
@@ -162,12 +165,14 @@ func (p *Process) checkStateChange(old, new types.ProcessState) bool {
 		return new == types.ProcessStateRunning || new == types.ProcessStateWarning
 	case types.ProcessStateRunning:
 		return new == types.ProcessStateStopping || new == types.ProcessStateStopped
-	case types.ProcessStateWarning, types.ProcessStateWaitingRestart:
+	case types.ProcessStateWarning:
 		return new == types.ProcessStateStarting
+	case types.ProcessStateWaitingRestart:
+		return new == types.ProcessStateStarting || new == types.ProcessStateStopped
 	case types.ProcessStateStopped:
 		return new == types.ProcessStateStarting || new == types.ProcessStateWaitingRestart
 	case types.ProcessStateStopping:
-		return new == types.ProcessStateStopped
+		return new == types.ProcessStateStopped || new == types.ProcessStateStopping
 	default:
 		return true
 	}
@@ -327,6 +332,13 @@ func (p *Process) initPsutil() {
 
 // Kill stops the process by sending SIGINT first, then forcibly kills it if it does not exit in time.
 func (p *Process) Kill() error {
+	// Stop a process waiting to restart immediately.
+	if p.State.State == types.ProcessStateWaitingRestart {
+		if !p.setState(types.ProcessStateStopped) {
+			return errors.New("process state abnormal")
+		}
+		return nil
+	}
 	if p.State.State != types.ProcessStateRunning {
 		return errors.New("can't kill not running process")
 	}
@@ -351,6 +363,13 @@ func (p *Process) Kill() error {
 
 // Stop the process immediately.
 func (p *Process) Kill9() error {
+	// Stop a process waiting to restart immediately.
+	if p.State.State == types.ProcessStateWaitingRestart {
+		if !p.setState(types.ProcessStateStopped) {
+			return errors.New("process state abnormal")
+		}
+		return nil
+	}
 	if err := p.op.Kill(); err != nil {
 		return err
 	}
@@ -441,8 +460,6 @@ func (p *Process) Start() (err error) {
 		log.Logger.Warnw("process is running, skip start")
 		return nil
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
 	if ok := p.setState(types.ProcessStateStarting); !ok {
 		return nil
 	}
@@ -466,19 +483,19 @@ func (p *Process) Start() (err error) {
 	return nil
 }
 
-// 等待条件允许后执行重启
+// Wait until the restart condition is met, then restart the process.
 func (p *Process) waitingRestart() {
 	if !p.setState(types.ProcessStateWaitingRestart) {
-		log.Logger.Warn("当前状态跳过重启等待", "name", p.Name, "state", p.State.State.String())
+		log.Logger.Warn("skip restart wait due to current state", "name", p.Name, "state", p.State.State.String())
 		return
 	}
 	restartTimeFormat := time.Now().Add(time.Second * time.Duration(p.State.RestartTimes)).Format(time.DateTime)
-	p.State.Info = fmt.Sprintf("等待%s时进行重启", restartTimeFormat)
-	log.Logger.Info(restartTimeFormat)
+	p.State.Info = fmt.Sprintf("restart scheduled for %s", restartTimeFormat)
 	time.Sleep(time.Second * time.Duration(p.State.RestartTimes))
 
 	if p.State.State != types.ProcessStateWaitingRestart {
-		log.Logger.Warn("当前状态跳过重启", "name", p.Name, "state", p.State.State.String())
+		log.Logger.Debugw("skip restart due to current state", "name", p.Name, "state", p.State.State.String())
+		return
 	}
 	p.State.RestartTimes++
 	p.Start()
@@ -487,7 +504,6 @@ func (p *Process) waitingRestart() {
 func (p *Process) watchDog() {
 	p.pty.Wait()
 	state, _ := p.op.Wait()
-	p.lock.Lock()
 	if p.cgroup.enable && p.cgroup.delete != nil {
 		err := p.cgroup.delete()
 		if err != nil {
@@ -497,14 +513,16 @@ func (p *Process) watchDog() {
 	if p.logHandler != nil {
 		p.logHandler.Close()
 	}
-	if !p.setState(types.ProcessStateStopped) {
-		log.Logger.Errorw("", "name", p.Name, "state", p.State.State.String())
-		p.lock.Unlock()
+	if !p.setState(types.ProcessStateStopping) {
+		log.Logger.Errorw("state abnormal", "name", p.Name, "state", p.State.State.String())
 		return
 	}
 	p.pty.Close()
 	close(p.StopChan)
-	p.lock.Unlock()
+	if !p.setState(types.ProcessStateStopped) {
+		log.Logger.Errorw("state abnormal", "name", p.Name, "state", p.State.State.String())
+		return
+	}
 	if state.ExitCode() != 0 {
 		log.Logger.Infow("process stopped", "process name", p.Name, "exitCode", state.ExitCode())
 	} else {

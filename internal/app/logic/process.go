@@ -264,22 +264,21 @@ func (p *ProcessCtlLogic) createProcess(cf model.Process) (*process.Process, err
 }
 
 func (p *ProcessCtlLogic) createEvent(proc *process.Process, state types.ProcessState) {
-	var eventType types.EventType
-	kv := []string{}
 	switch state {
 	case types.ProcessStateRunning:
-		eventType = types.EventProcessStart
-		kv = append(kv, "restartTimes", strconv.Itoa(proc.State.RestartTimes))
-	case types.ProcessStateStopped:
-		eventType = types.EventProcessStop
-		kv = append(kv, "startTime", proc.State.StartTime.Format(time.DateTime))
+		p.eventLogic.Create(proc.Name, proc.GetOperator(), types.EventProcessStart, "restartTimes", strconv.Itoa(proc.State.RestartTimes))
+	case types.ProcessStateStopping:
+		stoppingTime := time.Now()
+		operator := proc.GetOperator()
+		go func() {
+			<-proc.StopChan
+			p.eventLogic.Create(proc.Name, operator, types.EventProcessStop, "startTime", proc.State.StartTime.Format(time.DateTime), "wait", time.Since(stoppingTime).String())
+		}()
 	case types.ProcessStateWarning:
-		eventType = types.EventProcessWarning
-		kv = append(kv, "reason", proc.State.Info, "startTime", proc.State.StartTime.Format(time.DateTime))
+		p.eventLogic.Create(proc.Name, proc.GetOperator(), types.EventProcessWarning, "reason", proc.State.Info, "startTime", proc.State.StartTime.Format(time.DateTime))
 	default:
 		return
 	}
-	p.eventLogic.Create(proc.Name, proc.GetOperator(), eventType, kv...)
 }
 
 func (p *ProcessCtlLogic) push(proc *process.Process, state types.ProcessState) {
