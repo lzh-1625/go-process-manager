@@ -93,7 +93,7 @@ func TestProcessWriter(t *testing.T) {
 		time.Sleep(time.Millisecond * 50)
 		process.WriteBytes([]byte{v})
 	}
-	process.ProcessControl("user")
+	process.ProcessControl("user", time.Second*10)
 	process.Kill()
 	if str := tw.buf.String(); !strings.Contains(str, textString) || !tw.close {
 		t.Errorf("log is not test, got %s, close: %t", str, tw.close)

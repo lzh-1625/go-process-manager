@@ -214,6 +214,7 @@ func (p *ProcApi) GetProcessConfig(ctx *echo.Context) error {
 func (p *ProcApi) ProcessControl(ctx *echo.Context) error {
 	var req struct {
 		UUID int `query:"uuid"`
+		Time int `query:"time"`
 	}
 	if err := ctx.Bind(&req); err != nil {
 		return err
@@ -223,7 +224,7 @@ func (p *ProcApi) ProcessControl(ctx *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	proc.ProcessControl(user)
+	proc.ProcessControl(user, time.Second*time.Duration(req.Time))
 	return nil
 }
 

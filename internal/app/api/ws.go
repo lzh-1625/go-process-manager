@@ -82,9 +82,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if proc.HasWriter(reqUser) {
 		return errors.New("connection already exists")
 	}
-	if proc.Control.Controller != reqUser && !proc.VerifyControl() {
-		return errors.New("insufficient permissions")
-	}
+	write := proc.Control.Controller == reqUser || proc.VerifyControl()
 	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
 		return err
@@ -110,7 +108,7 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 		return nil
 	}
 	proc.SetTerminalSize(req.Cols, req.Rows)
-	write := w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
+	write = write && w.permissionApi.hasOprPermission(ctx, req.UUID, types.OperationTerminalWrite)
 	w.startWsConnect(wci, cancel, proc, write)
 	proc.AddWriter(reqUser, wci)
 	defer proc.DeleteWriter(reqUser)
@@ -152,9 +150,6 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if proc.State.State != types.ProcessStateRunning {
 		return errors.New("process not is running")
 	}
-	if !proc.VerifyControl() {
-		return errors.New("insufficient permissions")
-	}
 	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
 		return err
@@ -180,7 +175,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err := proc.ReadCache(wci); err != nil {
 		return nil
 	}
-	w.startWsConnect(wci, cancel, proc, data.Write)
+	w.startWsConnect(wci, cancel, proc, data.Write && proc.VerifyControl())
 	proc.AddWriter(guestName, wci)
 	defer proc.DeleteWriter(guestName)
 	conn.SetCloseHandler(func(_ int, _ string) error {

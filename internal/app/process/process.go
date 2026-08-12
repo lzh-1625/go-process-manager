@@ -235,8 +235,8 @@ func (p *Process) logReportHandler(log []byte) {
 
 // ProcessControl disconnects all current users and makes the specified user the controller.
 // Other users cannot operate the process terminal, and control is released automatically after a timeout.
-func (p *Process) ProcessControl(name string) {
-	p.Control.ControlExpiredTime = time.Now().Add(time.Second * time.Duration(config.CF.ProcessControlExpireTime))
+func (p *Process) ProcessControl(name string, t time.Duration) {
+	p.Control.ControlExpiredTime = time.Now().Add(t)
 	p.Control.Controller = name
 	for _, ws := range p.writers {
 		ws.Close()

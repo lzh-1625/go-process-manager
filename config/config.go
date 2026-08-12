@@ -41,7 +41,6 @@ type Configuration struct {
 	EsWindowLimit             bool   `default:"true" describe:"Es pagination 10000 limit"`
 	ProcessRestartsLimit      int    `default:"2" describe:"process restart limit"`
 	ProcessMsgCacheBufLimit   int    `default:"4096" describe:"pty process cache message bytes limit"`
-	ProcessControlExpireTime  int64  `default:"60" describe:"process control timeout (seconds)"`
 	PerformanceInfoListLength int    `default:"30" describe:"performance info storage length"`
 	PerformanceInfoInterval   int    `default:"60" describe:"monitor interval time (seconds)"`
 	TerminalConnectTimeout    int    `default:"10" describe:"terminal connect timeout (minutes)"`
