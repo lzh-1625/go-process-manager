@@ -171,12 +171,12 @@ onUnmounted(() => {
           </span>
           <v-chip
             v-if="props.data.controller"
-            size="small"
+            size="x-small"
             color="warning"
             variant="tonal"
-            prepend-icon="mdi-account-lock"
-            class="ml-2"
+            class="ml-2 process-user-chip"
           >
+            <v-icon size="10" class="mr-1">mdi-account-lock</v-icon>
             {{ $t("processCardPage.terminalControlledBy", { controller: props.data.controller }) }}
           </v-chip>
         </v-toolbar-title>

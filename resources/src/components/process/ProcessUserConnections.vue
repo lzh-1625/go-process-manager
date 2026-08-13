@@ -20,7 +20,7 @@ const userConnections = computed(() =>
       color="grey"
       size="x-small"
       variant="tonal"
-      class="user-chip"
+      class="process-user-chip"
     >
       <v-icon size="10" class="mr-1">mdi-account</v-icon>
       {{ username }}
@@ -39,7 +39,7 @@ const userConnections = computed(() =>
   vertical-align: middle;
 }
 
-.user-chip {
+:global(.process-user-chip) {
   position: relative;
   min-height: 16px !important;
   height: 16px !important;

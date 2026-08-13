@@ -418,9 +418,10 @@ const copyToken = () => {
           v-if="hasValidController"
           color="warning"
           variant="tonal"
-          size="small"
-          prepend-icon="mdi-account-lock"
+          size="x-small"
+          class="process-user-chip"
         >
+          <v-icon size="10" class="mr-1">mdi-account-lock</v-icon>
           {{ props.data.controller }}
         </v-chip>
       </div>
