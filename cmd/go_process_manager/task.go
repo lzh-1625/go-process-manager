@@ -23,7 +23,6 @@ func init() {
 	rootCmd.AddCommand(taskCmd)
 	taskCmd.AddCommand(
 		taskListCmd,
-		taskDeleteCmd,
 		taskStartCmd,
 		taskStopCmd,
 	)
@@ -33,16 +32,6 @@ var taskListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all tasks",
 	Long:  `Print a table of all registered tasks, including their ID, name, schedule and last run status.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		cli.NewTaskCli().GetList()
-	},
-}
-
-var taskDeleteCmd = &cobra.Command{
-	Use:   "delete [id]",
-	Short: "Delete a task by ID",
-	Long:  `Permanently remove the task with the given ID from gpm.`,
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		cli.NewTaskCli().GetList()
 	},
