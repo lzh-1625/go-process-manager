@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -79,9 +79,6 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	if proc.HasWriter(reqUser) {
-		return errors.New("connection already exists")
-	}
 	write := proc.Control.Controller == reqUser || proc.VerifyControl()
 	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
@@ -112,8 +109,9 @@ func (w *WsApi) WebsocketHandle(ctx *echo.Context) (err error) {
 		proc.SetTerminalSize(req.Cols, req.Rows)
 	}
 	w.startWsConnect(wci, cancel, proc, write)
-	proc.AddWriter(reqUser, wci)
-	defer proc.DeleteWriter(reqUser)
+	name := fmt.Sprintf("%s:%d", reqUser, time.Now().UnixMicro())
+	proc.AddWriter(name, wci)
+	defer proc.DeleteWriter(name)
 	conn.SetCloseHandler(func(_ int, _ string) error {
 		cancel()
 		return nil
@@ -145,10 +143,7 @@ func (w *WsApi) WebsocketShareHandle(ctx *echo.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	guestName := "guest-" + strconv.Itoa(int(data.ID)) // construct guest username
-	if proc.HasWriter(guestName) {
-		return errors.New("connection already exists")
-	}
+	guestName := fmt.Sprintf("guest-%d:%d", data.ID, time.Now().UnixMicro()) // construct guest username
 	if proc.State.State != types.ProcessStateRunning {
 		return errors.New("process not is running")
 	}

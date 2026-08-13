@@ -7,18 +7,18 @@ import (
 )
 
 type ProcessInfo struct {
-	Name               string    `json:"name"`
-	UUID               int       `json:"uuid"`
-	StartTime          string    `json:"startTime"`
-	User               string    `json:"user"`
-	Usage              Usage     `json:"usage"`
-	State              State     `json:"state"`
-	CgroupEnable       bool      `json:"cgroupEnable"`
-	MemoryLimit        *float32  `json:"memoryLimit"`
-	CpuLimit           *float32  `json:"cpuLimit"`
-	Env                []string  `json:"env"`
-	Controller         string    `json:"controller"`
-	ControlExpiredTime time.Time `json:"controlExpiredTime"`
+	Name               string         `json:"name"`
+	UUID               int            `json:"uuid"`
+	StartTime          string         `json:"startTime"`
+	User               map[string]int `json:"user"`
+	Usage              Usage          `json:"usage"`
+	State              State          `json:"state"`
+	CgroupEnable       bool           `json:"cgroupEnable"`
+	MemoryLimit        *float32       `json:"memoryLimit"`
+	CpuLimit           *float32       `json:"cpuLimit"`
+	Env                []string       `json:"env"`
+	Controller         string         `json:"controller"`
+	ControlExpiredTime time.Time      `json:"controlExpiredTime"`
 }
 
 type Usage struct {

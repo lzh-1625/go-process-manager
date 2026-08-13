@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -180,25 +182,19 @@ func (p *Process) checkStateChange(old, new types.ProcessState) bool {
 
 // GetUserString returns the formatted list of terminal users for the current process.
 func (p *Process) GetUserString() string {
-	return strings.Join(p.GetUserList(), ";")
+	return strings.Join(slices.Collect(maps.Keys(p.GetUserList())), ";")
 }
 
 // GetUserList returns the terminal users for the current process.
-func (p *Process) GetUserList() []string {
+func (p *Process) GetUserList() map[string]int {
 	p.wlock.RLock()
 	defer p.wlock.RUnlock()
-	userList := make([]string, 0, len(p.writers))
-	for i := range p.writers {
-		userList = append(userList, i)
+	m := make(map[string]int)
+	for k := range p.writers {
+		k, _, _ := strings.Cut(k, ":")
+		m[k]++
 	}
-	return userList
-}
-
-// HasWriter reports whether the current terminal has the specified writer.
-func (p *Process) HasWriter(userName string) bool {
-	p.wlock.RLock()
-	defer p.wlock.RUnlock()
-	return p.writers[userName] != nil
+	return m
 }
 
 // AddWriter adds a terminal writer.

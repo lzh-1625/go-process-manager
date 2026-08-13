@@ -3,6 +3,7 @@ import { ref, watch, nextTick, onUnmounted, computed } from "vue"; // 引入 wat
 import { useI18n } from "vue-i18n";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import { ProcessItem } from "~/src/types/process/process";
+import ProcessUserConnections from "./ProcessUserConnections.vue";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { AttachAddon } from "xterm-addon-attach";
@@ -164,6 +165,7 @@ onUnmounted(() => {
       >
         <v-toolbar-title style="height: 100%">
           {{ props.data.name }}
+          <ProcessUserConnections :users="props.data.user" class="ml-2" />
           <span v-if="terminalDisconnected" class="terminal-disconnected">
             {{ $t("processCardPage.terminalDisconnected") }}
           </span>

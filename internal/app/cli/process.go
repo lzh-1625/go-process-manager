@@ -3,11 +3,14 @@ package cli
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math"
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/lzh-1625/go_process_manager/config"
@@ -75,7 +78,7 @@ func (p *ProcessCli) GetList() error {
 			process.Name,
 			strconv.Itoa(process.UUID),
 			getStateString(process.State.State),
-			process.User,
+			strings.Join(slices.Collect(maps.Keys(process.User)), ":"),
 			getCPUUsageString(process.Usage.Cpu),
 			getMemoryUsageString(process.Usage.Mem),
 			process.StartTime,

@@ -3,6 +3,7 @@ import { ProcessItem, ProcessState } from "~/src/types/process/process";
 import { useI18n } from "vue-i18n";
 import echarts from "@/plugins/echarts";
 import TerminalPty from "./TerminalPty.vue";
+import ProcessUserConnections from "./ProcessUserConnections.vue";
 import {
   deleteProcessConfig,
   getContorl,
@@ -412,10 +413,7 @@ const copyToken = () => {
           </template>
         </v-tooltip>
         <span class="process-name">{{ props.data.name }}</span>
-        <span v-if="props.data.user" class="user-info">
-          <v-icon size="small" class="mr-1">mdi-account</v-icon>
-          {{ props.data.user }}
-        </span>
+        <ProcessUserConnections :users="props.data.user" />
         <v-chip
           v-if="hasValidController"
           color="warning"
@@ -719,14 +717,6 @@ const copyToken = () => {
 
 .process-name {
   font-weight: bold;
-}
-
-.user-info {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.85em;
-  opacity: 0.7;
-  font-weight: normal;
 }
 
 /* 中间图表自适应 */

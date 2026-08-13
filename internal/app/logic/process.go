@@ -124,7 +124,7 @@ func (p *ProcessCtlLogic) getProcessInfoList(processConfiglist []*model.Process)
 		pi.State.Info = process.State.Info
 		pi.State.State = process.State.State
 		pi.StartTime = process.State.StartTime.Format(time.DateTime)
-		pi.User = process.GetUserString()
+		pi.User = process.GetUserList()
 		pi.Usage.Cpu = process.PerformanceStatus.Cpu
 		pi.Usage.Mem = process.PerformanceStatus.Mem
 		pi.Usage.CpuCapacity = float64(runtime.NumCPU()) * 100.0
