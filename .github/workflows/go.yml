@@ -1,189 +1,82 @@
 name: Build
+permissions:
+  contents: write
+  actions: read
+  checks: read
 
 on:
   push:
     branches:
       - master
-    tags:
-      - 'v*'
   pull_request:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
 jobs:
-  frontend:
-    name: Build frontend
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 安装 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: resources/package-lock.json
 
-      - name: Install frontend dependencies
+      # resource 目录执行 npm install 和 build
+      - name: Install frontend deps
         working-directory: resources
-        run: npm ci
+        run: npm install
 
       - name: Build frontend
         working-directory: resources
         run: npm run build
 
-      - name: Upload frontend build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: resources/dist
-          if-no-files-found: error
-          retention-days: 1
-
-  build:
-    name: Build ${{ matrix.id }}
-    needs: frontend
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: linux-amd64
-            goos: linux
-            goarch: amd64
-            tags: ''
-            output: gpm_linux_amd64
-          - id: windows-amd64
-            goos: windows
-            goarch: amd64
-            tags: ''
-            output: gpm_windows_amd64.exe
-          - id: darwin-amd64
-            goos: darwin
-            goarch: amd64
-            tags: ''
-            output: gpm_darwin_amd64
-          - id: darwin-arm64
-            goos: darwin
-            goarch: arm64
-            tags: ''
-            output: gpm_darwin_arm64
-          - id: linux-arm64
-            goos: linux
-            goarch: arm64
-            tags: ''
-            output: gpm_linux_arm64
-          - id: linux-amd64-epoll
-            goos: linux
-            goarch: amd64
-            tags: epoll
-            output: gpm_linux_amd64_epoll
-          - id: linux-arm64-epoll
-            goos: linux
-            goarch: arm64
-            tags: epoll
-            output: gpm_linux_arm64_epoll
-          - id: linux-amd64-slim
-            goos: linux
-            goarch: amd64
-            tags: slim
-            output: gpm_linux_amd64_slim
-          - id: windows-amd64-slim
-            goos: windows
-            goarch: amd64
-            tags: slim
-            output: gpm_windows_amd64_slim.exe
-          - id: darwin-amd64-slim
-            goos: darwin
-            goarch: amd64
-            tags: slim
-            output: gpm_darwin_amd64_slim
-          - id: darwin-arm64-slim
-            goos: darwin
-            goarch: arm64
-            tags: slim
-            output: gpm_darwin_arm64_slim
-          - id: linux-arm64-slim
-            goos: linux
-            goarch: arm64
-            tags: slim
-            output: gpm_linux_arm64_slim
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download frontend build
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: resources/dist
-
+      # 安装 Go
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26.0'
-          cache: true
+          go-version: '1.26'
 
-      - name: Build and compress
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          BUILD_TAGS: ${{ matrix.tags }}
-          OUTPUT: ${{ matrix.output }}
-        run: |
-          version="$GITHUB_REF_NAME"
-          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
-            version="dev-${GITHUB_SHA::12}"
-          fi
-
-          build_tags=()
-          if [[ -n "$BUILD_TAGS" ]]; then
-            build_tags=("-tags=$BUILD_TAGS")
-          fi
-
-          CGO_ENABLED=0 go build "${build_tags[@]}" \
-            -ldflags="-s -w -X main.Version=$version" \
-            -trimpath \
-            -o "$OUTPUT" \
-            ./cmd/go_process_manager
-          gzip -9 "$OUTPUT"
-
-      - name: Upload release artifact
-        if: github.ref_type == 'tag'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.output }}
-          path: ${{ matrix.output }}.gz
-          if-no-files-found: error
-          retention-days: 1
-
-  release:
-    name: Create release
-    if: github.ref_type == 'tag'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download release artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Create release
+      # 执行 make（go build）
+      - name: Build Go project Linux AMD64
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_linux_amd64 ./cmd/go_process_manager
+      - name: Build Go project Windows AMD64
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_windows_amd64.exe ./cmd/go_process_manager
+      - name: Build Go project Darwin AMD64
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o gpm_darwin_amd64 ./cmd/go_process_manager
+      - name: Build Go project Darwin ARM64
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o gpm_darwin_arm64 ./cmd/go_process_manager
+      - name: Build Go project Linux ARM64
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o gpm_linux_arm64 ./cmd/go_process_manager
+      - name: Build Go project Linux AMD64 Slim
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_linux_amd64_slim ./cmd/go_process_manager
+      - name: Build Go project Windows AMD64 Slim
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_windows_amd64_slim.exe ./cmd/go_process_manager
+      - name: Build Go project Darwin AMD64 Slim
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_darwin_amd64_slim ./cmd/go_process_manager
+      - name: Build Go project Darwin ARM64 Slim
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_darwin_arm64_slim ./cmd/go_process_manager
+      - name: Build Go project Linux ARM64 Slim
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags="slim" -ldflags="-s -w" -trimpath -o gpm_linux_arm64_slim ./cmd/go_process_manager
+     
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.gz
-          name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
+          files: |
+            gpm_linux_amd64
+            gpm_windows_amd64.exe
+            gpm_darwin_amd64
+            gpm_darwin_arm64
+            gpm_linux_arm64
+            gpm_linux_amd64_slim
+            gpm_windows_amd64_slim.exe
+            gpm_darwin_amd64_slim
+            gpm_darwin_arm64_slim
+            gpm_linux_arm64_slim
+          name: Release ${{ github.sha }}
+          tag_name: v${{ github.run_number }}
           generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
