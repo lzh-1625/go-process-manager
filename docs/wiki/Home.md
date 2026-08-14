@@ -12,7 +12,9 @@ Use this guide to get the service running, manage processes and tasks, search lo
 - [Task Automation](Task-Automation)
 - [CLI Reference](CLI-Reference)
 - [Log Storage and Search](Log-Storage-and-Search)
+- [Events and Retention](Events-and-Retention)
 - [Configuration Reference](Configuration-Reference)
+- [Platform Differences](Platform-Differences)
 - [Roles and Permissions](Roles-and-Permissions)
 
 ## Before you start

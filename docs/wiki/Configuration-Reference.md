@@ -34,7 +34,7 @@ Restart after changing the log storage choice or connection settings. Keep exter
 | Task timeout | Limits how long a task can wait for completion. |
 | WebSocket health interval | Controls terminal connection health checks. |
 | Long-poll wait time | Controls how long the interface waits for updates. |
-| Event retention | Controls how long audit events are kept. |
+| [Event retention](Events-and-Retention) | Controls how long audit events are kept and when automatic cleanup runs. |
 
 ## Resource limits and web behavior
 
