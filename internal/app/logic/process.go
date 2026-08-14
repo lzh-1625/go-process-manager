@@ -230,7 +230,8 @@ func (p *ProcessCtlLogic) CreateProcess(config model.Process) (proc *process.Pro
 func (p *ProcessCtlLogic) createProcess(cf model.Process) (*process.Process, error) {
 	proc := process.NewProcess(cf,
 		process.SetAddWriterHook(func(proc *process.Process, user string, c io.WriteCloser) {
-			p.eventLogic.Create(proc.Name, user, types.EventProcessConnect)
+			name, _, _ := strings.Cut(user, ":")
+			p.eventLogic.Create(proc.Name, name, types.EventProcessConnect)
 			ProcessWaitCond().Trigger()
 		}),
 		process.SetDelWriterHook(func(p *process.Process, user string) {
