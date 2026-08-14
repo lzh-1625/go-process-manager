@@ -15,17 +15,6 @@ Supports Web UI / CLI / Webhook / cgroup resource limiting / log retrieval / ter
 
 ---
 
-# 🌐 Online Demo
-## Demo Address
-http://106.54.154.228:8790/
-
-## Test Account
-| Username | Password |
-|---|---|
-| root | root |
-
----
-
 # ✨ Project Introduction
 GPM (General Process Manager) is a modern process management platform designed for service, script and task workflow scenarios.
 
