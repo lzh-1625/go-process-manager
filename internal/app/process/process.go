@@ -140,7 +140,7 @@ func (p *Process) Operate(operator string, fn func() error) error {
 }
 
 // fn function execution successfully, set state
-func (p *Process) setState(state types.ProcessState, afterHookFns ...func()) bool {
+func (p *Process) setState(state types.ProcessState) bool {
 	p.State.lock.Lock()
 	old := p.State.State
 	if !p.checkStateChange(old, state) {
@@ -154,9 +154,6 @@ func (p *Process) setState(state types.ProcessState, afterHookFns ...func()) boo
 	}
 	if p.stateHook != nil {
 		p.stateHook(p, state)
-	}
-	for _, fn := range afterHookFns {
-		fn()
 	}
 	return true
 }
