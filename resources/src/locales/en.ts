@@ -332,6 +332,7 @@ export default {
     generateLink: "Generate Link",
     copyLink: "Copy Link",
     copySuccess: "Link copied to clipboard",
+    copyFailed: "Copy failed",
     tokenCopySuccess: "Token copied",
     createSuccess: "Share link created successfully",
     startSuccess: "Start successful",

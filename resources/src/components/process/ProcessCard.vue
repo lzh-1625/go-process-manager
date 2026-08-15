@@ -14,6 +14,7 @@ import {
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 import ProcessConfig from "./ProcessConfig.vue";
 import { isProcessStartDisabled } from "~/src/utils/processState";
+import { copyText } from "~/src/utils/clipboard";
 import {
   CONTROL_DURATION_DEFAULT,
   isControlDuration,
@@ -344,16 +345,20 @@ const generateShareLink = () => {
   });
 };
 
-const copyShareLink = () => {
-  navigator.clipboard.writeText(shareUrl.value).then(() => {
+const copyShareLink = async () => {
+  if (await copyText(shareUrl.value)) {
     snackbarStore.showSuccessMessage(t("processCardPage.copySuccess"));
-  });
+  } else {
+    snackbarStore.showErrorMessage(t("processCardPage.copyFailed"));
+  }
 };
 
-const copyToken = () => {
-  navigator.clipboard.writeText(shareToken.value).then(() => {
+const copyToken = async () => {
+  if (await copyText(shareToken.value)) {
     snackbarStore.showSuccessMessage(t("processCardPage.tokenCopySuccess"));
-  });
+  } else {
+    snackbarStore.showErrorMessage(t("processCardPage.copyFailed"));
+  }
 };
 </script>
 

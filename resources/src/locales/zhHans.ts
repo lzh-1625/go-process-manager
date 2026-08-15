@@ -325,6 +325,7 @@ export default {
     generateLink: "生成链接",
     copyLink: "复制链接",
     copySuccess: "链接已复制到剪贴板",
+    copyFailed: "复制失败",
     tokenCopySuccess: "Token已复制",
     createSuccess: "分享链接创建成功",
     startSuccess: "启动成功",

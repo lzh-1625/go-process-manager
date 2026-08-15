@@ -46,6 +46,11 @@
           <tbody>
             <tr v-for="item in paginatedPushList" :key="item.id">
               <td>
+                <v-chip color="primary" size="small" class="font-weight-bold">
+                  {{ item.id }}
+                </v-chip>
+              </td>
+              <td>
                 <v-chip
                   :color="getMethodColor(item.method)"
                   size="small"
@@ -88,7 +93,7 @@
               </td>
             </tr>
             <tr v-if="pushList.length === 0">
-              <td colspan="6" class="text-center text-secondary pa-8">
+              <td colspan="7" class="text-center text-secondary pa-8">
                 {{ $t('common.noData') }}
               </td>
             </tr>
@@ -256,7 +261,6 @@ const pushList = ref<PushItem[]>([]);
 
 const dialog = ref(false);
 const isEdit = ref(false);
-const formRef = ref();
 const formValid = ref(false);
 const submitLoading = ref(false);
 
@@ -287,6 +291,7 @@ const defaultForm = {
 const form = ref({ ...defaultForm });
 
 const headers = computed(() => [
+  { title: "ID", key: "id" },
   { title: t("pushPage.httpMethod"), key: "method" },
   { title: t("pushPage.pushUrl"), key: "url" },
   { title: t("pushPage.requestBody"), key: "body" },
