@@ -17,6 +17,12 @@
 
 </div>
 
+## 🌐 在线演示
+
+- 地址：[http://gpm.xcon.top/](http://gpm.xcon.top/)
+- 账号：`root`
+- 密码：`root`
+
 ---
 
 # ✨ 项目介绍

@@ -13,6 +13,12 @@ Supports Web UI / CLI / Webhook / cgroup resource limiting / log retrieval / ter
 
 ## [中文](./README_CN.md)
 
+## 🌐 Live Demo
+
+- URL: [http://gpm.xcon.top/](http://gpm.xcon.top/)
+- Username: `root`
+- Password: `root`
+
 ---
 
 # ✨ Project Introduction
