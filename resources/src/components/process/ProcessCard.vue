@@ -563,7 +563,7 @@ const copyToken = async () => {
             {{ $t("processCardPage.cancel") }}
           </v-btn>
           <v-btn color="primary" :disabled="!isControlDurationValid" @click="submitControl">
-            {{ $t("processCardPage.confirm") }}
+            {{ $t("common.confirm") }}
           </v-btn>
         </v-card-actions>
       </v-card>
