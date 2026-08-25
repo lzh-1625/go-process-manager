@@ -10,6 +10,7 @@ import (
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/es"
 	_ "github.com/lzh-1625/go_process_manager/internal/app/repository/search/es"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/sqlite"
+	"github.com/lzh-1625/go_process_manager/internal/app/repository/search/victorialogs"
 )
 
 func NewILogLogic(logRepository *repository.LogRepository) search.ILogLogic {
@@ -18,6 +19,8 @@ func NewILogLogic(logRepository *repository.LogRepository) search.ILogLogic {
 		return es.NewEsSearch()
 	case "bleve":
 		return bleve.NewBleveSearch()
+	case "victorialogs":
+		return victorialogs.NewVictoriaLogsSearch()
 	default:
 		return sqlite.NewSqliteSearch(logRepository)
 	}

@@ -33,12 +33,15 @@ func init() {
 type Configuration struct {
 	LogLevel                  string `default:"info"  describe:"log level [debug,info]"`
 	Listen                    string `default:":8797" describe:"listen port"`
-	StorgeType                string `default:"sqlite" describe:"storage engine [sqlite,es,bleve]"`
+	StorgeType                string `default:"sqlite" describe:"storage engine [sqlite,es,bleve,victorialogs]"`
 	EsUrl                     string `default:"" describe:"Elasticsearch url"`
 	EsIndex                   string `default:"server_log_v1" describe:"Elasticsearch index"`
 	EsUsername                string `default:"" describe:"Elasticsearch username"`
 	EsPassword                string `default:"" describe:"Elasticsearch password"`
 	EsWindowLimit             bool   `default:"true" describe:"Es pagination 10000 limit"`
+	VictoriaLogsUrl           string `default:"" describe:"VictoriaLogs url"`
+	VictoriaLogsUsername      string `default:"" describe:"VictoriaLogs username"`
+	VictoriaLogsPassword      string `default:"" describe:"VictoriaLogs password"`
 	ProcessRestartsLimit      int    `default:"2" describe:"process restart limit"`
 	ProcessMsgCacheBufLimit   int    `default:"4096" describe:"pty process cache message bytes limit"`
 	PerformanceInfoListLength int    `default:"30" describe:"performance info storage length"`
