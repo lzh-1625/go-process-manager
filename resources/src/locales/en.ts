@@ -63,14 +63,14 @@ export default {
   },
   menu: {
     // Core feature menus
-    process: "Process Manager",
-    shareManage: "Share Management",
-    task: "Task Management",
-    log: "Log Viewer",
-    event: "System Events",
-    user: "User Management",
+    process: "Processes",
+    shareManage: "Share Links",
+    task: "Tasks",
+    log: "Logs",
+    event: "Events",
+    user: "Users",
     settings: "Settings",
-    push: "Push Management",
+    push: "Push Configurations",
     // Group titles
     group: {
       process: "Process",
