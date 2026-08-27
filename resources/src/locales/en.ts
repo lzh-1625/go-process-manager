@@ -346,6 +346,11 @@ export default {
     terminalDisconnected: "Terminal connection closed",
     terminalError: "Terminal connection error",
     terminalControlledBy: "Terminal is controlled by {controller}",
+    zmodemTransferActive: "ZMODEM transfer in progress",
+    zmodemUploadTitle: "Upload files",
+    zmodemUploadDescription: "The remote terminal is ready to receive files.",
+    zmodemUploadFiles: "Files",
+    zmodemUpload: "Upload",
   },
   logPage: {
     highLight: "High Light",

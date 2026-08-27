@@ -20,3 +20,21 @@ test("process card keeps terminal access enabled when another user controls it",
 
   assert.match(processCard, /:disabled="terminalUnavailable"/);
 });
+
+test("terminal routes WebSocket traffic through the ZMODEM sentry", () => {
+  assert.match(terminalPty, /import \* as Zmodem from "zmodem\.js-ex\/src\/zmodem_browser"/);
+  assert.match(terminalPty, /new Zmodem\.Sentry/);
+  assert.match(terminalPty, /zmodemSentry\.consume\(event\.data\)/);
+  assert.match(terminalPty, /socket\.send\(new Uint8Array\(octets\)\)/);
+  assert.match(terminalPty, /try \{\s*zmodemSentry\.consume\(event\.data\)/);
+});
+
+test("terminal opens a file chooser when lrzsz rz requests an upload", () => {
+  assert.match(terminalPty, /v-model="zmodemUploadDialog"/);
+  assert.match(terminalPty, /Zmodem\.Browser\.send_files/);
+});
+
+test("terminal saves lrzsz sz payloads returned by the accepted offer", () => {
+  assert.match(terminalPty, /offer\.accept\(\)\.then\(\(payloads\) =>/);
+  assert.match(terminalPty, /Zmodem\.Browser\.save_to_disk\(payloads, fileName\)/);
+});

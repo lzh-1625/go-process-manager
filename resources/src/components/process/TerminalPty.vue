@@ -6,14 +6,17 @@ import { ProcessItem } from "~/src/types/process/process";
 import ProcessUserConnections from "./ProcessUserConnections.vue";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import { AttachAddon } from "xterm-addon-attach";
 import { CanvasAddon } from "@xterm/addon-canvas";
+import * as Zmodem from "zmodem.js-ex/src/zmodem_browser";
 import "xterm/css/xterm.css";
 
 const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 const dialog = ref(false);
 const terminalDisconnected = ref(false);
+const zmodemTransferActive = ref(false);
+const zmodemUploadDialog = ref(false);
+const zmodemUploadFiles = ref<File[]>([]);
 const props = defineProps<{
   data: ProcessItem;
 }>();
@@ -22,6 +25,9 @@ const xtermEl = ref<HTMLElement | null>(null);
 
 let socket: WebSocket | null = null;
 let term: Terminal | null = null;
+let zmodemSession: any = null;
+let zmodemUploadSession: any = null;
+let zmodemSentry: any = null;
 const fitAddon = new FitAddon();
 
 defineExpose({
@@ -94,18 +100,94 @@ const initTerm = () => {
     },
   });
 
-  const attachAddon = new AttachAddon(socket);
-
   term.loadAddon(new CanvasAddon()); // 推荐先加载渲染器
-  term.loadAddon(attachAddon);
   term.loadAddon(fitAddon);
 
   term.open(xtermEl.value);
+
+  zmodemSentry = new Zmodem.Sentry({
+    to_terminal: (octets: number[] | Uint8Array) =>
+      term?.write(new Uint8Array(octets)),
+    sender: (octets: number[] | Uint8Array) => {
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(new Uint8Array(octets));
+      }
+    },
+    on_detect: onZmodemDetected,
+    on_retract: resetZmodemTransfer,
+  });
+  socket.onmessage = (event) => {
+    try {
+      zmodemSentry.consume(event.data);
+    } catch (err) {
+      console.error("ZMODEM Error:", err);
+      abortZmodemTransfer();
+    }
+  };
+  term.onData((data) => {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(data);
+    }
+  });
 
   // 在打开后执行 fit() 来适配尺寸
   fitAddon.fit();
   term.focus();
   window.addEventListener("resize", handleResize);
+};
+
+const onZmodemDetected = (detection: any) => {
+  const session = detection.confirm();
+  zmodemSession = session;
+  zmodemTransferActive.value = true;
+  if (term) {
+    term.options.disableStdin = true;
+  }
+
+  session.on("session_end", resetZmodemTransfer);
+
+  if (session.type === "send") {
+    zmodemUploadSession = session;
+    zmodemUploadDialog.value = true;
+    return;
+  }
+
+  session.on("offer", (offer: any) => {
+    const fileName = offer.get_details().name;
+    offer.accept().then((payloads) => {
+      Zmodem.Browser.save_to_disk(payloads, fileName);
+    }).catch(abortZmodemTransfer);
+  });
+  session.start();
+};
+
+const sendZmodemFiles = () => {
+  if (!zmodemUploadSession || zmodemUploadFiles.value.length === 0) return;
+
+  zmodemUploadDialog.value = false;
+  Zmodem.Browser.send_files(zmodemUploadSession, zmodemUploadFiles.value)
+    .then(() => zmodemUploadSession?.close())
+    .catch(abortZmodemTransfer);
+};
+
+const cancelZmodemUpload = () => {
+  abortZmodemTransfer();
+};
+
+const abortZmodemTransfer = () => {
+  zmodemSession?.abort();
+  resetZmodemTransfer();
+};
+
+const resetZmodemTransfer = () => {
+  zmodemTransferActive.value = false;
+  zmodemUploadDialog.value = false;
+  zmodemUploadFiles.value = [];
+  zmodemSession = null;
+  zmodemUploadSession = null;
+  if (term && !terminalDisconnected.value) {
+    term.options.disableStdin = false;
+  }
 };
 
 const handleResize = () => {
@@ -126,6 +208,8 @@ const toolbarColor = computed(() => {
 
 const cleanup = () => {
   window.removeEventListener("resize", handleResize);
+  abortZmodemTransfer();
+  zmodemSentry = null;
   if (term) {
     term.dispose();
     term = null;
@@ -169,6 +253,9 @@ onUnmounted(() => {
           <span v-if="terminalDisconnected" class="terminal-disconnected">
             {{ $t("processCardPage.terminalDisconnected") }}
           </span>
+          <span v-if="zmodemTransferActive" class="zmodem-transfer-active">
+            {{ $t("processCardPage.zmodemTransferActive") }}
+          </span>
           <v-chip
             v-if="props.data.controller"
             size="x-small"
@@ -194,6 +281,33 @@ onUnmounted(() => {
       ></div>
     </v-card>
   </v-dialog>
+
+  <v-dialog v-model="zmodemUploadDialog" persistent max-width="500">
+    <v-card>
+      <v-card-title>{{ $t("processCardPage.zmodemUploadTitle") }}</v-card-title>
+      <v-card-text>
+        {{ $t("processCardPage.zmodemUploadDescription") }}
+        <v-file-input
+          v-model="zmodemUploadFiles"
+          class="mt-4"
+          multiple
+          show-size
+          :label="$t('processCardPage.zmodemUploadFiles')"
+        />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn @click="cancelZmodemUpload">{{ $t("common.cancel") }}</v-btn>
+        <v-btn
+          color="primary"
+          :disabled="zmodemUploadFiles.length === 0"
+          @click="sendZmodemFiles"
+        >
+          {{ $t("processCardPage.zmodemUpload") }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style>
@@ -202,6 +316,12 @@ onUnmounted(() => {
 }
 
 .terminal-disconnected {
+  margin-left: 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.zmodem-transfer-active {
   margin-left: 8px;
   font-size: 12px;
   opacity: 0.8;

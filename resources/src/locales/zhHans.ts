@@ -339,6 +339,11 @@ export default {
     terminalDisconnected: "终端连接断开",
     terminalError: "终端连接发生错误",
     terminalControlledBy: "终端正由 {controller} 控制",
+    zmodemTransferActive: "ZMODEM 文件传输中",
+    zmodemUploadTitle: "上传文件",
+    zmodemUploadDescription: "远程终端已准备接收文件。",
+    zmodemUploadFiles: "文件",
+    zmodemUpload: "上传",
   },
   logPage: {
     highLight: "高亮",
