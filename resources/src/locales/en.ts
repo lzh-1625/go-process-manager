@@ -362,7 +362,6 @@ export default {
     context: "Context",
     totalLogs: "Total {n} logs",
     loadLogsFailed: "Failed to load logs",
-    noLogsRetrieved: "No logs retrieved",
     viewContextAbove: "View Context Above",
     viewContextBelow: "View Context Below",
     loadMoreAbove: "Load More Above",

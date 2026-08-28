@@ -418,7 +418,7 @@ const loadLogs = async (options?: { page?: number }) => {
       snackbarStore.showErrorMessage(t("logPage.loadLogsFailed"));
     }
   } catch {
-    snackbarStore.showWarningMessage(t("logPage.noLogsRetrieved"));
+    // The response interceptor already displays the API error.
   } finally {
     loading.value = false;
   }
