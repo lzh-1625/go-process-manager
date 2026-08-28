@@ -1,207 +1,118 @@
 <template>
-  <v-container fluid class="py-6 px-8">
-    <v-card class="rounded-lg">
-      <!-- loading spinner -->
-      <div
-        v-if="loading"
-        class="h-full d-flex flex-grow-1 align-center justify-center"
-        style="min-height: 400px"
-      >
-        <v-progress-circular
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
+  <!-- loading spinner -->
+  <div v-if="loading" class="h-full d-flex flex-grow-1 align-center justify-center" style="min-height: 400px">
+    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+  </div>
+
+  <div v-else>
+    <!-- 标题栏 -->
+    <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+      <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
+      <span class="flex-fill">{{ $t('eventPage.title') }}</span>
+      <v-btn icon variant="text" size="small" @click="refreshEvents">
+        <v-icon>mdi-refresh</v-icon>
+      </v-btn>
+      <v-btn icon variant="text" size="small" @click="showFilter = !showFilter">
+        <v-icon>mdi-filter</v-icon>
+      </v-btn>
+    </h6>
+
+    <!-- 筛选条件 -->
+    <v-expand-transition>
+      <div v-show="showFilter" class="px-5 pb-4">
+        <v-row dense>
+          <v-col cols="12" sm="6" md="2">
+            <v-text-field :label="$t('common.name')" variant="outlined" density="compact" v-model="searchForm.name"
+              clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="2">
+            <v-text-field :label="$t('eventPage.user')" variant="outlined" density="compact" v-model="searchForm.user"
+              clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="2">
+            <v-select :label="$t('eventPage.eventType')" variant="outlined" density="compact" v-model="searchForm.type"
+              :items="eventTypes" item-title="label" item-value="value" clearable hide-details />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-combobox :label="$t('eventPage.additionalInfo')" :hint="$t('eventPage.additionalFilterHint')"
+              :delimiters="[',']" persistent-hint variant="outlined" density="compact" v-model="searchForm.keyValues"
+              multiple chips closable-chips clearable hide-no-data />
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <v-text-field :label="$t('common.startTime')" variant="outlined" density="compact" type="datetime-local"
+              v-model="searchForm.startTime" clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <v-text-field :label="$t('common.endTime')" variant="outlined" density="compact" type="datetime-local"
+              v-model="searchForm.endTime" clearable hide-details />
+          </v-col>
+          <v-col cols="12" class="d-flex ga-2 mt-2">
+            <v-btn color="primary" size="small" elevation="4" variant="elevated" @click="searchEvents">
+              {{ $t('common.search') }}
+            </v-btn>
+            <v-btn size="small" variant="tonal" @click="resetSearch">
+              {{ $t('common.reset') }}
+            </v-btn>
+          </v-col>
+        </v-row>
       </div>
+    </v-expand-transition>
 
-      <div v-else>
-        <!-- 标题栏 -->
-        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
-          <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
-          <span class="flex-fill">{{ $t('eventPage.title') }}</span>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="refreshEvents"
-          >
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="showFilter = !showFilter"
-          >
-            <v-icon>mdi-filter</v-icon>
-          </v-btn>
-        </h6>
-
-        <!-- 筛选条件 -->
-        <v-expand-transition>
-          <div v-show="showFilter" class="px-5 pb-4">
-            <v-row dense>
-              <v-col cols="12" sm="6" md="2">
-                <v-text-field
-                  :label="$t('common.name')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.name"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="2">
-                <v-text-field
-                  :label="$t('eventPage.user')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.user"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="2">
-                <v-select
-                  :label="$t('eventPage.eventType')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.type"
-                  :items="eventTypes"
-                  item-title="label"
-                  item-value="value"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-combobox
-                  :label="$t('eventPage.additionalInfo')"
-                  :hint="$t('eventPage.additionalFilterHint')"
-                  :delimiters="[',']"
-                  persistent-hint
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.keyValues"
-                  multiple
-                  chips
-                  closable-chips
-                  clearable
-                  hide-no-data
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  :label="$t('common.startTime')"
-                  variant="outlined"
-                  density="compact"
-                  type="datetime-local"
-                  v-model="searchForm.startTime"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  :label="$t('common.endTime')"
-                  variant="outlined"
-                  density="compact"
-                  type="datetime-local"
-                  v-model="searchForm.endTime"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" class="d-flex ga-2 mt-2">
-                <v-btn
-                  color="primary"
-                  size="small"
-                  elevation="4"
-                  variant="elevated"
-                  @click="searchEvents"
-                >
-                  {{ $t('common.search') }}
-                </v-btn>
-                <v-btn size="small" variant="tonal" @click="resetSearch">
-                  {{ $t('common.reset') }}
-                </v-btn>
-              </v-col>
-            </v-row>
-          </div>
-        </v-expand-transition>
-
-        <!-- 事件列表 -->
-        <v-table class="pa-3">
-          <thead>
-            <tr>
-              <th class="text-left" v-for="header in headers" :key="header.text">
-                {{ header.text }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in eventData" :key="item.id">
-              <td>
-                <v-chip
-                  :color="getEventTypeColor(item.type)"
-                  size="small"
-                  class="font-weight-bold"
-                >
-                  <v-icon start size="small">{{
-                    getEventTypeIcon(item.type)
-                  }}</v-icon>
-                  {{ getEventTypeLabel(item.type) }}
+    <!-- 事件列表 -->
+    <v-table class="pa-3">
+      <thead>
+        <tr>
+          <th class="text-left" v-for="header in headers" :key="header.text">
+            {{ header.text }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in eventData" :key="item.id">
+          <td>
+            <v-chip :color="getEventTypeColor(item.type)" size="small" class="font-weight-bold">
+              <v-icon start size="small">{{
+                getEventTypeIcon(item.type)
+                }}</v-icon>
+              {{ getEventTypeLabel(item.type) }}
+            </v-chip>
+          </td>
+          <td class="font-weight-bold">
+            <v-chip color="primary" size="small" class="font-weight-bold">
+              {{ item.name }}
+            </v-chip>
+          </td>
+          <td>{{ item.user || "-" }}</td>
+          <td>
+            <div v-if="item.additional" class="additional-info">
+              <template v-for="(value, key) in parseAdditional(item.additional)" :key="key">
+                <v-chip size="x-small" variant="outlined" class="mr-1 mb-1 cursor-pointer"
+                  @click="addKeyValue(key, value)">
+                  {{ key }}: {{ value }}
                 </v-chip>
-              </td>
-              <td class="font-weight-bold">
-                <v-chip color="primary" size="small" class="font-weight-bold">
-                  {{ item.name }}
-                </v-chip>
-              </td>
-              <td>{{ item.user || "-" }}</td>
-              <td>
-                <div v-if="item.additional" class="additional-info">
-                  <template
-                    v-for="(value, key) in parseAdditional(item.additional)"
-                    :key="key"
-                  >
-                    <v-chip
-                      size="x-small"
-                      variant="outlined"
-                      class="mr-1 mb-1 cursor-pointer"
-                      @click="addKeyValue(key, value)"
-                    >
-                      {{ key }}: {{ value }}
-                    </v-chip>
-                  </template>
-                </div>
-                <span v-else class="text-secondary">-</span>
-              </td>
-              <td>{{ formatTime(item.createdTime) }}</td>
-            </tr>
-            <tr v-if="eventData.length === 0">
-              <td colspan="5" class="text-center text-secondary pa-8">
-                {{ $t('common.noData') }}
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+              </template>
+            </div>
+            <span v-else class="text-secondary">-</span>
+          </td>
+          <td>{{ formatTime(item.createdTime) }}</td>
+        </tr>
+        <tr v-if="eventData.length === 0">
+          <td colspan="5" class="text-center text-secondary pa-8">
+            {{ $t('common.noData') }}
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
 
-        <!-- 分页 -->
-        <div class="text-center pa-4">
-          <v-pagination
-            v-model="currentPage"
-            :length="totalPages"
-            :total-visible="7"
-            density="compact"
-            @update:model-value="handlePageChange"
-          ></v-pagination>
-          <div class="mt-2 text-caption text-secondary">
-            {{ $t('eventPage.totalEvents', { n: totalEvents }) }}
-          </div>
-        </div>
+    <!-- 分页 -->
+    <div class="text-center pa-4">
+      <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" density="compact"
+        @update:model-value="handlePageChange"></v-pagination>
+      <div class="mt-2 text-caption text-secondary">
+        {{ $t('eventPage.totalEvents', { n: totalEvents }) }}
       </div>
-    </v-card>
-  </v-container>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -9,7 +9,6 @@ import "@mdi/font/css/materialdesignicons.css";
 import "vuetify/styles";
 // Composables
 import { createVuetify } from "vuetify";
-import type { ThemeDefinition } from "vuetify";
 
 import * as directives from "vuetify/directives";
 import { createVueI18nAdapter } from "vuetify/locale/adapters/vue-i18n";

@@ -7,15 +7,16 @@
 
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
     "noUnusedLocals": true,
+    "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "~/*": ["./*"],
       "@/*": ["./src/*"]
-    },
-    "types": ["vitest/globals"]
+    }
   }
 }

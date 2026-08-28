@@ -63,7 +63,8 @@ func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 
 // GetLogMetric returns recent log statistics.
 // dateType selects the time range: 1 for 7 days, 2 for 6 weeks, and 3 for 6 months.
-func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric) {
+func (m *MetricLogic) GetLogMetric(dateType int) *model.LogStatsticMetric {
+	result := &model.LogStatsticMetric{}
 	t := time.Now()
 	switch dateType {
 	case 1:
@@ -71,7 +72,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfDay(t)
 			end := datetime.EndOfDay(t)
 
-			resp, _ := m.ILogLogic.Search(model.GetLogReq{
+			resp, err := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -80,6 +81,9 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 					EndTime:   end.UnixMilli(),
 				},
 			})
+			if err != nil {
+				return nil
+			}
 			result.Items = append(result.Items, model.LogStatsticMetricItem{
 				Date:  t.Format(time.DateOnly),
 				Count: resp.Total,
@@ -91,7 +95,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfWeek(t, time.Monday)
 			end := datetime.EndOfWeek(t, time.Monday)
 
-			resp, _ := m.ILogLogic.Search(model.GetLogReq{
+			resp, err := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -100,6 +104,9 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 					EndTime:   end.UnixMilli(),
 				},
 			})
+			if err != nil {
+				return nil
+			}
 			result.Items = append(result.Items, model.LogStatsticMetricItem{
 				Date:  t.Format(time.DateOnly),
 				Count: resp.Total,
@@ -111,7 +118,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfMonth(t)
 			end := datetime.EndOfMonth(t)
 
-			resp, _ := m.ILogLogic.Search(model.GetLogReq{
+			resp, err := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -120,6 +127,10 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 					EndTime:   end.UnixMilli(),
 				},
 			})
+
+			if err != nil {
+				return nil
+			}
 			result.Items = append(result.Items, model.LogStatsticMetricItem{
 				Date:  t.Format("2006-01"),
 				Count: resp.Total,
@@ -128,5 +139,5 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 		}
 	}
 	result.Executing = m.logHandler.GetRunning()
-	return
+	return result
 }

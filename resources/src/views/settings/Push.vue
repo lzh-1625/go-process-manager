@@ -1,249 +1,173 @@
 <template>
-  <v-container fluid class="py-6 px-8">
-    <v-card class="rounded-lg">
-      <div
-        v-if="loading"
-        class="h-full d-flex flex-grow-1 align-center justify-center"
-        style="min-height: 400px"
-      >
-        <v-progress-circular
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
+  <div v-if="loading" class="h-full d-flex flex-grow-1 align-center justify-center" style="min-height: 400px">
+    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+  </div>
+
+  <div v-else>
+    <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+      <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
+      <span class="flex-fill">{{ $t('pushPage.title') }}</span>
+      <v-btn icon variant="text" size="small" @click="refreshPushList">
+        <v-icon>mdi-refresh</v-icon>
+      </v-btn>
+      <v-btn color="primary" variant="tonal" size="small" @click="openAddDialog">
+        <v-icon left>mdi-plus</v-icon>
+        {{ $t('pushPage.addPush') }}
+      </v-btn>
+    </h6>
+
+    <v-table class="pa-3">
+      <thead>
+        <tr>
+          <th class="text-left" v-for="header in headers" :key="header.title">
+            {{ header.title }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in paginatedPushList" :key="item.id">
+          <td>
+            <v-chip color="primary" size="small" class="font-weight-bold">
+              {{ item.id }}
+            </v-chip>
+          </td>
+          <td>
+            <v-chip :color="getMethodColor(item.method)" size="small" class="font-weight-bold">
+              {{ item.method }}
+            </v-chip>
+          </td>
+          <td>
+            <div class="text-truncate" style="max-width: 300px;" :title="item.url">
+              {{ item.url }}
+            </div>
+          </td>
+          <td>
+            <div class="text-truncate" style="max-width: 200px;" :title="item.body">
+              {{ item.body || '-' }}
+            </div>
+          </td>
+          <td>
+            <div class="text-truncate" style="max-width: 150px;" :title="item.remark">
+              {{ item.remark || '-' }}
+            </div>
+          </td>
+          <td>
+            <v-switch :model-value="item.enable" color="primary" density="compact" hide-details
+              @update:model-value="toggleEnable(item)"></v-switch>
+          </td>
+          <td>
+            <v-icon class="mr-2" @click="openEditDialog(item)" size="small">
+              mdi-pencil
+            </v-icon>
+            <v-icon @click="confirmDelete(item)" size="small">
+              mdi-delete
+            </v-icon>
+          </td>
+        </tr>
+        <tr v-if="pushList.length === 0">
+          <td colspan="7" class="text-center text-secondary pa-8">
+            {{ $t('common.noData') }}
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+
+    <div class="text-center pa-4">
+      <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" density="compact"
+        @update:model-value="handlePageChange"></v-pagination>
+      <div class="mt-2 text-caption text-secondary">
+        {{ $t('pushPage.totalPushes', { n: pushList.length }) }}
       </div>
+    </div>
+  </div>
+  <v-dialog v-model="dialog" max-width="600px">
+    <v-card class="rounded-xl">
+      <v-card-title class="text-h6 font-weight-medium">
+        {{ isEdit ? $t('pushPage.editPush') : $t('pushPage.addPush') }}
+      </v-card-title>
 
-      <div v-else>
-        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
-          <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
-          <span class="flex-fill">{{ $t('pushPage.title') }}</span>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="refreshPushList"
-          >
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            size="small"
-            @click="openAddDialog"
-          >
-            <v-icon left>mdi-plus</v-icon>
-            {{ $t('pushPage.addPush') }}
-          </v-btn>
-        </h6>
+      <v-divider></v-divider>
 
-        <v-table class="pa-3">
-          <thead>
-            <tr>
-              <th class="text-left" v-for="header in headers" :key="header.title">
-                {{ header.title }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in paginatedPushList" :key="item.id">
-              <td>
-                <v-chip color="primary" size="small" class="font-weight-bold">
-                  {{ item.id }}
-                </v-chip>
-              </td>
-              <td>
-                <v-chip
-                  :color="getMethodColor(item.method)"
-                  size="small"
-                  class="font-weight-bold"
-                >
-                  {{ item.method }}
-                </v-chip>
-              </td>
-              <td>
-                <div class="text-truncate" style="max-width: 300px;" :title="item.url">
-                  {{ item.url }}
-                </div>
-              </td>
-              <td>
-                <div class="text-truncate" style="max-width: 200px;" :title="item.body">
-                  {{ item.body || '-' }}
-                </div>
-              </td>
-              <td>
-                <div class="text-truncate" style="max-width: 150px;" :title="item.remark">
-                  {{ item.remark || '-' }}
-                </div>
-              </td>
-              <td>
-                <v-switch
-                  :model-value="item.enable"
-                  color="primary"
-                  density="compact"
-                  hide-details
-                  @update:model-value="toggleEnable(item)"
-                ></v-switch>
-              </td>
-              <td>
-                <v-icon class="mr-2" @click="openEditDialog(item)" size="small">
-                  mdi-pencil
-                </v-icon>
-                <v-icon @click="confirmDelete(item)" size="small">
-                  mdi-delete
-                </v-icon>
-              </td>
-            </tr>
-            <tr v-if="pushList.length === 0">
-              <td colspan="7" class="text-center text-secondary pa-8">
-                {{ $t('common.noData') }}
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+      <v-card-text class="pt-6">
+        <v-form ref="formRef" v-model="formValid">
+          <v-container fluid>
+            <v-row dense>
+              <v-col cols="12" class="pt-0">
+                <v-sheet class="placeholder-guide pa-3" rounded="lg">
+                  <div class="text-caption font-weight-medium mb-2">
+                    {{ $t('pushPage.placeholderTitle') }}
+                  </div>
+                  <div class="d-flex flex-wrap ga-2">
+                    <v-chip v-for="placeholder in placeholders" :key="placeholder.token" size="small" variant="tonal">
+                      {{ placeholder.token }} · {{ placeholder.label }}
+                    </v-chip>
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-2">
+                    {{ $t('pushPage.placeholderUsage') }}
+                  </div>
+                </v-sheet>
+              </v-col>
+              <v-col cols="12" sm="4">
+                <v-select v-model="form.method" :label="$t('pushPage.httpMethod')" :items="methodOptions"
+                  variant="outlined" density="comfortable" :rules="[rules.required]"></v-select>
+              </v-col>
+              <v-col cols="12" sm="8">
+                <v-text-field v-model="form.url" :label="$t('pushPage.pushUrl')" variant="outlined"
+                  density="comfortable" :rules="[rules.required, rules.url]"
+                  placeholder="https://example.com/webhook/{$name}?pid={$pid}" persistent-hint></v-text-field>
+              </v-col>
+              <v-col v-if="form.method === 'POST'" cols="12">
+                <v-textarea v-model="form.body" :label="$t('pushPage.requestBody')" variant="outlined"
+                  density="comfortable" rows="4"
+                  placeholder='{"name": "{$name}", "user": "{$user}", "status": "{$status}", "pid": "{$pid}"}'></v-textarea>
+              </v-col>
+              <v-col cols="12">
+                <v-text-field v-model="form.remark" :label="$t('common.remark')" variant="outlined"
+                  density="comfortable" :placeholder="$t('pushPage.pushConfigDesc')"></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <v-switch v-model="form.enable" :label="$t('pushPage.enablePush')" color="primary"
+                  hide-details></v-switch>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-form>
+      </v-card-text>
 
-        <div class="text-center pa-4">
-          <v-pagination
-            v-model="currentPage"
-            :length="totalPages"
-            :total-visible="7"
-            density="compact"
-            @update:model-value="handlePageChange"
-          ></v-pagination>
-          <div class="mt-2 text-caption text-secondary">
-            {{ $t('pushPage.totalPushes', { n: pushList.length }) }}
-          </div>
-        </div>
-      </div>
+      <v-divider></v-divider>
+
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" @click="submitForm" :loading="submitLoading" :disabled="!formValid">
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
+        </v-btn>
+      </v-card-actions>
     </v-card>
+  </v-dialog>
 
-    <v-dialog v-model="dialog" max-width="600px">
-      <v-card class="rounded-xl">
-        <v-card-title class="text-h6 font-weight-medium">
-          {{ isEdit ? $t('pushPage.editPush') : $t('pushPage.addPush') }}
-        </v-card-title>
+  <v-dialog v-model="deleteDialog" max-width="480">
+    <v-card class="rounded-xl">
+      <v-card-title class="text-h6 font-weight-medium">{{ $t('pushPage.confirmDelete') }}</v-card-title>
 
-        <v-divider></v-divider>
+      <v-divider></v-divider>
 
-        <v-card-text class="pt-6">
-          <v-form ref="formRef" v-model="formValid">
-            <v-container fluid>
-              <v-row dense>
-                <v-col cols="12" class="pt-0">
-                  <v-sheet class="placeholder-guide pa-3" rounded="lg">
-                    <div class="text-caption font-weight-medium mb-2">
-                      {{ $t('pushPage.placeholderTitle') }}
-                    </div>
-                    <div class="d-flex flex-wrap ga-2">
-                      <v-chip
-                        v-for="placeholder in placeholders"
-                        :key="placeholder.token"
-                        size="small"
-                        variant="tonal"
-                      >
-                        {{ placeholder.token }} · {{ placeholder.label }}
-                      </v-chip>
-                    </div>
-                    <div class="text-caption text-medium-emphasis mt-2">
-                      {{ $t('pushPage.placeholderUsage') }}
-                    </div>
-                  </v-sheet>
-                </v-col>
-                <v-col cols="12" sm="4">
-                  <v-select
-                    v-model="form.method"
-                    :label="$t('pushPage.httpMethod')"
-                    :items="methodOptions"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[rules.required]"
-                  ></v-select>
-                </v-col>
-                <v-col cols="12" sm="8">
-                  <v-text-field
-                    v-model="form.url"
-                    :label="$t('pushPage.pushUrl')"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[rules.required, rules.url]"
-                    placeholder="https://example.com/webhook/{$name}?pid={$pid}"
-                    persistent-hint
-                  ></v-text-field>
-                </v-col>
-                <v-col v-if="form.method === 'POST'" cols="12">
-                  <v-textarea
-                    v-model="form.body"
-                    :label="$t('pushPage.requestBody')"
-                    variant="outlined"
-                    density="comfortable"
-                    rows="4"
-                    placeholder='{"name": "{$name}", "user": "{$user}", "status": "{$status}", "pid": "{$pid}"}'
-                  ></v-textarea>
-                </v-col>
-                <v-col cols="12">
-                  <v-text-field
-                    v-model="form.remark"
-                    :label="$t('common.remark')"
-                    variant="outlined"
-                    density="comfortable"
-                    :placeholder="$t('pushPage.pushConfigDesc')"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12">
-                  <v-switch
-                    v-model="form.enable"
-                    :label="$t('pushPage.enablePush')"
-                    color="primary"
-                    hide-details
-                  ></v-switch>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-form>
-        </v-card-text>
+      <v-card-text class="pt-6">
+        {{ $t('pushPage.confirmDeleteMsg') }}
+        <div class="text-caption text-secondary mt-2">
+          {{ $t('common.remark') }}: {{ deleteItem?.remark || $t('common.none') }}
+        </div>
+      </v-card-text>
 
-        <v-divider></v-divider>
+      <v-divider></v-divider>
 
-        <v-card-actions class="justify-end pa-4">
-          <v-btn text @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
-          <v-btn
-            color="primary"
-            @click="submitForm"
-            :loading="submitLoading"
-            :disabled="!formValid"
-          >
-            {{ isEdit ? $t('common.save') : $t('common.create') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="deleteDialog" max-width="480">
-      <v-card class="rounded-xl">
-        <v-card-title class="text-h6 font-weight-medium">{{ $t('pushPage.confirmDelete') }}</v-card-title>
-
-        <v-divider></v-divider>
-
-        <v-card-text class="pt-6">
-          {{ $t('pushPage.confirmDeleteMsg') }}
-          <div class="text-caption text-secondary mt-2">
-            {{ $t('common.remark') }}: {{ deleteItem?.remark || $t('common.none') }}
-          </div>
-        </v-card-text>
-
-        <v-divider></v-divider>
-
-        <v-card-actions class="justify-end pa-4">
-          <v-btn text @click="deleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn
-            color="error"
-            @click="handleDelete"
-            :loading="deleteLoading"
-          >
-            {{ $t('common.delete') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+      <v-card-actions class="justify-end pa-4">
+        <v-btn text @click="deleteDialog = false">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="error" @click="handleDelete" :loading="deleteLoading">
+          {{ $t('common.delete') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">

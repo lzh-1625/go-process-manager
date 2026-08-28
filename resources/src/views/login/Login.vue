@@ -53,64 +53,21 @@ const resetErrors = () => {
     <!-- sign in form -->
 
     <v-card-text>
-      <v-form
-        ref="refLoginForm"
-        class="text-left"
-        v-model="isFormValid"
-        lazy-validation
-      >
-        <v-text-field
-          ref="refAccount"
-          v-model="account"
-          required
-          :error="error"
-          :label="$t('login.account')"
-          density="default"
-          variant="underlined"
-          color="primary"
-          bg-color="#fff"
-          name="username"
-          outlined
-          validateOn="blur"
-          placeholder=""
-          @keyup.enter="handleLogin"
-          @change="resetErrors"
-        ></v-text-field>
-        <v-text-field
-          ref="refPassword"
-          v-model="password"
-          :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-          :type="showPassword ? 'text' : 'password'"
-          :error="error"
-          :error-messages="errorMessages"
-          :label="$t('login.password')"
-          placeholder=""
-          density="default"
-          variant="underlined"
-          color="primary"
-          bg-color="#fff"
-          name="password"
-          outlined
-          validateOn="blur"
-          @change="resetErrors"
-          @keyup.enter="handleLogin"
-          @click:append-inner="showPassword = !showPassword"
-        ></v-text-field>
-        <v-btn
-          :loading="isLoading"
-          :disabled="isSignInDisabled"
-          block
-          size="x-large"
-          color="primary"
-          @click="handleLogin"
-          class="mt-2"
-          >{{ $t("login.button") }}</v-btn
-        >
+      <v-form ref="refLoginForm" class="text-left" v-model="isFormValid" lazy-validation>
+        <v-text-field ref="refAccount" v-model="account" required :error="error" :label="$t('login.account')"
+          density="default" variant="underlined" color="primary" bg-color="#fff" name="username" outlined
+          validateOn="blur" placeholder="" @keyup.enter="handleLogin" @change="resetErrors"></v-text-field>
+        <v-text-field ref="refPassword" v-model="password" :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          :type="showPassword ? 'text' : 'password'" :error="error" :error-messages="errorMessages"
+          :label="$t('login.password')" placeholder="" density="default" variant="underlined" color="primary"
+          bg-color="#fff" name="password" outlined validateOn="blur" @change="resetErrors" @keyup.enter="handleLogin"
+          @click:append-inner="showPassword = !showPassword"></v-text-field>
+        <v-btn :loading="isLoading" :disabled="isSignInDisabled" block size="x-large" color="primary"
+          @click="handleLogin" class="mt-2">{{ $t("login.button") }}</v-btn>
 
         <div v-if="errorProvider" class="error--text my-2">
           {{ errorProviderMessages }}
         </div>
-      </v-form></v-card-text
-    >
+      </v-form></v-card-text>
   </v-card>
 </template>

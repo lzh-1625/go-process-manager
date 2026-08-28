@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite --mode dev",
     "build": "vite build --base=/ --mode pro",
+    "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -34,8 +35,10 @@
     "postcss": "^8.4.41",
     "sass": "^1.77.8",
     "tailwindcss": "^3.4.8",
+    "typescript": "^5.6.3",
     "unplugin-auto-import": "^0.18.2",
     "vite": "^5.4.0",
-    "vite-plugin-vuetify": "^2.0.4"
+    "vite-plugin-vuetify": "^2.0.4",
+    "vue-tsc": "^2.1.10"
   }
 }

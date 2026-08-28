@@ -147,8 +147,10 @@ const loadData = async () => {
     const response = await getLogMetric(dateType.value);
     logData.value = response.data as LogStatsticMetric;
 
-    await nextTick();
-    setOption(chartOption.value);
+    if (logData.value?.items?.length) {
+      await nextTick();
+      setOption(chartOption.value);
+    }
   } catch (error) {
     console.error("Failed to load log metric data:", error);
   }
@@ -237,34 +239,42 @@ watch(
         ></v-progress-circular>
       </div>
       <div v-else style="position: relative">
-        <div
-          v-if="logData"
-          style="
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            z-index: 10;
-            background: rgba(255, 152, 0, 0.1);
-            padding: 4px 12px;
-            border-radius: 6px;
-            border: 1.5px solid #ff9800;
-          "
-        >
-          <div style="font-size: 10px; color: #ff9800; font-weight: bold">
-            {{ $t("dashboardPage.processing") }}
-          </div>
+        <template v-if="logData?.items?.length">
           <div
             style="
-              font-size: 18px;
-              color: #ff9800;
-              font-weight: bold;
-              text-align: center;
+              position: absolute;
+              top: 10px;
+              left: 20px;
+              z-index: 10;
+              background: rgba(255, 152, 0, 0.1);
+              padding: 4px 12px;
+              border-radius: 6px;
+              border: 1.5px solid #ff9800;
             "
           >
-            {{ logData.executing }}
+            <div style="font-size: 10px; color: #ff9800; font-weight: bold">
+              {{ $t("dashboardPage.processing") }}
+            </div>
+            <div
+              style="
+                font-size: 18px;
+                color: #ff9800;
+                font-weight: bold;
+                text-align: center;
+              "
+            >
+              {{ logData.executing }}
+            </div>
           </div>
+          <div ref="chartEl" style="width: 100%; height: 350px"></div>
+        </template>
+        <div
+          v-else
+          class="d-flex align-center justify-center text-secondary"
+          style="height: 350px"
+        >
+          {{ $t("common.noData") }}
         </div>
-        <div ref="chartEl" style="width: 100%; height: 350px"></div>
       </div>
     </v-card-text>
   </div>

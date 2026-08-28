@@ -2,25 +2,14 @@
   <v-container fluid class="py-6 px-8 rounded-lg">
     <!-- 主体网格 -->
     <div v-if="processData && processData.length > 0" class="flex-grid">
-      <v-card
-        v-for="(i, v) in processData"
-        :key="i.uuid"
-        class="responsive-box"
-      >
+      <v-card v-for="(i, v) in processData" :key="i.uuid" class="responsive-box">
         <ProcessCard :data="i" :index="v" />
       </v-card>
     </div>
 
     <!-- 空状态界面 -->
-    <v-card
-      v-else-if="initFirst"
-      class="pa-12 rounded-2xl elevation-2 text-center"
-      style="min-height: 400px"
-    >
-      <div
-        class="d-flex flex-column align-center justify-center"
-        style="height: 100%"
-      >
+    <v-card v-else-if="initFirst" class="pa-12 rounded-2xl elevation-2 text-center" style="min-height: 400px">
+      <div class="d-flex flex-column align-center justify-center" style="height: 100%">
         <v-icon size="120" color="grey-lighten-1" class="mb-6">
           mdi-application-outline
         </v-icon>
@@ -28,14 +17,8 @@
           {{ $t('processPage.noProcess') }}
         </h3>
         <p class="text-body-1 text-grey mb-8">{{ $t('processPage.createFirst') }}</p>
-        <v-btn v-permission="0"
-          size="large"
-          color="primary"
-          variant="elevated"
-          class="rounded-lg px-8"
-          elevation="4"
-          @click="processCreateComponent?.createProcessDialog()"
-        >
+        <v-btn v-permission="0" size="large" color="primary" variant="elevated" class="rounded-lg px-8" elevation="4"
+          @click="processCreateComponent?.createProcessDialog()">
           <v-icon start size="large" v-permission="1">mdi-plus-circle</v-icon>
           {{ $t('processPage.createProcess') }}
         </v-btn>
@@ -45,22 +28,10 @@
 
   <!-- 右下角悬浮按钮组 -->
   <div class="fab-wrapper">
-    <v-speed-dial
-      v-model="fab"
-      location="bottom end"
-      direction="top"
-      transition="slide-y-reverse-transition"
-      :open-on-hover="false"
-    >
+    <v-speed-dial v-model="fab" location="bottom end" direction="top" transition="slide-y-reverse-transition"
+      :open-on-hover="false">
       <template v-slot:activator="{ props: activatorProps }">
-        <v-btn
-          v-bind="activatorProps"
-          color="primary"
-          size="large"
-          icon
-          elevation="8"
-          class="fab-main"
-        >
+        <v-btn v-bind="activatorProps" color="primary" size="large" icon elevation="8" class="fab-main">
           <v-icon v-if="!fab" size="28">mdi-menu</v-icon>
           <v-icon v-else size="28">mdi-close</v-icon>
         </v-btn>
@@ -68,16 +39,8 @@
 
       <v-tooltip location="start" :text="$t('processPage.createProcess')">
         <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn
-            v-permission="0"
-            v-bind="tooltipProps"
-            icon
-            color="primary"
-            size="default"
-            elevation="6"
-            @click="handleCreateClick"
-            class="fab-action"
-          >
+          <v-btn v-permission="0" v-bind="tooltipProps" icon color="primary" size="default" elevation="6"
+            @click="handleCreateClick" class="fab-action">
             <v-icon size="24">mdi-plus-circle</v-icon>
           </v-btn>
         </template>
@@ -85,17 +48,8 @@
 
       <v-tooltip location="start" :text="$t('processPage.startAll')">
         <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn
-            v-bind="tooltipProps"
-            icon
-            color="success"
-            size="default"
-            elevation="6"
-            :loading="startingAll"
-            :disabled="!processData || processData.length === 0"
-            @click="confirmStartAll"
-            class="fab-action"
-          >
+          <v-btn v-bind="tooltipProps" icon color="success" size="default" elevation="6" :loading="startingAll"
+            :disabled="!processData || processData.length === 0" @click="confirmStartAll" class="fab-action">
             <v-icon size="24">mdi-play-circle</v-icon>
           </v-btn>
         </template>
@@ -103,17 +57,8 @@
 
       <v-tooltip location="start" :text="$t('processPage.stopAll')">
         <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn
-            v-bind="tooltipProps"
-            icon
-            color="error"
-            size="default"
-            elevation="6"
-            :loading="killingAll"
-            :disabled="!processData || processData.length === 0"
-            @click="confirmKillAll"
-            class="fab-action"
-          >
+          <v-btn v-bind="tooltipProps" icon color="error" size="default" elevation="6" :loading="killingAll"
+            :disabled="!processData || processData.length === 0" @click="confirmKillAll" class="fab-action">
             <v-icon size="24">mdi-stop-circle</v-icon>
           </v-btn>
         </template>
@@ -445,7 +390,8 @@ onMounted(() => {
 /* 工具栏样式 */
 .toolbar {
   display: flex;
-  justify-content: flex-end; /* 靠右对齐 */
+  justify-content: flex-end;
+  /* 靠右对齐 */
   gap: 10px;
   margin-bottom: 20px;
   padding: 4px 0;

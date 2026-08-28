@@ -37,7 +37,7 @@ func (m *MetricApi) GetLogicStatsticMetric(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	return ctx.JSON(http.StatusOK, model.Response[model.LogStatsticMetric]{
+	return ctx.JSON(http.StatusOK, model.Response[*model.LogStatsticMetric]{
 		Data:    m.metricLogic.GetLogMetric(req.DateType),
 		Message: "success",
 		Code:    0,

@@ -1,123 +1,80 @@
 <template>
-  <v-container fluid class="py-6 px-8">
-    <v-card class="rounded-lg">
-      <div
-        v-if="loading"
-        class="h-full d-flex flex-grow-1 align-center justify-center"
-        style="min-height: 400px"
-      >
-        <v-progress-circular
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
+  <div v-if="loading" class="h-full d-flex flex-grow-1 align-center justify-center" style="min-height: 400px">
+    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+  </div>
+
+  <div v-else>
+    <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+      <v-icon color="primary" class="mr-2">mdi-share-variant</v-icon>
+      <span class="flex-fill">{{ $t('sharePage.title') }}</span>
+      <v-btn icon variant="text" size="small" @click="refreshList">
+        <v-icon>mdi-refresh</v-icon>
+      </v-btn>
+    </h6>
+
+    <v-table class="pa-3">
+      <thead>
+        <tr>
+          <th class="text-left" v-for="header in headers" :key="header.title">
+            {{ header.title }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in paginatedShares" :key="item.id">
+          <td class="font-weight-bold">{{ item.id }}</td>
+          <td>
+            <v-chip color="primary" size="small" class="font-weight-bold">
+              {{ getProcessName(item.pid) }}
+            </v-chip>
+          </td>
+          <td>{{ timeHandler(item.createdAt) }}</td>
+          <td>{{ timeHandler(item.lastLink) }}</td>
+          <td>
+            <v-chip :color="isExpired(item.expireTime) ? 'error' : 'success'" size="small" class="font-weight-bold">
+              {{ isExpired(item.expireTime) ? $t('sharePage.expired') : timeHandler(item.expireTime) }}
+            </v-chip>
+          </td>
+          <td>{{ item.createBy }}</td>
+          <td>
+            <v-chip :color="item.write ? 'warning' : 'grey'" size="small" class="font-weight-bold">
+              {{ item.write ? $t('sharePage.writable') : $t('sharePage.readonly') }}
+            </v-chip>
+          </td>
+          <td>
+            <v-tooltip :text="$t('sharePage.copyLink')">
+              <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" @click="copyShareLink(item.token)">
+                  <v-icon color="primary">mdi-content-copy</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip :text="$t('sharePage.deleteShare')">
+              <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" icon variant="text" size="small" @click="deleteItem(item)">
+                  <v-icon color="error">mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </td>
+        </tr>
+        <tr v-if="shareList.length === 0">
+          <td colspan="7" class="text-center text-secondary pa-8">
+            {{ $t('sharePage.noShares') }}
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+
+    <div class="text-center pa-4">
+      <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" density="compact"
+        @update:model-value="handlePageChange"></v-pagination>
+      <div class="mt-2 text-caption text-secondary">
+        {{ $t('sharePage.totalShares', { n: shareList.length }) }}
       </div>
+    </div>
+  </div>
 
-      <div v-else>
-        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
-          <v-icon color="primary" class="mr-2">mdi-share-variant</v-icon>
-          <span class="flex-fill">{{ $t('sharePage.title') }}</span>
-          <v-btn icon variant="text" size="small" @click="refreshList">
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-        </h6>
-
-        <v-table class="pa-3">
-          <thead>
-            <tr>
-              <th
-                class="text-left"
-                v-for="header in headers"
-                :key="header.title"
-              >
-                {{ header.title }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in paginatedShares" :key="item.id">
-              <td class="font-weight-bold">{{ item.id }}</td>
-              <td>
-                <v-chip
-                  color="primary"
-                  size="small"
-                  class="font-weight-bold"
-                >
-                  {{ getProcessName(item.pid) }}
-                </v-chip>
-              </td>
-              <td>{{ timeHandler(item.createdAt) }}</td>
-              <td>{{ timeHandler(item.lastLink) }}</td>
-              <td>
-                <v-chip
-                  :color="isExpired(item.expireTime) ? 'error' : 'success'"
-                  size="small"
-                  class="font-weight-bold"
-                >
-                  {{ isExpired(item.expireTime) ? $t('sharePage.expired') : timeHandler(item.expireTime) }}
-                </v-chip>
-              </td>
-              <td>{{ item.createBy }}</td>
-              <td>
-                <v-chip
-                  :color="item.write ? 'warning' : 'grey'"
-                  size="small"
-                  class="font-weight-bold"
-                >
-                  {{ item.write ? $t('sharePage.writable') : $t('sharePage.readonly') }}
-                </v-chip>
-              </td>
-              <td>
-                <v-tooltip :text="$t('sharePage.copyLink')">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      variant="text"
-                      size="small"
-                      @click="copyShareLink(item.token)"
-                    >
-                      <v-icon color="primary">mdi-content-copy</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-                <v-tooltip :text="$t('sharePage.deleteShare')">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      variant="text"
-                      size="small"
-                      @click="deleteItem(item)"
-                    >
-                      <v-icon color="error">mdi-delete</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </td>
-            </tr>
-            <tr v-if="shareList.length === 0">
-              <td colspan="7" class="text-center text-secondary pa-8">
-                {{ $t('sharePage.noShares') }}
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-
-        <div class="text-center pa-4">
-          <v-pagination
-            v-model="currentPage"
-            :length="totalPages"
-            :total-visible="7"
-            density="compact"
-            @update:model-value="handlePageChange"
-          ></v-pagination>
-          <div class="mt-2 text-caption text-secondary">
-            {{ $t('sharePage.totalShares', { n: shareList.length }) }}
-          </div>
-        </div>
-      </div>
-    </v-card>
-  </v-container>
 
   <v-dialog v-model="dialogDelete" max-width="480">
     <v-card class="rounded-xl">
