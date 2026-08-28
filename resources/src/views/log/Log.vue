@@ -1,271 +1,144 @@
 <template>
-  <v-container fluid class="log-page py-4 py-sm-6 px-3 px-sm-6 px-md-8">
-    <v-card class="rounded-lg">
-      <!-- loading spinner -->
-      <div
-        v-if="loading && logData.length === 0"
-        class="h-full d-flex flex-grow-1 align-center justify-center"
-        style="min-height: 400px"
-      >
-        <v-progress-circular indeterminate color="primary" />
-      </div>
+  <!-- loading spinner -->
+  <div v-if="loading && logData.length === 0" class="h-full d-flex flex-grow-1 align-center justify-center"
+    style="min-height: 400px">
+    <v-progress-circular indeterminate color="primary" />
+  </div>
 
-      <div v-else>
-        <!-- 标题栏 -->
-        <h6
-          class="log-page__title text-h6 font-weight-bold pa-4 pa-sm-5 d-flex align-center"
-        >
-          <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
-          <span class="flex-fill">{{ $t("logPage.title") }}</span>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            @click="showFilter = !showFilter"
-          >
-            <v-icon>mdi-filter</v-icon>
-          </v-btn>
-        </h6>
-        <div class="px-4 px-sm-5 pb-3 pt-1"></div>
-        <!-- 更多筛选条件（可折叠） -->
-        <v-expand-transition>
-          <div v-show="showFilter" class="px-4 px-sm-5 pb-4">
-            <v-row dense class="align-center">
-              <v-col cols="12" sm="12" md="12">
-                <v-combobox
-                  :label="$t('logPage.logContent')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.log"
-                  :items="logSearchHistory"
-                  clearable
-                  hide-details
-                  prepend-inner-icon="mdi-magnify"
-                  @keyup.enter="searchLogs"
-                >
-                  <template #append-inner>
-                    <v-tooltip
-                      :text="$t('logPage.searchSyntaxHint')"
-                      location="top"
-                    >
-                      <template #activator="{ props }">
-                        <v-btn
-                          v-bind="props"
-                          icon="mdi-alert-circle-outline"
-                          size="x-small"
-                          variant="text"
-                          density="compact"
-                          :aria-label="$t('logPage.searchSyntaxHint')"
-                        />
-                      </template>
-                    </v-tooltip>
+  <div v-else>
+    <!-- 标题栏 -->
+    <h6 class="log-page__title text-h6 font-weight-bold pa-4 pa-sm-5 d-flex align-center">
+      <v-icon color="primary" class="mr-2">mdi-text-box-search</v-icon>
+      <span class="flex-fill">{{ $t("logPage.title") }}</span>
+      <v-btn icon variant="text" size="small" @click="showFilter = !showFilter">
+        <v-icon>mdi-filter</v-icon>
+      </v-btn>
+    </h6>
+    <div class="px-4 px-sm-5 pb-3 pt-1"></div>
+    <!-- 更多筛选条件（可折叠） -->
+    <v-expand-transition>
+      <div v-show="showFilter" class="px-4 px-sm-5 pb-4">
+        <v-row dense class="align-center">
+          <v-col cols="12" sm="12" md="12">
+            <v-combobox :label="$t('logPage.logContent')" variant="outlined" density="compact" v-model="searchForm.log"
+              :items="logSearchHistory" clearable hide-details prepend-inner-icon="mdi-magnify"
+              @keyup.enter="searchLogs">
+              <template #append-inner>
+                <v-tooltip :text="$t('logPage.searchSyntaxHint')" location="top">
+                  <template #activator="{ props }">
+                    <v-btn v-bind="props" icon="mdi-alert-circle-outline" size="x-small" variant="text"
+                      density="compact" :aria-label="$t('logPage.searchSyntaxHint')" />
                   </template>
-                </v-combobox>
-              </v-col>
-            </v-row>
-            <v-row dense>
-              <v-col cols="12" sm="6" md="4">
-                <v-autocomplete
-                  :label="$t('logPage.processName')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.name"
-                  :items="processList"
-                  multiple
-                  chips
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="4">
-                <v-text-field
-                  :label="$t('logPage.user')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.using"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="4">
-                <v-select
-                  :label="$t('logPage.sortBy')"
-                  variant="outlined"
-                  density="compact"
-                  v-model="searchForm.sort"
-                  :items="sortOptions"
-                  item-title="label"
-                  item-value="value"
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="4">
-                <v-text-field
-                  :label="$t('common.startTime')"
-                  variant="outlined"
-                  density="compact"
-                  type="datetime-local"
-                  step="1"
-                  v-model="searchForm.startTime"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" sm="6" md="4">
-                <v-text-field
-                  :label="$t('common.endTime')"
-                  variant="outlined"
-                  density="compact"
-                  type="datetime-local"
-                  step="1"
-                  v-model="searchForm.endTime"
-                  clearable
-                  hide-details
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                sm="6"
-                md="4"
-                class="d-flex ga-2 align-center justify-end"
-              >
-                <v-btn
-                  color="primary"
-                  size="small"
-                  variant="elevated"
-                  elevation="2"
-                  :loading="loading"
-                  :disabled="loading"
-                  @click="searchLogs"
-                >
-                  <v-icon start>mdi-magnify</v-icon>
-                  {{ $t("common.search") }}
-                </v-btn>
-                <v-btn
-                  size="small"
-                  variant="tonal"
-                  :disabled="loading"
-                  @click="resetSearch"
-                >
-                  <v-icon start>mdi-refresh</v-icon>
-                  {{ $t("common.reset") }}
-                </v-btn>
-                <v-switch
-                  v-model="searchForm.hightLight"
-                  :label="$t('logPage.highLight')"
-                  hide-details
-                  color="primary"
-                />
-              </v-col>
-            </v-row>
-          </div>
-        </v-expand-transition>
+                </v-tooltip>
+              </template>
+            </v-combobox>
+          </v-col>
+        </v-row>
+        <v-row dense>
+          <v-col cols="12" sm="6" md="4">
+            <v-autocomplete :label="$t('logPage.processName')" variant="outlined" density="compact"
+              v-model="searchForm.name" :items="processList" multiple chips clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-text-field :label="$t('logPage.user')" variant="outlined" density="compact" v-model="searchForm.using"
+              clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-select :label="$t('logPage.sortBy')" variant="outlined" density="compact" v-model="searchForm.sort"
+              :items="sortOptions" item-title="label" item-value="value" hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-text-field :label="$t('common.startTime')" variant="outlined" density="compact" type="datetime-local"
+              step="1" v-model="searchForm.startTime" clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-text-field :label="$t('common.endTime')" variant="outlined" density="compact" type="datetime-local"
+              step="1" v-model="searchForm.endTime" clearable hide-details />
+          </v-col>
+          <v-col cols="12" sm="6" md="4" class="d-flex ga-2 align-center justify-end">
+            <v-btn color="primary" size="small" variant="elevated" elevation="2" :loading="loading" :disabled="loading"
+              @click="searchLogs">
+              <v-icon start>mdi-magnify</v-icon>
+              {{ $t("common.search") }}
+            </v-btn>
+            <v-btn size="small" variant="tonal" :disabled="loading" @click="resetSearch">
+              <v-icon start>mdi-refresh</v-icon>
+              {{ $t("common.reset") }}
+            </v-btn>
+            <v-switch v-model="searchForm.hightLight" :label="$t('logPage.highLight')" hide-details color="primary" />
+          </v-col>
+        </v-row>
+      </div>
+    </v-expand-transition>
 
-        <!-- 日志列表 -->
-        <div class="log-stream px-2 px-sm-4 pb-2 pb-sm-4">
-          <v-overlay
-            :model-value="loading && logData.length > 0"
-            contained
-            class="align-center justify-center"
-            persistent
-          >
-            <v-progress-circular indeterminate color="primary" />
-          </v-overlay>
+    <!-- 日志列表 -->
+    <div class="log-stream px-2 px-sm-4 pb-2 pb-sm-4">
+      <v-overlay :model-value="loading && logData.length > 0" contained class="align-center justify-center" persistent>
+        <v-progress-circular indeterminate color="primary" />
+      </v-overlay>
 
-          <div class="log-stream__header" v-if="!smAndDown">
-            <span>{{ $t("logPage.logContent") }}</span>
-            <span
-              >{{ $t("common.time") }} / {{ $t("logPage.processName") }} /
-              {{ $t("logPage.user") }}</span
-            >
-          </div>
+      <div class="log-stream__header" v-if="!smAndDown">
+        <span>{{ $t("logPage.logContent") }}</span>
+        <span>{{ $t("common.time") }} / {{ $t("logPage.processName") }} /
+          {{ $t("logPage.user") }}</span>
+      </div>
 
-          <div
-            v-for="item in logData"
-            :key="item.id"
-            class="log-stream__row"
-            @mouseenter="hoveredRowId = item.id ?? null"
-            @mouseleave="hoveredRowId = null"
-          >
-            <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
-            <div class="log-stream__meta">
-              <div class="log-stream__labels">
-                <v-chip color="info" size="x-small" variant="tonal">{{
-                  formatTime(item.time)
-                }}</v-chip>
-                <v-chip color="primary" size="x-small" variant="tonal">{{
-                  item.name
-                }}</v-chip>
-                <v-chip color="secondary" size="x-small" variant="tonal">{{
-                  item.using || "-"
-                }}</v-chip>
-              </div>
-            </div>
-
-            <!-- 悬停浮层：上下文操作按钮 -->
-            <div
-              v-if="hoveredRowId === item.id"
-              class="log-row__context-actions"
-            >
-              <v-tooltip :text="$t('logPage.viewContextAbove')" location="top">
-                <template #activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    icon
-                    size="x-small"
-                    variant="elevated"
-                    density="compact"
-                    @click.stop="contextViewer?.openAbove(item)"
-                  >
-                    <v-icon size="14">mdi-arrow-up-circle-outline</v-icon>
-                  </v-btn>
-                </template>
-              </v-tooltip>
-              <v-tooltip :text="$t('logPage.viewContextBelow')" location="top">
-                <template #activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    icon
-                    size="x-small"
-                    variant="elevated"
-                    density="compact"
-                    @click.stop="contextViewer?.openBelow(item)"
-                  >
-                    <v-icon size="14">mdi-arrow-down-circle-outline</v-icon>
-                  </v-btn>
-                </template>
-              </v-tooltip>
-            </div>
-          </div>
-
-          <div
-            v-if="logData.length === 0"
-            class="text-center text-secondary py-10"
-          >
-            {{ $t("common.noData") }}
+      <div v-for="item in logData" :key="item.id" class="log-stream__row" @mouseenter="hoveredRowId = item.id ?? null"
+        @mouseleave="hoveredRowId = null">
+        <div class="log-content" v-html="convertAnsiToHtml(item.log)"></div>
+        <div class="log-stream__meta">
+          <div class="log-stream__labels">
+            <v-chip color="info" size="x-small" variant="tonal">{{
+              formatTime(item.time)
+              }}</v-chip>
+            <v-chip color="primary" size="x-small" variant="tonal">{{
+              item.name
+              }}</v-chip>
+            <v-chip color="secondary" size="x-small" variant="tonal">{{
+              item.using || "-"
+              }}</v-chip>
           </div>
         </div>
 
-        <!-- 分页 -->
-        <div class="text-center pa-3 pa-sm-4">
-          <v-pagination
-            v-model="currentPage"
-            :length="totalPages > 400 ? 400 : totalPages"
-            :total-visible="paginationVisible"
-            density="compact"
-            :disabled="loading"
-            @update:model-value="handlePageChange"
-          />
-          <div class="mt-2 text-caption text-secondary">
-            {{ $t("logPage.totalLogs", { n: totalLogs }) }}
-          </div>
+        <!-- 悬停浮层：上下文操作按钮 -->
+        <div v-if="hoveredRowId === item.id" class="log-row__context-actions">
+          <v-tooltip :text="$t('logPage.viewContextAbove')" location="top">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon size="x-small" variant="elevated" density="compact"
+                @click.stop="contextViewer?.openAbove(item)">
+                <v-icon size="14">mdi-arrow-up-circle-outline</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip :text="$t('logPage.viewContextBelow')" location="top">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon size="x-small" variant="elevated" density="compact"
+                @click.stop="contextViewer?.openBelow(item)">
+                <v-icon size="14">mdi-arrow-down-circle-outline</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
         </div>
       </div>
-    </v-card>
 
-    <!-- xterm 上下文查看器 -->
-    <LogContextViewer ref="contextViewer" />
-  </v-container>
+      <div v-if="logData.length === 0" class="text-center text-secondary py-10">
+        {{ $t("common.noData") }}
+      </div>
+    </div>
+
+    <!-- 分页 -->
+    <div class="text-center pa-3 pa-sm-4">
+      <v-pagination v-model="currentPage" :length="totalPages > 400 ? 400 : totalPages"
+        :total-visible="paginationVisible" density="compact" :disabled="loading"
+        @update:model-value="handlePageChange" />
+      <div class="mt-2 text-caption text-secondary">
+        {{ $t("logPage.totalLogs", { n: totalLogs }) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- xterm 上下文查看器 -->
+  <LogContextViewer ref="contextViewer" />
 </template>
 
 <script setup lang="ts">
@@ -338,7 +211,10 @@ const loadLogSearchHistory = () => {
     );
     if (Array.isArray(storedHistory)) {
       logSearchHistory.value = storedHistory
-        .filter((item): item is string => typeof item === "string" && item.trim())
+        .filter(
+          (item): item is string =>
+            typeof item === "string" && item.trim().length > 0,
+        )
         .slice(0, MAX_LOG_SEARCH_HISTORY);
     }
   } catch {
@@ -440,7 +316,6 @@ const resetSearch = () => {
   };
   loadLogs({ page: 1 });
 };
-const refreshLogs = () => loadLogs();
 const handlePageChange = (page: number) => loadLogs({ page });
 
 const loadProcessList = async () => {
@@ -526,7 +401,7 @@ onMounted(() => {
   font-variant-numeric: tabular-nums;
 }
 
-.log-stream__row + .log-stream__row {
+.log-stream__row+.log-stream__row {
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
@@ -559,6 +434,7 @@ onMounted(() => {
 }
 
 @media (max-width: 960px) {
+
   .log-stream__header,
   .log-stream__row {
     grid-template-columns: minmax(0, 1fr) 240px;

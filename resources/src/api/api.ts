@@ -45,7 +45,7 @@ class RequestHttp {
         return config;
       },
       (error: AxiosError) => {
-        snackbarStore.showErrorMessage(error);
+        snackbarStore.showErrorMessage(error.message);
         return Promise.reject(error);
       },
     );

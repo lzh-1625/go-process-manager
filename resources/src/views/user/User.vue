@@ -1,120 +1,72 @@
 <template>
-  <v-container fluid class="py-6 px-8">
-    <v-card class="rounded-lg">
-      <div
-        v-if="loading"
-        class="h-full d-flex flex-grow-1 align-center justify-center"
-        style="min-height: 400px"
-      >
-        <v-progress-circular
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
+  <div v-if="loading" class="h-full d-flex flex-grow-1 align-center justify-center" style="min-height: 400px">
+    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+  </div>
+
+  <div v-else>
+    <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
+      <v-icon color="primary" class="mr-2">mdi-account-multiple</v-icon>
+      <span class="flex-fill">{{ $t('userPage.title') }}</span>
+      <v-btn icon variant="text" size="small" @click="refreshUsers">
+        <v-icon>mdi-refresh</v-icon>
+      </v-btn>
+      <v-btn color="primary" variant="tonal" size="small" @click="addDialog = true">
+        <v-icon left>mdi-plus</v-icon>
+        {{ $t('userPage.addUser') }}
+      </v-btn>
+    </h6>
+
+    <v-table class="pa-3">
+      <thead>
+        <tr>
+          <th class="text-left" v-for="header in headers" :key="header.title">
+            {{ header.title }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in paginatedUsers" :key="item.account">
+          <td class="font-weight-bold">{{ item.account }}</td>
+          <td>
+            <v-chip :color="item.role === 1
+                ? 'primary'
+                : item.role === 2
+                  ? 'success'
+                  : 'grey'
+              " size="small" class="font-weight-bold">
+              {{ getRole(item.role) }}
+            </v-chip>
+          </td>
+          <td>{{ timeHanlder(item.createTime) }}</td>
+          <td>{{ item.remark || "-" }}</td>
+          <td>
+            <v-btn icon variant="text" size="small" :disabled="item.role != 2" @click="oprEdit(item)">
+              <v-icon color="primary">mdi-application-edit</v-icon>
+            </v-btn>
+            <v-btn icon variant="text" size="small" @click="editItem(item)" :disabled="item.role == 0">
+              <v-icon color="warning">mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon variant="text" size="small" @click="deleteItem(item)" :disabled="item.role == 0">
+              <v-icon color="error">mdi-delete</v-icon>
+            </v-btn>
+          </td>
+        </tr>
+        <tr v-if="desserts.length === 0">
+          <td colspan="5" class="text-center text-secondary pa-8">
+            {{ $t('common.noData') }}
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
+
+    <div class="text-center pa-4">
+      <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" density="compact"
+        @update:model-value="handlePageChange"></v-pagination>
+      <div class="mt-2 text-caption text-secondary">
+        {{ $t('userPage.totalUsers', { n: desserts.length }) }}
       </div>
-
-      <div v-else>
-        <h6 class="text-h6 font-weight-bold pa-5 d-flex align-center">
-          <v-icon color="primary" class="mr-2">mdi-account-multiple</v-icon>
-          <span class="flex-fill">{{ $t('userPage.title') }}</span>
-          <v-btn icon variant="text" size="small" @click="refreshUsers">
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            size="small"
-            @click="addDialog = true"
-          >
-            <v-icon left>mdi-plus</v-icon>
-            {{ $t('userPage.addUser') }}
-          </v-btn>
-        </h6>
-
-        <v-table class="pa-3">
-          <thead>
-            <tr>
-              <th
-                class="text-left"
-                v-for="header in headers"
-                :key="header.title"
-              >
-                {{ header.title }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in paginatedUsers" :key="item.account">
-              <td class="font-weight-bold">{{ item.account }}</td>
-              <td>
-                <v-chip
-                  :color="
-                    item.role === 1
-                      ? 'primary'
-                      : item.role === 2
-                      ? 'success'
-                      : 'grey'
-                  "
-                  size="small"
-                  class="font-weight-bold"
-                >
-                  {{ getRole(item.role) }}
-                </v-chip>
-              </td>
-              <td>{{ timeHanlder(item.createTime) }}</td>
-              <td>{{ item.remark || "-" }}</td>
-              <td>
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  :disabled="item.role != 2"
-                  @click="oprEdit(item)"
-                >
-                  <v-icon color="primary">mdi-application-edit</v-icon>
-                </v-btn>
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  @click="editItem(item)"
-                  :disabled="item.role == 0"
-                >
-                  <v-icon color="warning">mdi-pencil</v-icon>
-                </v-btn>
-                <v-btn
-                  icon
-                  variant="text"
-                  size="small"
-                  @click="deleteItem(item)"
-                  :disabled="item.role == 0"
-                >
-                  <v-icon color="error">mdi-delete</v-icon>
-                </v-btn>
-              </td>
-            </tr>
-            <tr v-if="desserts.length === 0">
-              <td colspan="5" class="text-center text-secondary pa-8">
-                {{ $t('common.noData') }}
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-
-        <div class="text-center pa-4">
-          <v-pagination
-            v-model="currentPage"
-            :length="totalPages"
-            :total-visible="7"
-            density="compact"
-            @update:model-value="handlePageChange"
-          ></v-pagination>
-          <div class="mt-2 text-caption text-secondary">
-            {{ $t('userPage.totalUsers', { n: desserts.length }) }}
-          </div>
-        </div>
-      </div>
-    </v-card>
-  </v-container>
+    </div>
+  </div>
 
   <v-dialog v-model="dialog" max-width="520">
     <v-card class="rounded-xl">
@@ -126,34 +78,18 @@
         <v-container fluid>
           <v-row dense>
             <v-col cols="12">
-              <v-select
-                v-model="userForm.role"
-                :items="items"
-                item-title="label"
-                :label="$t('userPage.selectRole')"
-                variant="outlined"
-                density="comfortable"
-              ></v-select>
+              <v-select v-model="userForm.role" :items="items" item-title="label" :label="$t('userPage.selectRole')"
+                variant="outlined" density="comfortable"></v-select>
             </v-col>
             <v-col cols="12">
-              <v-text-field
-                v-model="userForm.password"
-                :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-                :type="show1 ? 'text' : 'password'"
-                :label="$t('userPage.newPassword')"
-                :hint="$t('userPage.passwordHint')"
-                variant="outlined"
-                density="comfortable"
-                @click:append-inner="show1 = !show1"
-              ></v-text-field>
+              <v-text-field v-model="userForm.password" :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                :type="show1 ? 'text' : 'password'" :label="$t('userPage.newPassword')"
+                :hint="$t('userPage.passwordHint')" variant="outlined" density="comfortable"
+                @click:append-inner="show1 = !show1"></v-text-field>
             </v-col>
             <v-col cols="12">
-              <v-text-field
-                v-model="userForm.remark"
-                :label="$t('common.remark')"
-                variant="outlined"
-                density="comfortable"
-              ></v-text-field>
+              <v-text-field v-model="userForm.remark" :label="$t('common.remark')" variant="outlined"
+                density="comfortable"></v-text-field>
             </v-col>
           </v-row>
         </v-container>
@@ -197,41 +133,21 @@
         <v-container fluid>
           <v-row dense>
             <v-col cols="12">
-              <v-text-field
-                v-model="addUserForm.account"
-                :label="$t('userPage.username')"
-                variant="outlined"
-                density="comfortable"
-              ></v-text-field>
+              <v-text-field v-model="addUserForm.account" :label="$t('userPage.username')" variant="outlined"
+                density="comfortable"></v-text-field>
             </v-col>
             <v-col cols="12">
-              <v-text-field
-                v-model="addUserForm.password"
-                :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-                :type="show1 ? 'text' : 'password'"
-                :label="$t('userPage.password')"
-                variant="outlined"
-                density="comfortable"
-                @click:append-inner="show1 = !show1"
-              ></v-text-field>
+              <v-text-field v-model="addUserForm.password" :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                :type="show1 ? 'text' : 'password'" :label="$t('userPage.password')" variant="outlined"
+                density="comfortable" @click:append-inner="show1 = !show1"></v-text-field>
             </v-col>
             <v-col cols="12">
-              <v-select
-                v-model="addUserForm.role"
-                :items="items"
-                item-title="label"
-                :label="$t('userPage.selectRole')"
-                variant="outlined"
-                density="comfortable"
-              ></v-select>
+              <v-select v-model="addUserForm.role" :items="items" item-title="label" :label="$t('userPage.selectRole')"
+                variant="outlined" density="comfortable"></v-select>
             </v-col>
             <v-col cols="12">
-              <v-text-field
-                v-model="addUserForm.remark"
-                :label="$t('common.remark')"
-                variant="outlined"
-                density="comfortable"
-              ></v-text-field>
+              <v-text-field v-model="addUserForm.remark" :label="$t('common.remark')" variant="outlined"
+                density="comfortable"></v-text-field>
             </v-col>
           </v-row>
         </v-container>
@@ -256,32 +172,18 @@
       <v-divider></v-divider>
 
       <v-card-text class="pt-6">
-        <v-data-table
-          :headers="permissionHeaders"
-          :items="oprList"
-          class="elevation-1 rounded-lg"
-          density="compact"
-          hover
-        >
-          <template
-            v-for="field in [
-              'owned',
-              'start',
-              'stop',
-              'terminal',
-              'write',
-              'log',
-            ]"
-            #[`item.${field}`]="{ item }"
-          >
-            <v-switch
-              color="primary"
-              inset
-              density="compact"
-              hide-details
-              :model-value="item[field]"
-              @update:model-value="updatePermission(item, field, $event)"
-            ></v-switch>
+        <v-data-table :headers="permissionHeaders" :items="oprList" class="elevation-1 rounded-lg" density="compact"
+          hover>
+          <template v-for="field in [
+            'owned',
+            'start',
+            'stop',
+            'terminal',
+            'write',
+            'log',
+          ]" #[`item.${field}`]="{ item }">
+            <v-switch color="primary" inset density="compact" hide-details :model-value="item[field]"
+              @update:model-value="updatePermission(item, field, $event)"></v-switch>
           </template>
         </v-data-table>
       </v-card-text>
@@ -294,11 +196,7 @@
     </v-card>
   </v-dialog>
 
-  <v-dialog
-    v-model="oprEditdiaFormDialog"
-    max-width="520"
-    transition="dialog-fade-transition"
-  >
+  <v-dialog v-model="oprEditdiaFormDialog" max-width="520" transition="dialog-fade-transition">
     <v-card class="rounded-xl">
       <v-card-title class="text-h6 font-weight-medium">
         <v-icon color="primary" class="mr-2">mdi-shield-edit-outline</v-icon>
@@ -313,13 +211,8 @@
             <v-col cols="12" v-for="(label, key) in switchLabels" :key="key">
               <div class="d-flex align-center justify-space-between py-2">
                 <span class="font-weight-medium text-body-1">{{ $t(label) }}</span>
-                <v-switch
-                  color="primary"
-                  inset
-                  density="compact"
-                  hide-details
-                  v-model="permissionEditForm[key]"
-                ></v-switch>
+                <v-switch color="primary" inset density="compact" hide-details
+                  v-model="permissionEditForm[key]"></v-switch>
               </div>
             </v-col>
           </v-row>
