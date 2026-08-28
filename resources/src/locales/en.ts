@@ -477,7 +477,6 @@ export default {
     passwordMismatch: "Passwords do not match",
     systemConfig: "System Configuration",
     refreshStorage: "Refresh Storage Engine",
-    refreshStorageEngine: "Refresh Storage Engine",
     configWarning:
       "Some configurations require restart to take effect. Incorrect configurations may cause crashes.",
     default: "Default:",
@@ -492,9 +491,7 @@ export default {
     configSaveSuccess: "Configuration saved successfully",
     saveConfigFailed: "Failed to save configuration",
     configSaveFailed: "Failed to save configuration",
-    storageEngineConnected: "Connected to storage engine",
     storageConnected: "Connected to storage engine",
-    storageEngineReloadFailed: "Failed to reload storage engine",
     storageReloadFailed: "Failed to reload storage engine",
     passwordNotMatch: "Passwords do not match",
   },

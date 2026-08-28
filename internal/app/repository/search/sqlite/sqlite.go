@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"errors"
 	"slices"
 
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
@@ -21,7 +20,7 @@ func NewSqliteSearch(logRepository *repository.LogRepository) search.ILogLogic {
 	}
 }
 
-func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
+func (l *sqliteSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	query := search.QueryStringAnalysis(req.Match.Log)
 	data, total := l.logRepository.SearchLog(req, query)
 
@@ -35,18 +34,14 @@ func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
 		}
 	}
 
-	return model.LogResp{
+	return &model.LogResp{
 		Data:  data,
 		Total: total,
-	}
+	}, nil
 }
 
 func (l *sqliteSearch) Insert(logs ...model.ProcessLog) {
 	if err := l.logRepository.InsertLog(logs...); err != nil {
 		logger.Logger.Errorw("Log insert failed", "err", err)
 	}
-}
-
-func (l *sqliteSearch) Reload() error {
-	return errors.New("sqlite not support reload")
 }

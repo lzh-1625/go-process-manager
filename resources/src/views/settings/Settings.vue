@@ -61,17 +61,6 @@
           <v-icon color="success" class="mr-2">mdi-tune</v-icon>
           <span class="text-h6 text-sm-h5">{{ $t('settingsPage.systemConfig') }}</span>
         </div>
-        <v-btn
-          color="primary"
-          variant="tonal"
-          @click="handleStorageReload"
-          :loading="configLoading"
-          class="text-none"
-          prepend-icon="mdi-reload"
-          size="small"
-        >
-          {{ $t('settingsPage.refreshStorageEngine') }}
-        </v-btn>
       </v-card-title>
       <v-divider></v-divider>
       <v-card-text class="pa-3 pa-sm-4 pa-md-6">
@@ -170,7 +159,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import { getConfig, setConfig, configReload } from "~/src/api/config";
+import { getConfig, setConfig } from "~/src/api/config";
 import { editUser } from "~/src/api/user";
 import { useSnackbarStore } from "~/src/stores/snackbarStore";
 
@@ -265,21 +254,6 @@ const handleSetConfig = async () => {
   } catch (error) {
     console.error("保存配置错误:", error);
     snackbarStore.showErrorMessage(t("settingsPage.saveConfigFailed"));
-  } finally {
-    configLoading.value = false;
-  }
-};
-
-const handleStorageReload = async () => {
-  configLoading.value = true;
-  try {
-    const resp = await configReload();
-    if (resp.code === 0) {
-      snackbarStore.showSuccessMessage(t("settingsPage.storageEngineConnected"));
-    }
-  } catch (error) {
-    console.error("重载存储引擎错误:", error);
-    snackbarStore.showErrorMessage(t("settingsPage.storageEngineReloadFailed"));
   } finally {
     configLoading.value = false;
   }

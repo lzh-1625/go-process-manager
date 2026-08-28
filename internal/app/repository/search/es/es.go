@@ -15,23 +15,8 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-func NewEsSearch() search.ILogLogic {
-	e := &esSearch{}
-	e.init()
-	return e
-}
-
-type esSearch struct {
-	esClient *elastic.Client
-}
-
-func (e *esSearch) Reload() error {
-	return e.init()
-}
-
-func (e *esSearch) init() error {
-	var err error
-	e.esClient, err = elastic.NewClient(
+func NewEsSearch() (search.ILogLogic, error) {
+	client, err := elastic.NewClient(
 		elastic.SetURL(config.CF.EsUrl),
 		elastic.SetBasicAuth(config.CF.EsUsername, config.CF.EsPassword),
 		elastic.SetSniff(false),
@@ -44,9 +29,13 @@ func (e *esSearch) init() error {
 	)
 	if err != nil {
 		log.Logger.Warnw("Failed to connect to es", "err", err)
-		return err
+		return nil, err
 	}
-	return nil
+	return &esSearch{esClient: client}, nil
+}
+
+type esSearch struct {
+	esClient *elastic.Client
 }
 
 func (e *esSearch) Insert(logs ...model.ProcessLog) {
@@ -63,7 +52,7 @@ func (e *esSearch) Insert(logs ...model.ProcessLog) {
 	}
 }
 
-func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
+func (e *esSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	search := e.esClient.Search(config.CF.EsIndex).From(req.Page.From).Size(req.Page.Size).TrackScores(true)
 	if !config.CF.EsWindowLimit {
 		search = search.TrackTotalHits(true)
@@ -140,7 +129,7 @@ func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 	resp, err := sq.Do(context.TODO())
 	if err != nil {
 		log.Logger.Warnw("es search failed", "err", err)
-		return result
+		return nil, err
 	}
 	// iterate response hits
 	for _, v := range resp.Hits.Hits {
@@ -158,5 +147,5 @@ func (e *esSearch) Search(req model.GetLogReq) model.LogResp {
 	}
 
 	result.Total = resp.TotalHits()
-	return result
+	return &result, nil
 }

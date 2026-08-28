@@ -109,3 +109,19 @@ type BleveProcessLog struct {
 	Name       string `json:"name"`
 	Using      string `json:"using"`
 }
+
+type VictoriaLog struct {
+	ID    string `json:"id"`
+	Log   string `json:"_msg"`
+	Time  string `json:"_time"`
+	Name  string `json:"name"`
+	Using string `json:"using"`
+}
+
+type VictoriaLogInsert struct {
+	ID    string `json:"id"`
+	Log   string `json:"log"`
+	Time  string `json:"time"`
+	Name  string `json:"name"`
+	Using string `json:"using"`
+}
