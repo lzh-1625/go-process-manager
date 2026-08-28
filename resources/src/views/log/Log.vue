@@ -347,7 +347,7 @@ const loadLogSearchHistory = () => {
 };
 
 const saveLogSearchHistory = () => {
-  const keyword = searchForm.value.log.trim();
+  const keyword = (searchForm.value.log ?? "").trim();
   if (!keyword) return;
 
   const history = [
