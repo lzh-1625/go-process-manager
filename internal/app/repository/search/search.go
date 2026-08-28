@@ -9,7 +9,7 @@ import (
 )
 
 type ILogLogic interface {
-	Search(req model.GetLogReq) model.LogResp
+	Search(req model.GetLogReq) (*model.LogResp, error)
 	Insert(...model.ProcessLog)
 }
 

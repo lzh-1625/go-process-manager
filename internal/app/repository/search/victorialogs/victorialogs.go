@@ -33,22 +33,15 @@ type victoriaLogsSearch struct {
 }
 
 func NewVictoriaLogsSearch() search.ILogLogic {
-	v := &victoriaLogsSearch{}
-	if err := v.init(); err != nil {
-		log.Logger.Warnw("Failed to initialize VictoriaLogs client", "err", err)
-	}
-	return v
-}
-
-func (v *victoriaLogsSearch) init() error {
-	v.url = strings.TrimRight(config.CF.VictoriaLogsUrl, "/")
-	v.client = &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConnsPerHost: config.CF.LogHandlerPoolSize,
-			IdleConnTimeout:     90 * time.Second,
+	return &victoriaLogsSearch{
+		url: strings.TrimRight(config.CF.VictoriaLogsUrl, "/"),
+		client: &http.Client{
+			Transport: &http.Transport{
+				MaxIdleConnsPerHost: config.CF.LogHandlerPoolSize,
+				IdleConnTimeout:     90 * time.Second,
+			},
 		},
 	}
-	return nil
 }
 
 func (v *victoriaLogsSearch) Insert(logs ...model.ProcessLog) {
@@ -94,17 +87,12 @@ func (v *victoriaLogsSearch) Insert(logs ...model.ProcessLog) {
 	}
 }
 
-func (v *victoriaLogsSearch) Search(req model.GetLogReq) (result model.LogResp) {
-	if v.client == nil {
-		log.Logger.Warn("VictoriaLogs client is not initialized")
-		return result
-	}
-
+func (v *victoriaLogsSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	query := buildQuery(req)
 	data, err := v.query(query, req)
 	if err != nil {
 		log.Logger.Warnw("VictoriaLogs search failed", "err", err)
-		return result
+		return nil, err
 	}
 	if req.Match.HighLight {
 		for _, item := range search.QueryStringAnalysis(req.Match.Log) {
@@ -116,15 +104,16 @@ func (v *victoriaLogsSearch) Search(req model.GetLogReq) (result model.LogResp) 
 			}
 		}
 	}
-	result.Data = data
 
 	total, err := v.hits(buildFilters(req), req)
 	if err != nil {
 		log.Logger.Warnw("VictoriaLogs hits query failed", "err", err)
-		return result
+		return nil, err
 	}
-	result.Total = total
-	return result
+	return &model.LogResp{
+		Data:  data,
+		Total: total,
+	}, nil
 }
 
 func (v *victoriaLogsSearch) query(query string, req model.GetLogReq) ([]*model.ProcessLog, error) {

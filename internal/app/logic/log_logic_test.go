@@ -75,9 +75,9 @@ func req() model.GetLogReq {
 
 func TestSearchLog(t *testing.T) {
 	config.CF.ConfigDir = t.TempDir()
-	var bleve = bleve.NewBleveSearch()
+	var bleve, _ = bleve.NewBleveSearch()
 	var sqlite = sqlite.NewSqliteSearch(repository.NewLogRepository(repository.NewQuery(repository.NewDB())))
-	var es = es.NewEsSearch()
+	var es, _ = es.NewEsSearch()
 
 	test(t, bleve)
 	test(t, sqlite)
@@ -186,9 +186,9 @@ func check(logic search.ILogLogic, req model.GetLogReq) bool {
 		result1 = append(result1, v)
 	}
 
-	resp := logic.Search(req)
-	if len(result1) != len(resp.Data) {
-		log.Logger.Errorw("data is not correct", "result1", result1, "resp", resp, "req", req)
+	resp, err := logic.Search(req)
+	if err != nil || len(result1) != len(resp.Data) {
+		log.Logger.Errorw("data is not correct", "result1", result1, "resp", resp, "req", req, "err", err)
 		return false
 	}
 	for _, v := range resp.Data {

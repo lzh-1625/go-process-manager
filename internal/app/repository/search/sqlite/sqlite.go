@@ -20,7 +20,7 @@ func NewSqliteSearch(logRepository *repository.LogRepository) search.ILogLogic {
 	}
 }
 
-func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
+func (l *sqliteSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	query := search.QueryStringAnalysis(req.Match.Log)
 	data, total := l.logRepository.SearchLog(req, query)
 
@@ -34,10 +34,10 @@ func (l *sqliteSearch) Search(req model.GetLogReq) model.LogResp {
 		}
 	}
 
-	return model.LogResp{
+	return &model.LogResp{
 		Data:  data,
 		Total: total,
-	}
+	}, nil
 }
 
 func (l *sqliteSearch) Insert(logs ...model.ProcessLog) {

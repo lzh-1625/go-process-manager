@@ -20,7 +20,7 @@ import (
 	gse "github.com/vcaesar/gse-bleve"
 )
 
-func NewBleveSearch() *bleveSearch {
+func NewBleveSearch() (sr.ILogLogic, error) {
 	opt := gse.Option{
 		Dicts: "embed, zh_s",
 		Stop:  "",
@@ -30,7 +30,7 @@ func NewBleveSearch() *bleveSearch {
 	indexMapping, err := gse.NewMapping(opt)
 	if err != nil {
 		logger.Logger.Errorw("bleve init fail", "err", err)
-		return nil
+		return nil, err
 	}
 	mapping := bleve.NewDocumentMapping()
 	log := bleve.NewTextFieldMapping()
@@ -58,10 +58,10 @@ func NewBleveSearch() *bleveSearch {
 		index, err = bleve.New(path, indexMapping)
 		if err != nil {
 			logger.Logger.Errorw("bleve init error", "err", err)
-			return nil
+			return nil, err
 		}
 	}
-	return &bleveSearch{index: index}
+	return &bleveSearch{index: index}, nil
 }
 
 type bleveSearch struct {
@@ -78,7 +78,7 @@ func (b *bleveSearch) Insert(logs ...model.ProcessLog) {
 	}
 }
 
-func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
+func (b *bleveSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	buildQuery := bleve.NewBooleanQuery()
 
 	logQuery := sr.QueryStringAnalysis(req.Match.Log)
@@ -175,7 +175,7 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 	})
 	if err != nil {
 		logger.Logger.Warnw("bleve search failed", "err", err)
-		return
+		return nil, err
 	}
 	data := []*model.ProcessLog{}
 	for _, v := range res.Hits {
@@ -193,8 +193,8 @@ func (b *bleveSearch) Search(req model.GetLogReq) (result model.LogResp) {
 			Name:  v.Fields["name"].(string),
 		})
 	}
-
-	result.Data = data
-	result.Total = int64(res.Total)
-	return
+	return &model.LogResp{
+		Data:  data,
+		Total: int64(res.Total),
+	}, nil
 }

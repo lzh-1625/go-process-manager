@@ -71,7 +71,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfDay(t)
 			end := datetime.EndOfDay(t)
 
-			resp := m.ILogLogic.Search(model.GetLogReq{
+			resp, _ := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -91,7 +91,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfWeek(t, time.Monday)
 			end := datetime.EndOfWeek(t, time.Monday)
 
-			resp := m.ILogLogic.Search(model.GetLogReq{
+			resp, _ := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`
@@ -111,7 +111,7 @@ func (m *MetricLogic) GetLogMetric(dateType int) (result model.LogStatsticMetric
 			start := datetime.BeginOfMonth(t)
 			end := datetime.EndOfMonth(t)
 
-			resp := m.ILogLogic.Search(model.GetLogReq{
+			resp, _ := m.ILogLogic.Search(model.GetLogReq{
 				TimeRange: struct {
 					StartTime int64 `json:"startTime"`
 					EndTime   int64 `json:"endTime"`

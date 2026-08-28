@@ -30,13 +30,7 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return err
 	}
-	if isAdmin(ctx) {
-		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.ILogLogic.Search(req),
-			Message: "success",
-			Code:    0,
-		})
-	} else {
+	if !isAdmin(ctx) {
 		processNameList := a.permissionLogic.GetProcessNameByPermission(getUserName(ctx), types.OperationLog)
 
 		if len(req.FilterName) == 0 {
@@ -50,12 +44,19 @@ func (a *LogApi) GetLog(ctx *echo.Context) error {
 		if len(req.FilterName) == 0 {
 			return errors.New("no information found")
 		}
-		return ctx.JSON(http.StatusOK, model.Response[model.LogResp]{
-			Data:    a.ILogLogic.Search(req),
-			Message: "success",
-			Code:    0,
+	}
+	data, err := a.ILogLogic.Search(req)
+	if err != nil {
+		return ctx.JSON(http.StatusOK, model.Response[any]{
+			Message: err.Error(),
+			Code:    -1,
 		})
 	}
+	return ctx.JSON(http.StatusOK, model.Response[*model.LogResp]{
+		Data:    data,
+		Message: "success",
+		Code:    0,
+	})
 }
 
 func (a *LogApi) GetRunningLog(ctx *echo.Context) error {
