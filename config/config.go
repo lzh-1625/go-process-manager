@@ -31,36 +31,36 @@ func init() {
 
 // Only float64, int, int64, bool, and string types are supported.
 type Configuration struct {
-	LogLevel                  string `default:"info"  describe:"log level [debug,info]"`
-	Listen                    string `default:":8797" describe:"listen port"`
-	StorgeType                string `default:"sqlite" describe:"storage engine [sqlite,es,bleve,victorialogs]"`
-	EsUrl                     string `default:"" describe:"Elasticsearch url"`
+	LogLevel                  string `default:"info"  describe:"log level [debug, info]"`
+	Listen                    string `default:":8797" describe:"listen address"`
+	StorgeType                string `default:"sqlite" describe:"storage engine [sqlite, es, bleve, victorialogs]"`
+	EsUrl                     string `default:"" describe:"Elasticsearch URL"`
 	EsIndex                   string `default:"server_log_v1" describe:"Elasticsearch index"`
 	EsUsername                string `default:"" describe:"Elasticsearch username"`
 	EsPassword                string `default:"" describe:"Elasticsearch password"`
-	EsWindowLimit             bool   `default:"true" describe:"Es pagination 10000 limit"`
-	VictoriaLogsUrl           string `default:"" describe:"VictoriaLogs url"`
+	EsWindowLimit             bool   `default:"true" describe:"limit Elasticsearch pagination to 10,000 results"`
+	VictoriaLogsUrl           string `default:"" describe:"VictoriaLogs URL"`
 	VictoriaLogsUsername      string `default:"" describe:"VictoriaLogs username"`
 	VictoriaLogsPassword      string `default:"" describe:"VictoriaLogs password"`
 	ProcessRestartsLimit      int    `default:"2" describe:"process restart limit"`
-	ProcessMsgCacheBufLimit   int    `default:"4096" describe:"pty process cache message bytes limit"`
-	PerformanceInfoListLength int    `default:"30" describe:"performance info storage length"`
-	PerformanceInfoInterval   int    `default:"60" describe:"monitor interval time (seconds)"`
+	ProcessMsgCacheBufLimit   int    `default:"4096" describe:"PTY message cache limit (bytes)"`
+	PerformanceInfoListLength int    `default:"30" describe:"performance history length"`
+	PerformanceInfoInterval   int    `default:"60" describe:"performance collection interval (seconds)"`
 	TerminalConnectTimeout    int    `default:"10" describe:"terminal connect timeout (minutes)"`
-	UserPassWordMinLength     int    `default:"4" describe:"user password min length"`
-	LogHandlerPoolSize        int    `default:"1" describe:"log handler parallel number"`
-	LogReportOptimization     bool   `default:"true" describe:"log optimization, prevent truncation"`
-	PprofEnable               bool   `default:"true" describe:"enable pprof analysis tool"`
+	UserPassWordMinLength     int    `default:"4" describe:"minimum user password length"`
+	LogHandlerPoolSize        int    `default:"1" describe:"log handler worker count"`
+	LogReportOptimization     bool   `default:"true" describe:"optimize log reporting (prevents truncation)"`
+	PprofEnable               bool   `default:"true" describe:"enable pprof profiling"`
 	KillWaitTime              int    `default:"5" describe:"kill signal wait time (seconds)"`
 	TaskTimeout               int    `default:"60" describe:"task execution timeout (seconds)"`
 	TokenExpirationTime       int64  `default:"720" describe:"token expiration time (hours)"`
-	WsHealthCheckInterval     int    `default:"3" describe:"ws health check interval (seconds)"`
-	CgroupPeriod              int64  `default:"100000" describe:"CgroupPeriod"`
-	CgroupSwapLimit           bool   `default:"false" describe:"cgroup swap limit"`
-	CondWaitTime              int    `default:"30" describe:"long polling wait time (seconds)"`
-	EventStorageTime          int    `default:"30" describe:"event storage time (days)"`
+	WsHealthCheckInterval     int    `default:"3" describe:"WebSocket health check interval (seconds)"`
+	CgroupPeriod              int64  `default:"100000" describe:"cgroup CPU period (microseconds)"`
+	CgroupSwapLimit           bool   `default:"false" describe:"limit cgroup swap"`
+	CondWaitTime              int    `default:"30" describe:"long-poll wait time (seconds)"`
+	EventStorageTime          int    `default:"30" describe:"event retention time (days)"`
 	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
-	StaticResourceCahce       bool   `default:"true" describe:"enable static resource cache"`
+	StaticResourceCahce       bool   `default:"true" describe:"enable static resource caching"`
 	SecretKey                 string `default:"-"`
 	ConfigDir                 string `default:"-" json:"-"`
 }

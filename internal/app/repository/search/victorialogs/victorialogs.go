@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lzh-1625/go_process_manager/config"
 	"github.com/lzh-1625/go_process_manager/internal/app/model"
 	"github.com/lzh-1625/go_process_manager/internal/app/repository/search"
 	"github.com/lzh-1625/go_process_manager/log"
@@ -27,26 +28,8 @@ const (
 )
 
 type victoriaLogsSearch struct {
-	client   *http.Client
-	url      string
-	username string
-	password string
-}
-
-type victoriaLog struct {
-	ID    string `json:"id"`
-	Log   string `json:"_msg"`
-	Time  string `json:"_time"`
-	Name  string `json:"name"`
-	Using string `json:"using"`
-}
-
-type victoriaLogInsert struct {
-	ID    string `json:"id"`
-	Log   string `json:"log"`
-	Time  string `json:"time"`
-	Name  string `json:"name"`
-	Using string `json:"using"`
+	client *http.Client
+	url    string
 }
 
 func NewVictoriaLogsSearch() search.ILogLogic {
@@ -57,17 +40,12 @@ func NewVictoriaLogsSearch() search.ILogLogic {
 	return v
 }
 
-func (v *victoriaLogsSearch) Reload() error {
-	return v.init()
-}
-
 func (v *victoriaLogsSearch) init() error {
-
-	v.url = strings.TrimRight("http://xcon.top:9428", "/")
-
+	v.url = strings.TrimRight(config.CF.VictoriaLogsUrl, "/")
 	v.client = &http.Client{
 		Transport: &http.Transport{
-			IdleConnTimeout: 90 * time.Second,
+			MaxIdleConnsPerHost: config.CF.LogHandlerPoolSize,
+			IdleConnTimeout:     90 * time.Second,
 		},
 	}
 	return nil
@@ -81,7 +59,7 @@ func (v *victoriaLogsSearch) Insert(logs ...model.ProcessLog) {
 	var body bytes.Buffer
 	encoder := json.NewEncoder(&body)
 	for _, item := range logs {
-		entry := victoriaLogInsert{
+		entry := model.VictoriaLogInsert{
 			ID:    strconv.FormatInt(item.ID, 10),
 			Log:   item.Log,
 			Time:  time.UnixMilli(item.Time).UTC().Format(time.RFC3339Nano),
@@ -94,8 +72,7 @@ func (v *victoriaLogsSearch) Insert(logs ...model.ProcessLog) {
 		}
 	}
 
-	endpoint := v.endpoint(insertPath)
-	parsed, err := url.Parse(endpoint)
+	parsed, err := url.Parse(v.url + insertPath)
 	if err != nil {
 		log.Logger.Errorw("VictoriaLogs insert URL is invalid", "err", err)
 		return
@@ -130,7 +107,14 @@ func (v *victoriaLogsSearch) Search(req model.GetLogReq) (result model.LogResp) 
 		return result
 	}
 	if req.Match.HighLight {
-		highlight(data, search.QueryStringAnalysis(req.Match.Log))
+		for _, item := range search.QueryStringAnalysis(req.Match.Log) {
+			if item.Cond == search.NotMatch || item.Cond == search.NotWildCard {
+				continue
+			}
+			for _, log := range data {
+				log.Log = utils.StringReplaceHighLight(log.Log, item.Content)
+			}
+		}
 	}
 	result.Data = data
 
@@ -157,7 +141,7 @@ func (v *victoriaLogsSearch) query(query string, req model.GetLogReq) ([]*model.
 	buffer := make([]byte, 64*1024)
 	scanner.Buffer(buffer, 4*1024*1024)
 	for scanner.Scan() {
-		var entry victoriaLog
+		var entry model.VictoriaLog
 		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
 			return nil, fmt.Errorf("decode VictoriaLogs query response: %w", err)
 		}
@@ -212,7 +196,7 @@ func (v *victoriaLogsSearch) postForm(path string, values url.Values) (io.ReadCl
 	req, err := http.NewRequestWithContext(
 		context.TODO(),
 		http.MethodPost,
-		v.endpoint(path),
+		v.url+path,
 		strings.NewReader(values.Encode()),
 	)
 	if err != nil {
@@ -246,13 +230,9 @@ func (v *victoriaLogsSearch) do(req *http.Request) error {
 	return nil
 }
 
-func (v *victoriaLogsSearch) endpoint(path string) string {
-	return v.url + path
-}
-
 func (v *victoriaLogsSearch) setAuth(req *http.Request) {
-	if v.username != "" || v.password != "" {
-		req.SetBasicAuth(v.username, v.password)
+	if config.CF.VictoriaLogsUsername != "" || config.CF.VictoriaLogsPassword != "" {
+		req.SetBasicAuth(config.CF.VictoriaLogsUsername, config.CF.VictoriaLogsPassword)
 	}
 }
 
@@ -271,23 +251,23 @@ func buildFilters(req model.GetLogReq) string {
 		filter := ""
 		switch item.Cond {
 		case search.Match:
-			filter = "i(" + quote(item.Content) + ")"
+			filter = "i(" + strconv.Quote(item.Content) + ")"
 		case search.NotMatch:
-			filter = "NOT i(" + quote(item.Content) + ")"
+			filter = "NOT i(" + strconv.Quote(item.Content) + ")"
 		case search.WildCard:
-			filter = "~" + quote("(?i)"+regexp.QuoteMeta(item.Content))
+			filter = "~" + strconv.Quote("(?i)"+regexp.QuoteMeta(item.Content))
 		case search.NotWildCard:
-			filter = "NOT ~" + quote("(?i)"+regexp.QuoteMeta(item.Content))
+			filter = "NOT ~" + strconv.Quote("(?i)"+regexp.QuoteMeta(item.Content))
 		}
 		if filter != "" {
 			filters = append(filters, filter)
 		}
 	}
 	if req.Match.Name != "" {
-		filters = append(filters, "name:="+quote(req.Match.Name))
+		filters = append(filters, "name:="+strconv.Quote(req.Match.Name))
 	}
 	if req.Match.Using != "" {
-		filters = append(filters, "using:="+quote(req.Match.Using))
+		filters = append(filters, "using:="+strconv.Quote(req.Match.Using))
 	}
 	if req.CursorID != 0 {
 		operator := ">"
@@ -299,15 +279,11 @@ func buildFilters(req model.GetLogReq) string {
 	if len(req.FilterName) != 0 {
 		values := make([]string, 0, len(req.FilterName))
 		for _, name := range req.FilterName {
-			values = append(values, quote(name))
+			values = append(values, strconv.Quote(name))
 		}
 		filters = append(filters, "name:in("+strings.Join(values, ", ")+")")
 	}
 	return strings.Join(filters, " ")
-}
-
-func quote(value string) string {
-	return strconv.Quote(value)
 }
 
 func setTimeRange(values url.Values, req model.GetLogReq) {
@@ -316,16 +292,5 @@ func setTimeRange(values url.Values, req model.GetLogReq) {
 	}
 	if req.TimeRange.EndTime != 0 {
 		values.Set("end", time.UnixMilli(req.TimeRange.EndTime).UTC().Format(time.RFC3339Nano))
-	}
-}
-
-func highlight(logs []*model.ProcessLog, query []search.Query) {
-	for _, item := range query {
-		if item.Cond == search.NotMatch || item.Cond == search.NotWildCard {
-			continue
-		}
-		for _, log := range logs {
-			log.Log = utils.StringReplaceHighLight(log.Log, item.Content)
-		}
 	}
 }

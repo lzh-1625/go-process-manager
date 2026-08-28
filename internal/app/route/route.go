@@ -174,7 +174,6 @@ func NewRoute(
 		{
 			configGroup.GET("", configApi.GetSystemConfiguration)
 			configGroup.PUT("", configApi.SetSystemConfiguration)
-			configGroup.PUT("/reload", configApi.LogConfigReload)
 		}
 		metricGroup := apiGroup.Group("/metric", middle.RolePermission(types.RoleAdmin))
 		{

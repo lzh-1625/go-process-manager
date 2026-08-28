@@ -35,7 +35,3 @@ func (c *ConfigApi) SetSystemConfiguration(ctx *echo.Context) error {
 	}
 	return c.configLogic.SetSystemConfiguration(req)
 }
-
-func (c *ConfigApi) LogConfigReload(ctx *echo.Context) error {
-	return c.ILogLogic.Reload()
-}

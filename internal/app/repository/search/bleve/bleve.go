@@ -21,20 +21,6 @@ import (
 )
 
 func NewBleveSearch() *bleveSearch {
-	b := &bleveSearch{}
-	b.init()
-	return b
-}
-
-type bleveSearch struct {
-	index bleve.Index
-}
-
-func (b *bleveSearch) Reload() error {
-	return b.init()
-}
-
-func (b *bleveSearch) init() error {
 	opt := gse.Option{
 		Dicts: "embed, zh_s",
 		Stop:  "",
@@ -44,7 +30,7 @@ func (b *bleveSearch) init() error {
 	indexMapping, err := gse.NewMapping(opt)
 	if err != nil {
 		logger.Logger.Errorw("bleve init fail", "err", err)
-		return err
+		return nil
 	}
 	mapping := bleve.NewDocumentMapping()
 	log := bleve.NewTextFieldMapping()
@@ -72,11 +58,14 @@ func (b *bleveSearch) init() error {
 		index, err = bleve.New(path, indexMapping)
 		if err != nil {
 			logger.Logger.Errorw("bleve init error", "err", err)
-			return err
+			return nil
 		}
 	}
-	b.index = index
-	return nil
+	return &bleveSearch{index: index}
+}
+
+type bleveSearch struct {
+	index bleve.Index
 }
 
 func (b *bleveSearch) Insert(logs ...model.ProcessLog) {

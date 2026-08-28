@@ -11,7 +11,6 @@ import (
 type ILogLogic interface {
 	Search(req model.GetLogReq) model.LogResp
 	Insert(...model.ProcessLog)
-	Reload() error
 }
 
 type Cond int

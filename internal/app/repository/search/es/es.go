@@ -16,22 +16,7 @@ import (
 )
 
 func NewEsSearch() search.ILogLogic {
-	e := &esSearch{}
-	e.init()
-	return e
-}
-
-type esSearch struct {
-	esClient *elastic.Client
-}
-
-func (e *esSearch) Reload() error {
-	return e.init()
-}
-
-func (e *esSearch) init() error {
-	var err error
-	e.esClient, err = elastic.NewClient(
+	client, err := elastic.NewClient(
 		elastic.SetURL(config.CF.EsUrl),
 		elastic.SetBasicAuth(config.CF.EsUsername, config.CF.EsPassword),
 		elastic.SetSniff(false),
@@ -44,9 +29,13 @@ func (e *esSearch) init() error {
 	)
 	if err != nil {
 		log.Logger.Warnw("Failed to connect to es", "err", err)
-		return err
+		return nil
 	}
-	return nil
+	return &esSearch{esClient: client}
+}
+
+type esSearch struct {
+	esClient *elastic.Client
 }
 
 func (e *esSearch) Insert(logs ...model.ProcessLog) {
