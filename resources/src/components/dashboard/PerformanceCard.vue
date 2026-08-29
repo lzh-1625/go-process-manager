@@ -5,14 +5,19 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, Ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useTheme } from "vuetify";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
 import { getPerformceUsage, PerformceUsage } from "@/api/metric";
 
 const { t } = useI18n();
+const theme = useTheme();
 
 const loading = ref(true);
 const performanceData = ref<PerformceUsage | null>(null);
+const chartTextColor = computed(() =>
+  theme.global.current.value.dark ? "#E7E9F6" : "#2F2B3D"
+);
 
 const viewportWidth = ref(window.innerWidth);
 const viewportHeight = ref(window.innerHeight);
@@ -46,7 +51,7 @@ const chartLegend = computed(() => {
       left: "center",
       bottom: 0,
       top: "auto",
-      textStyle: { fontSize: 9 },
+      textStyle: { fontSize: 9, color: chartTextColor.value },
       type: "scroll" as const,
     };
   }
@@ -56,7 +61,7 @@ const chartLegend = computed(() => {
       left: "center",
       bottom: 0,
       top: "auto",
-      textStyle: { fontSize: 10 },
+      textStyle: { fontSize: 10, color: chartTextColor.value },
       type: "scroll" as const,
     };
   }
@@ -64,7 +69,7 @@ const chartLegend = computed(() => {
     orient: "vertical" as const,
     left: "left",
     top: "middle",
-    textStyle: { fontSize: 11 },
+    textStyle: { fontSize: 11, color: chartTextColor.value },
     type: "scroll" as const,
   };
 });
@@ -140,6 +145,7 @@ const cpuOption = computed<EChartsOption>(() => {
       textStyle: {
         fontSize: chartLayout.value === "landscape" ? 13 : 16,
         fontWeight: "bold",
+        color: chartTextColor.value,
       },
     },
     legend: chartLegend.value,
@@ -161,12 +167,14 @@ const cpuOption = computed<EChartsOption>(() => {
             return `${params.name}: ${params.value}%`;
           },
           fontSize: 10,
+          color: chartTextColor.value,
         },
         emphasis: {
           label: {
             show: true,
             fontSize: 14,
             fontWeight: "bold",
+            color: chartTextColor.value,
           },
         },
         labelLine: {
@@ -216,6 +224,7 @@ const memOption = computed<EChartsOption>(() => {
       textStyle: {
         fontSize: chartLayout.value === "landscape" ? 13 : 16,
         fontWeight: "bold",
+        color: chartTextColor.value,
       },
     },
     legend: chartLegend.value,
@@ -237,12 +246,14 @@ const memOption = computed<EChartsOption>(() => {
             return `${params.name}: ${params.value}MB`;
           },
           fontSize: 10,
+          color: chartTextColor.value,
         },
         emphasis: {
           label: {
             show: true,
             fontSize: 14,
             fontWeight: "bold",
+            color: chartTextColor.value,
           },
         },
         labelLine: {

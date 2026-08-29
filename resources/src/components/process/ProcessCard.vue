@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ProcessItem, ProcessState } from "~/src/types/process/process";
 import { useI18n } from "vue-i18n";
+import { useTheme } from "vuetify";
 import echarts from "@/plugins/echarts";
 import TerminalPty from "./TerminalPty.vue";
 import ProcessUserConnections from "./ProcessUserConnections.vue";
@@ -21,7 +22,16 @@ import {
 } from "~/src/utils/controlDuration";
 
 const { t } = useI18n();
-let chartInstance: echarts.ECharts;
+const theme = useTheme();
+const chartTextColor = computed(() =>
+  theme.global.current.value.dark ? "#E7E9F6" : "#2F2B3D"
+);
+const chartTooltipStyle = computed(() =>
+  theme.global.current.value.dark
+    ? { backgroundColor: "#2B323B", borderColor: "#4A5072" }
+    : { backgroundColor: "#FFFFFF", borderColor: "#D0D4F1" }
+);
+let chartInstance: echarts.ECharts | null = null;
 
 const snackbarStore = useSnackbarStore();
 const stopLoading = ref(false);
@@ -38,9 +48,16 @@ const initEChart = () => {
   var option = {
     tooltip: {
       trigger: "axis",
+      ...chartTooltipStyle.value,
+      textStyle: {
+        color: chartTextColor.value,
+      },
     },
     legend: {
       data: ["CPU", "Memery"],
+      textStyle: {
+        color: chartTextColor.value,
+      },
     },
     animationDuration: 2000,
     grid: {
@@ -62,6 +79,8 @@ const initEChart = () => {
         min: 0, // 设置CPU的y轴最小值为10
         max: props.data.usage.cpuCapacity,
         minInterval: 0.1,
+        nameTextStyle: { color: chartTextColor.value },
+        axisLabel: { color: chartTextColor.value },
         splitLine: {
           show: false,
         },
@@ -72,6 +91,8 @@ const initEChart = () => {
         type: "value",
         name: "Memery(" + (mem / 1024).toFixed(2) + "MB)",
         max: parseFloat((props.data.usage.memCapacity / 1024).toFixed(2)),
+        nameTextStyle: { color: chartTextColor.value },
+        axisLabel: { color: chartTextColor.value },
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { show: false },
@@ -191,6 +212,14 @@ onMounted(() => {
     resizeObserver.observe(chartEl);
   }
 });
+
+watch(
+  () => theme.global.current.value.dark,
+  () => {
+    chartInstance?.dispose();
+    initEChart();
+  }
+);
 
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);

@@ -5,11 +5,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, Ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useTheme } from "vuetify";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
 import { getLogMetric, LogStatsticMetric, LogStatsticMetricItem } from "@/api/metric";
 
 const { t } = useI18n();
+const theme = useTheme();
 
 const loading = ref(true);
 const logData = ref<LogStatsticMetric | null>(null);
@@ -29,6 +31,9 @@ const processEntries = computed(() =>
 );
 
 const hasLogData = computed(() => processEntries.value.length > 0);
+const chartTextColor = computed(() =>
+  theme.global.current.value.dark ? "#E7E9F6" : "#2F2B3D"
+);
 
 const totalLogItems = computed<LogStatsticMetricItem[]>(() => {
   const [, firstProcessItems] = processEntries.value[0] ?? [];
@@ -74,6 +79,9 @@ const chartOption = computed<EChartsOption>(() => {
     legend: {
       type: "scroll",
       top: 42,
+      textStyle: {
+        color: chartTextColor.value,
+      },
     },
     tooltip: {
       trigger: "axis",
