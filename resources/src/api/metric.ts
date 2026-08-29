@@ -19,7 +19,7 @@ export interface LogStatsticMetricItem {
 
 export interface LogStatsticMetric {
   executing: number;
-  items: LogStatsticMetricItem[];
+  items: Record<string, LogStatsticMetricItem[]>;
 }
 
 export function getPerformceUsage() {
@@ -29,4 +29,3 @@ export function getPerformceUsage() {
 export function getLogMetric(dateType: number) {
   return api.get<LogStatsticMetric>("/metric/log", { dateType }).then((res) => res);
 }
-

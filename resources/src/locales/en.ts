@@ -209,6 +209,7 @@ export default {
     month: "Month",
     executing: "Executing",
     logCount: "Log Count",
+    totalLogCount: "Total Log Count",
     processing: "Processing",
   },
 

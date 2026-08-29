@@ -7,13 +7,14 @@ import { ref, onMounted, computed, Ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
-import { getLogMetric, LogStatsticMetric } from "@/api/metric";
+import { getLogMetric, LogStatsticMetric, LogStatsticMetricItem } from "@/api/metric";
 
 const { t } = useI18n();
 
 const loading = ref(true);
 const logData = ref<LogStatsticMetric | null>(null);
 const dateType = ref(1); // 1: 日, 2: 周, 3: 月
+const showTotal = ref(false);
 
 const dateTypes = computed(() => [
   { value: 1, title: t("dashboardPage.day") },
@@ -23,13 +24,37 @@ const dateTypes = computed(() => [
 
 const chartEl = ref<HTMLDivElement | null>(null);
 
-const chartOption = computed<EChartsOption>(() => {
-  if (!logData.value || !logData.value.items) return {};
+const processEntries = computed(() =>
+  Object.entries(logData.value?.items ?? {}).filter(([, items]) => items.length > 0)
+);
 
-  // 反转数组以按时间正序显示
-  const items = [...logData.value.items].reverse();
-  const dates = items.map((item) => item.date);
-  const counts = items.map((item) => item.count);
+const hasLogData = computed(() => processEntries.value.length > 0);
+
+const totalLogItems = computed<LogStatsticMetricItem[]>(() => {
+  const [, firstProcessItems] = processEntries.value[0] ?? [];
+  if (!firstProcessItems) return [];
+
+  return firstProcessItems.map((item, index) => ({
+    date: item.date,
+    count: processEntries.value.reduce(
+      (total, [, items]) => total + (items[index]?.count ?? 0),
+      0
+    ),
+  }));
+});
+
+const chartEntries = computed<[string, LogStatsticMetricItem[]][]>(() => {
+  if (showTotal.value) {
+    return [[t("dashboardPage.totalLogCount"), totalLogItems.value]];
+  }
+  return processEntries.value;
+});
+
+const chartOption = computed<EChartsOption>(() => {
+  if (!hasLogData.value) return {};
+
+  const [, firstProcessItems] = processEntries.value[0];
+  const dates = [...firstProcessItems].reverse().map((item) => item.date);
 
   return {
     title: {
@@ -46,6 +71,10 @@ const chartOption = computed<EChartsOption>(() => {
         fontSize: 12,
       },
     },
+    legend: {
+      type: "scroll",
+      top: 42,
+    },
     tooltip: {
       trigger: "axis",
       axisPointer: {
@@ -55,15 +84,20 @@ const chartOption = computed<EChartsOption>(() => {
         },
       },
       formatter: (params: any) => {
-        const param = params[0];
-        return `${param.name}<br/>${param.marker}${t("dashboardPage.logCount")}: ${param.value}`;
+        const [firstParam] = params;
+        return `${firstParam.name}<br/>${params
+          .map(
+            (param: any) =>
+              `${param.marker}${param.seriesName}: ${param.value} ${t("dashboardPage.logCount")}`
+          )
+          .join("<br/>")}`;
       },
     },
     grid: {
       left: "3%",
       right: "4%",
       bottom: "10%",
-      top: "20%",
+      top: "28%",
       containLabel: true,
     },
     xAxis: {
@@ -85,52 +119,29 @@ const chartOption = computed<EChartsOption>(() => {
         },
       }
     ],
-    series: [
-      {
-        name: t("dashboardPage.logCount"),
+    series: chartEntries.value.map(([processName, items]) => ({
+        name: processName,
         type: "line",
         smooth: true,
         symbol: "circle",
         symbolSize: 8,
         lineStyle: {
           width: 3,
-          color: "#03a9f4",
         },
         itemStyle: {
-          color: "#03a9f4",
           borderColor: "#fff",
           borderWidth: 2,
         },
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              {
-                offset: 0,
-                color: "rgba(3, 169, 244, 0.3)",
-              },
-              {
-                offset: 1,
-                color: "rgba(3, 169, 244, 0.05)",
-              },
-            ],
-          },
-        },
-        data: counts,
+        data: [...items].reverse().map((item) => item.count),
         emphasis: {
           focus: "series",
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: "rgba(3, 169, 244, 0.5)",
+            shadowColor: "rgba(0, 0, 0, 0.5)",
           },
         },
-      },
-    ],
+      })),
   };
 });
 
@@ -143,16 +154,21 @@ const { setOption, getInstance } = useChart(
 );
 
 const loadData = async () => {
+  loading.value = true;
+  let loaded = false;
   try {
     const response = await getLogMetric(dateType.value);
     logData.value = response.data as LogStatsticMetric;
-
-    if (logData.value?.items?.length) {
-      await nextTick();
-      setOption(chartOption.value);
-    }
+    loaded = true;
   } catch (error) {
     console.error("Failed to load log metric data:", error);
+  } finally {
+    loading.value = false;
+  }
+
+  if (loaded && hasLogData.value) {
+    await nextTick();
+    setOption(chartOption.value, true);
   }
 };
 
@@ -169,9 +185,6 @@ let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   setTimeout(async () => {
-    loading.value = false;
-    await nextTick();
-    // 等待 DOM 渲染后再加载数据
     await loadData();
 
     // 数据加载完成后，监听图表容器大小变化
@@ -199,7 +212,7 @@ watch(
   () => chartOption.value,
   (newVal) => {
     if (logData.value) {
-      setOption(newVal);
+      setOption(newVal, true);
     }
   },
   { deep: true }
@@ -210,36 +223,35 @@ watch(
   <div>
     <v-card-title class="d-flex justify-space-between align-center pa-5">
       <span class="text-h6 font-weight-bold">{{ $t("dashboardPage.logStatistics") }}</span>
-      <v-btn-toggle
-        v-model="dateType"
-        color="primary"
-        mandatory
-        density="compact"
-        @update:model-value="onDateTypeChange"
-      >
-        <v-btn
-          v-for="type in dateTypes"
-          :key="type.value"
-          :value="type.value"
-          size="small"
+      <div class="d-flex align-center ga-4">
+        <v-switch
+          v-model="showTotal"
+          :label="$t('dashboardPage.totalLogCount')"
+          color="primary"
+          density="compact"
+          hide-details
+        ></v-switch>
+        <v-btn-toggle
+          v-model="dateType"
+          color="primary"
+          mandatory
+          density="compact"
+          @update:model-value="onDateTypeChange"
         >
-          {{ type.title }}
-        </v-btn>
-      </v-btn-toggle>
+          <v-btn
+            v-for="type in dateTypes"
+            :key="type.value"
+            :value="type.value"
+            size="small"
+          >
+            {{ type.title }}
+          </v-btn>
+        </v-btn-toggle>
+      </div>
     </v-card-title>
     <v-card-text>
-      <div
-        v-if="loading"
-        class="h-full d-flex align-center justify-center"
-        style="min-height: 300px"
-      >
-        <v-progress-circular
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
-      </div>
-      <div v-else style="position: relative">
-        <template v-if="logData?.items?.length">
+      <div style="position: relative">
+        <template v-if="hasLogData">
           <div
             style="
               position: absolute;
@@ -263,7 +275,7 @@ watch(
                 text-align: center;
               "
             >
-              {{ logData.executing }}
+              {{ logData?.executing }}
             </div>
           </div>
           <div ref="chartEl" style="width: 100%; height: 350px"></div>
@@ -275,9 +287,23 @@ watch(
         >
           {{ $t("common.noData") }}
         </div>
+        <div
+          v-if="loading"
+          class="log-metric-loading d-flex align-center justify-center"
+        >
+          <v-progress-circular indeterminate color="primary"></v-progress-circular>
+        </div>
       </div>
     </v-card-text>
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.log-metric-loading {
+  position: absolute;
+  inset: 0;
+  min-height: 350px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.7);
+}
+</style>

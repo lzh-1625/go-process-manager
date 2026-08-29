@@ -13,8 +13,8 @@ type PerformceUsageItem struct {
 }
 
 type LogStatsticMetric struct {
-	Executing int                     `json:"executing"`
-	Items     []LogStatsticMetricItem `json:"items"`
+	Executing int                                `json:"executing"`
+	Items     map[string][]LogStatsticMetricItem `json:"items"`
 }
 
 type LogStatsticMetricItem struct {

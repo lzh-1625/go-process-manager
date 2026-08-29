@@ -117,6 +117,9 @@ func (v *victoriaLogsSearch) Search(req model.GetLogReq) (*model.LogResp, error)
 }
 
 func (v *victoriaLogsSearch) query(query string, req model.GetLogReq) ([]*model.ProcessLog, error) {
+	if req.Page.Size == 0 {
+		return nil, nil
+	}
 	values := url.Values{"query": {query}}
 	setTimeRange(values, req)
 	response, err := v.postForm(queryPath, values)

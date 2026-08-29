@@ -90,14 +90,14 @@ export function useChart(
   };
 
   // 更新/设置配置
-  const setOption = (option: EChartsOption) => {
+  const setOption = (option: EChartsOption, notMerge = false) => {
     nextTick(() => {
       if (!chartInstance) {
         initCharts();
         if (!chartInstance) return;
       }
 
-      chartInstance.setOption(option);
+      chartInstance.setOption(option, notMerge);
       hideLoading();
     });
   };

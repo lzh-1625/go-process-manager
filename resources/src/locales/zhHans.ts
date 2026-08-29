@@ -194,7 +194,7 @@ export default {
   },
   dashboardPage: {
     systemPerformance: "系统性能监控",
-    logStatistics: "日志统计趋势",
+    logStatistics: "日志统计",
     cpuUsage: "CPU使用率",
     memoryUsage: "内存使用率",
     otherProcesses: "其他进程",
@@ -204,6 +204,7 @@ export default {
     month: "月",
     executing: "正在执行",
     logCount: "日志数量",
+    totalLogCount: "总日志数",
     processing: "正在处理",
   },
   // toolbox

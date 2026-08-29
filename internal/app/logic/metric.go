@@ -64,78 +64,69 @@ func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 // GetLogMetric returns recent log statistics.
 // dateType selects the time range: 1 for 7 days, 2 for 6 weeks, and 3 for 6 months.
 func (m *MetricLogic) GetLogMetric(dateType int) *model.LogStatsticMetric {
-	result := &model.LogStatsticMetric{}
-	t := time.Now()
-	switch dateType {
-	case 1:
-		for range 7 {
-			start := datetime.BeginOfDay(t)
-			end := datetime.EndOfDay(t)
-
-			resp, err := m.ILogLogic.Search(model.GetLogReq{
-				TimeRange: struct {
-					StartTime int64 `json:"startTime"`
-					EndTime   int64 `json:"endTime"`
-				}{
-					StartTime: start.UnixMilli(),
-					EndTime:   end.UnixMilli(),
-				},
-			})
-			if err != nil {
-				return nil
+	pl := m.processCtlLogic.GetProcessList()
+	result := &model.LogStatsticMetric{
+		Items: make(map[string][]model.LogStatsticMetricItem, len(pl)),
+	}
+	for _, v := range pl {
+		t := time.Now()
+		result.Items[v.Name] = []model.LogStatsticMetricItem{}
+		switch dateType {
+		case 1:
+			for range 7 {
+				start := datetime.BeginOfDay(t)
+				end := datetime.EndOfDay(t)
+				req := model.GetLogReq{}
+				req.FilterName = []string{v.Name}
+				req.TimeRange.StartTime = start.UnixMilli()
+				req.TimeRange.EndTime = end.UnixMilli()
+				resp, err := m.ILogLogic.Search(req)
+				if err != nil {
+					return nil
+				}
+				result.Items[v.Name] = append(result.Items[v.Name], model.LogStatsticMetricItem{
+					Date:  t.Format(time.DateOnly),
+					Count: resp.Total,
+				})
+				t = datetime.AddDay(t, -1)
 			}
-			result.Items = append(result.Items, model.LogStatsticMetricItem{
-				Date:  t.Format(time.DateOnly),
-				Count: resp.Total,
-			})
-			t = datetime.AddDay(t, -1)
-		}
-	case 2:
-		for range 6 {
-			start := datetime.BeginOfWeek(t, time.Monday)
-			end := datetime.EndOfWeek(t, time.Monday)
-
-			resp, err := m.ILogLogic.Search(model.GetLogReq{
-				TimeRange: struct {
-					StartTime int64 `json:"startTime"`
-					EndTime   int64 `json:"endTime"`
-				}{
-					StartTime: start.UnixMilli(),
-					EndTime:   end.UnixMilli(),
-				},
-			})
-			if err != nil {
-				return nil
+		case 2:
+			for range 6 {
+				start := datetime.BeginOfWeek(t, time.Monday)
+				end := datetime.EndOfWeek(t, time.Monday)
+				req := model.GetLogReq{}
+				req.FilterName = []string{v.Name}
+				req.TimeRange.StartTime = start.UnixMilli()
+				req.TimeRange.EndTime = end.UnixMilli()
+				resp, err := m.ILogLogic.Search(req)
+				if err != nil {
+					return nil
+				}
+				result.Items[v.Name] = append(result.Items[v.Name], model.LogStatsticMetricItem{
+					Date:  t.Format(time.DateOnly),
+					Count: resp.Total,
+				})
+				t = datetime.AddWeek(t, -1)
 			}
-			result.Items = append(result.Items, model.LogStatsticMetricItem{
-				Date:  t.Format(time.DateOnly),
-				Count: resp.Total,
-			})
-			t = datetime.AddWeek(t, -1)
-		}
-	case 3:
-		for range 6 {
-			start := datetime.BeginOfMonth(t)
-			end := datetime.EndOfMonth(t)
+		case 3:
+			for range 6 {
+				start := datetime.BeginOfMonth(t)
+				end := datetime.EndOfMonth(t)
+				req := model.GetLogReq{}
+				req.FilterName = []string{v.Name}
+				req.TimeRange.StartTime = start.UnixMilli()
+				req.TimeRange.EndTime = end.UnixMilli()
+				resp, err := m.ILogLogic.Search(req)
 
-			resp, err := m.ILogLogic.Search(model.GetLogReq{
-				TimeRange: struct {
-					StartTime int64 `json:"startTime"`
-					EndTime   int64 `json:"endTime"`
-				}{
-					StartTime: start.UnixMilli(),
-					EndTime:   end.UnixMilli(),
-				},
-			})
-
-			if err != nil {
-				return nil
+				if err != nil {
+					return nil
+				}
+				result.Items[v.Name] = append(result.Items[v.Name], model.LogStatsticMetricItem{
+					Date:  t.Format("2006-01"),
+					Count: resp.Total,
+				})
+				t = datetime.AddMonth(t, -1)
 			}
-			result.Items = append(result.Items, model.LogStatsticMetricItem{
-				Date:  t.Format("2006-01"),
-				Count: resp.Total,
-			})
-			t = datetime.AddMonth(t, -1)
 		}
 	}
 	result.Executing = m.logHandler.GetRunning()
