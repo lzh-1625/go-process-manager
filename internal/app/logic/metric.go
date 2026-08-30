@@ -2,7 +2,9 @@ package logic
 
 import (
 	"fmt"
+	"maps"
 	"runtime"
+	"slices"
 	"time"
 
 	"github.com/duke-git/lancet/v2/datetime"
@@ -148,6 +150,11 @@ func (m *MetricLogic) GetLogMetric(dateType int) *model.LogStatsticMetric {
 			}
 		}
 	}
+	maps.DeleteFunc(result.Items, func(s string, v []model.LogStatsticMetricItem) bool {
+		return !slices.ContainsFunc(v, func(item model.LogStatsticMetricItem) bool {
+			return item.Count != 0
+		})
+	})
 	result.Executing = m.logHandler.GetRunning()
 	return result
 }
