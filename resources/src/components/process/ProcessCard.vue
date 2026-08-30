@@ -20,6 +20,7 @@ import {
   CONTROL_DURATION_DEFAULT,
   isControlDuration,
 } from "~/src/utils/controlDuration";
+import { getChartTooltipOverflowBehavior } from "../dashboard/chartAppearance";
 
 const { t } = useI18n();
 const theme = useTheme();
@@ -49,6 +50,7 @@ const initEChart = () => {
     tooltip: {
       trigger: "axis",
       ...chartTooltipStyle.value,
+      ...getChartTooltipOverflowBehavior(),
       textStyle: {
         color: chartTextColor.value,
       },

@@ -9,6 +9,11 @@ import { useTheme } from "vuetify";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
 import { getLogMetric, LogStatsticMetric, LogStatsticMetricItem } from "@/api/metric";
+import {
+  getChartTooltipStyle,
+  getChartTooltipOverflowBehavior,
+  logMetricProcessingBadgeStyle,
+} from "./chartAppearance";
 
 const { t } = useI18n();
 const theme = useTheme();
@@ -85,6 +90,8 @@ const chartOption = computed<EChartsOption>(() => {
     },
     tooltip: {
       trigger: "axis",
+      ...getChartTooltipStyle(theme.global.current.value.dark),
+      ...getChartTooltipOverflowBehavior(),
       axisPointer: {
         type: "cross",
         label: {
@@ -231,7 +238,7 @@ watch(
   <div>
     <v-card-title class="d-flex justify-space-between align-center pa-5">
       <span class="text-h6 font-weight-bold">{{ $t("dashboardPage.logStatistics") }}</span>
-      <div class="d-flex align-center ga-4">
+      <div class="d-flex align-center justify-end flex-wrap ga-3">
         <v-switch
           v-model="showTotal"
           :label="$t('dashboardPage.totalLogCount')"
@@ -255,37 +262,22 @@ watch(
             {{ type.title }}
           </v-btn>
         </v-btn-toggle>
+        <v-chip
+          v-if="hasLogData"
+          color="warning"
+          variant="tonal"
+          size="small"
+          :style="logMetricProcessingBadgeStyle"
+        >
+          <v-icon size="16">mdi-progress-clock</v-icon>
+          <span class="text-caption">{{ $t("dashboardPage.processing") }}</span>
+          <span class="font-weight-bold">{{ logData?.executing }}</span>
+        </v-chip>
       </div>
     </v-card-title>
     <v-card-text>
       <div style="position: relative">
         <template v-if="hasLogData">
-          <div
-            style="
-              position: absolute;
-              top: 10px;
-              left: 20px;
-              z-index: 10;
-              background: rgba(255, 152, 0, 0.1);
-              padding: 4px 12px;
-              border-radius: 6px;
-              border: 1.5px solid #ff9800;
-            "
-          >
-            <div style="font-size: 10px; color: #ff9800; font-weight: bold">
-              {{ $t("dashboardPage.processing") }}
-            </div>
-            <div
-              style="
-                font-size: 18px;
-                color: #ff9800;
-                font-weight: bold;
-                text-align: center;
-              "
-            >
-              {{ logData?.executing }}
-            </div>
-          </div>
           <div ref="chartEl" style="width: 100%; height: 350px"></div>
         </template>
         <div

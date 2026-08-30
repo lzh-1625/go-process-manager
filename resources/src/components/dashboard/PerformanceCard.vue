@@ -9,6 +9,7 @@ import { useTheme } from "vuetify";
 import type { EChartsOption } from "echarts";
 import { useChart, RenderType, ThemeType } from "@/plugins/echarts";
 import { getPerformceUsage, PerformceUsage } from "@/api/metric";
+import { getChartTooltipStyle } from "./chartAppearance";
 
 const { t } = useI18n();
 const theme = useTheme();
@@ -136,6 +137,7 @@ const cpuOption = computed<EChartsOption>(() => {
   return {
     tooltip: {
       trigger: "item",
+      ...getChartTooltipStyle(theme.global.current.value.dark),
       formatter: "{a} ---<br/>{b}: {c}% ({d}%)",
     },
     title: {
@@ -215,6 +217,7 @@ const memOption = computed<EChartsOption>(() => {
   return {
     tooltip: {
       trigger: "item",
+      ...getChartTooltipStyle(theme.global.current.value.dark),
       formatter: "{a} <br/>{b}: {c}MB ({d}%)",
     },
     title: {

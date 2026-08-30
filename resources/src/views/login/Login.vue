@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { login } from "@/api/login";
 import router from "~/src/router";
+import { useTheme } from "vuetify";
+import { getLoginAppearance } from "./loginAppearance";
+
+const theme = useTheme();
+const loginAppearance = computed(() =>
+  getLoginAppearance(theme.global.current.value.dark)
+);
 
 const isLoading = ref(false);
 const isSignInDisabled = ref(false);
@@ -46,7 +53,7 @@ const resetErrors = () => {
 };
 </script>
 <template>
-  <v-card color="white" class="pa-3 ma-3" elevation="3">
+  <v-card :color="loginAppearance.cardColor" class="pa-3 ma-3" elevation="3">
     <v-card-title class="my-4 text-h4">
       <span class="flex-fill"> GPM </span>
     </v-card-title>
@@ -55,12 +62,12 @@ const resetErrors = () => {
     <v-card-text>
       <v-form ref="refLoginForm" class="text-left" v-model="isFormValid" lazy-validation>
         <v-text-field ref="refAccount" v-model="account" required :error="error" :label="$t('login.account')"
-          density="default" variant="underlined" color="primary" bg-color="#fff" name="username" outlined
+          density="default" variant="underlined" color="primary" :bg-color="loginAppearance.fieldColor" name="username" outlined
           validateOn="blur" placeholder="" @keyup.enter="handleLogin" @change="resetErrors"></v-text-field>
         <v-text-field ref="refPassword" v-model="password" :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
           :type="showPassword ? 'text' : 'password'" :error="error" :error-messages="errorMessages"
           :label="$t('login.password')" placeholder="" density="default" variant="underlined" color="primary"
-          bg-color="#fff" name="password" outlined validateOn="blur" @change="resetErrors" @keyup.enter="handleLogin"
+          :bg-color="loginAppearance.fieldColor" name="password" outlined validateOn="blur" @change="resetErrors" @keyup.enter="handleLogin"
           @click:append-inner="showPassword = !showPassword"></v-text-field>
         <v-btn :loading="isLoading" :disabled="isSignInDisabled" block size="x-large" color="primary"
           @click="handleLogin" class="mt-2">{{ $t("login.button") }}</v-btn>
