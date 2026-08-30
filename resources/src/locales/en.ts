@@ -204,6 +204,7 @@ export default {
     memoryUsage: "Memory Usage",
     otherProcesses: "Other Processes",
     idle: "Idle",
+    hour: "Hour",
     day: "Day",
     week: "Week",
     month: "Month",

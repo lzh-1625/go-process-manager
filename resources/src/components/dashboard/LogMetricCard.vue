@@ -1,6 +1,6 @@
 <!--
 * @Component: LogMetricCard
-* @Description: 日志统计折线图，支持日、周、月三个时间单位
+* @Description: 日志统计折线图，支持小时、日、周、月四个时间单位
 -->
 <script setup lang="ts">
 import { ref, onMounted, computed, Ref } from "vue";
@@ -20,10 +20,11 @@ const theme = useTheme();
 
 const loading = ref(true);
 const logData = ref<LogStatsticMetric | null>(null);
-const dateType = ref(1); // 1: 日, 2: 周, 3: 月
+const dateType = ref(0); // 0: 小时, 1: 日, 2: 周, 3: 月
 const showTotal = ref(false);
 
 const dateTypes = computed(() => [
+  { value: 0, title: t("dashboardPage.hour") },
   { value: 1, title: t("dashboardPage.day") },
   { value: 2, title: t("dashboardPage.week") },
   { value: 3, title: t("dashboardPage.month") },
@@ -120,7 +121,7 @@ const chartOption = computed<EChartsOption>(() => {
       boundaryGap: false,
       data: dates,
       axisLabel: {
-        rotate: dateType.value === 1 ? 45 : 0,
+        rotate: dateType.value <= 1 ? 45 : 0,
       },
     },
     yAxis: [
@@ -128,6 +129,7 @@ const chartOption = computed<EChartsOption>(() => {
         type: "value",
         name: t("dashboardPage.logCount"),
         min: 0,
+        minInterval: 1,
         position: "right",
         axisLine: {
           show: true,

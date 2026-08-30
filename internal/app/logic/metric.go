@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"fmt"
 	"runtime"
 	"time"
 
@@ -62,7 +63,7 @@ func (m *MetricLogic) GetPerformceUsage() (*model.PerformceUsage, error) {
 }
 
 // GetLogMetric returns recent log statistics.
-// dateType selects the time range: 1 for 7 days, 2 for 6 weeks, and 3 for 6 months.
+// dateType selects the time range: 0 for 12 hours, 1 for 7 days, 2 for 6 weeks, and 3 for 6 months.
 func (m *MetricLogic) GetLogMetric(dateType int) *model.LogStatsticMetric {
 	pl := m.processCtlLogic.GetProcessList()
 	result := &model.LogStatsticMetric{
@@ -72,6 +73,24 @@ func (m *MetricLogic) GetLogMetric(dateType int) *model.LogStatsticMetric {
 		t := time.Now()
 		result.Items[v.Name] = []model.LogStatsticMetricItem{}
 		switch dateType {
+		case 0:
+			for range 12 {
+				start := datetime.BeginOfHour(t)
+				end := datetime.EndOfHour(t)
+				req := model.GetLogReq{}
+				req.FilterName = []string{v.Name}
+				req.TimeRange.StartTime = start.UnixMilli()
+				req.TimeRange.EndTime = end.UnixMilli()
+				resp, err := m.ILogLogic.Search(req)
+				if err != nil {
+					return nil
+				}
+				result.Items[v.Name] = append(result.Items[v.Name], model.LogStatsticMetricItem{
+					Date:  fmt.Sprintf("%d:00", t.Hour()),
+					Count: resp.Total,
+				})
+				t = datetime.AddHour(t, -1)
+			}
 		case 1:
 			for range 7 {
 				start := datetime.BeginOfDay(t)

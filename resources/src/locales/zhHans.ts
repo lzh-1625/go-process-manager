@@ -199,6 +199,7 @@ export default {
     memoryUsage: "内存使用率",
     otherProcesses: "其他进程",
     idle: "空闲",
+    hour: "小时",
     day: "日",
     week: "周",
     month: "月",
