@@ -116,6 +116,7 @@ func TestProcess(t *testing.T) {
 		}))
 	}))
 	app.Start(ctx)
+	time.Sleep(time.Second)
 }
 
 func TestEvent(t *testing.T) {
@@ -163,6 +164,7 @@ func TestEvent(t *testing.T) {
 				t.Errorf("failed to stop process %q as %q: %v", proc.Name, "test-user-1", err)
 				return
 			}
+			time.Sleep(time.Second)
 			data, count, err = eventLogic.Get(model.EventListReq{Page: 1, Size: 1000})
 			if err != nil {
 				t.Errorf("failed to list process events after stop: %v", err)
