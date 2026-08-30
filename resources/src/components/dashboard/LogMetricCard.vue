@@ -103,7 +103,7 @@ const chartOption = computed<EChartsOption>(() => {
         return `${firstParam.name}<br/>${params
           .map(
             (param: any) =>
-              `${param.marker}${param.seriesName}: ${param.value} ${t("dashboardPage.logCount")}`
+              `${param.marker}${param.seriesName}: ${param.value}`
           )
           .join("<br/>")}`;
       },
