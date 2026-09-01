@@ -85,9 +85,15 @@ func (b *bleveSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	for _, v := range logQuery {
 		switch v.Cond {
 		case sr.Match:
+			query := bleve.NewBooleanQuery()
 			logQuery := bleve.NewMatchQuery(v.Content)
+			logQuery.SetBoost(2)
 			logQuery.SetField("log")
-			buildQuery.AddMust(logQuery)
+			query.AddShould(logQuery)
+			logPhraseQuery := bleve.NewMatchPhraseQuery(v.Content)
+			logPhraseQuery.SetField("log")
+			query.AddShould(logPhraseQuery)
+			buildQuery.AddMust(query)
 		case sr.NotMatch:
 			logQuery := bleve.NewMatchQuery(v.Content)
 			logQuery.SetField("log")

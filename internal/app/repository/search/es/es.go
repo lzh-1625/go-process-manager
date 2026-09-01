@@ -81,8 +81,10 @@ func (e *esSearch) Search(req model.GetLogReq) (*model.LogResp, error) {
 	for _, v := range query {
 		switch v.Cond {
 		case sr.Match:
-			queryList = append(queryList, elastic.NewMatchQuery("log", v.Content).Boost(2))
-			queryList = append(queryList, elastic.NewMatchPhraseQuery("log", v.Content))
+			queryList = append(queryList, elastic.NewBoolQuery().Should(
+				elastic.NewMatchQuery("log", v.Content).Boost(2),
+				elastic.NewMatchPhraseQuery("log", v.Content),
+			))
 		case sr.NotMatch:
 			notQuery = append(notQuery, elastic.NewMatchPhraseQuery("log", v.Content))
 		case sr.WildCard:
