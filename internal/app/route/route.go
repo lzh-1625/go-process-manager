@@ -66,6 +66,9 @@ func NewRoute(
 	if config.CF.StaticResourceCahce {
 		r.Use(middle.CacheMiddleware())
 	}
+	if config.CF.GZipEnable {
+		r.Use(middleware.Gzip())
+	}
 	// static file
 	r.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		HTML5:      true,
@@ -76,10 +79,6 @@ func NewRoute(
 	}))
 	if config.CF.PprofEnable {
 		pprofInit(r)
-	}
-
-	if config.CF.GZipEnable {
-		r.Use(middleware.Gzip())
 	}
 
 	if os.Getenv("GPM_DEMO") == "true" {

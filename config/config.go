@@ -59,7 +59,7 @@ type Configuration struct {
 	CgroupSwapLimit           bool   `default:"false" describe:"limit cgroup swap"`
 	CondWaitTime              int    `default:"30" describe:"long-poll wait time (seconds)"`
 	EventStorageTime          int    `default:"30" describe:"event retention time (days)"`
-	GZipEnable                bool   `default:"false" describe:"enable gzip compression"`
+	GZipEnable                bool   `default:"true" describe:"enable gzip compression"`
 	StaticResourceCahce       bool   `default:"true" describe:"enable static resource caching"`
 	SecretKey                 string `default:"-"`
 	ConfigDir                 string `default:"-" json:"-"`

@@ -101,7 +101,10 @@ const chartOption = computed<EChartsOption>(() => {
       },
       formatter: (params: any) => {
         const [firstParam] = params;
-        return `${firstParam.name}<br/>${params
+        const sortedParams = [...params].sort(
+          (a: any, b: any) => Number(b.value) - Number(a.value)
+        );
+        return `${firstParam.name}<br/>${sortedParams
           .map(
             (param: any) =>
               `${param.marker}${param.seriesName}: ${param.value}`
