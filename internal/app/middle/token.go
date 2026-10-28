@@ -44,6 +44,7 @@ func (a *AuthMiddleware) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 				}
 			}
 			token = strings.TrimPrefix(token, "bearer ")
+			token = strings.TrimPrefix(token, "Bearer ")
 			mc, err := utils.VerifyToken(token, config.CF.SecretKey)
 			if err != nil {
 				return c.JSON(401, model.Response[struct{}]{
